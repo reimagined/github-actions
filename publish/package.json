@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc --build && ncc build lib/index.js --license licenses.txt",
+    "build": "ncc build src/index.ts --license licenses.txt --target es2015",
     "clean": "tsc --clean",
     "add-dist": "git add --force dist"
   },
