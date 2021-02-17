@@ -339,6 +339,8 @@ const core = __nccwpck_require__(316);
 const entry = () => {
     core.debug(`message from action!`);
     core.debug(`another message!`);
+    // eslint-disable-next-line no-console
+    console.log(`action output!`);
 };
 exports.entry = entry;
 exports.entry();
