@@ -71,6 +71,6 @@ jobs:
           draft: false
           body: Automated release workflow
           prerelease: false
-s
+
 
 
