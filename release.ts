@@ -81,8 +81,8 @@ const release = async (): Promise<void> => {
   let skipRelease = true
   try {
     await execCommand(`git commit -nam "Build artifacts"`)
-    await execCommand(`git tag -a ${releaseTag}`)
-    await execCommand(`git tag -fa ${referenceTag}`)
+    await execCommand(`git tag ${releaseTag}`)
+    await execCommand(`git tag -f ${referenceTag}`)
     await execCommand(`git push --tags`)
     skipRelease = false
   } catch (error) {
