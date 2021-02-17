@@ -83,7 +83,9 @@ const release = async (): Promise<void> => {
     await execCommand(`git commit -nam "Build artifacts"`)
     await execCommand(`git tag ${releaseTag}`)
     await execCommand(`git tag -f ${referenceTag}`)
-    await execCommand(`git push --tags`)
+    await execCommand(`git push`)
+    await execCommand(`git push origin ${releaseTag}`)
+    await execCommand(`git push origin ${referenceTag} --force`)
     skipRelease = false
   } catch (error) {
     if (!error.message.includes('nothing to commit, working tree clean')) {
