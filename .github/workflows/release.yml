@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  push:
+    branches: [ main* ]
+    tags-ignore:
+      - v*
+  pull_request:
+    branches: [ main* ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '12'
+
+      - name: Install
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Validate lock file
+        run: |
+          yarn validate-lock-file
+
+      - name: Prettier
+        run: |
+          yarn prettier:check
+
+      - name: ESLint
+        run: |
+          yarn lint
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: verify
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.RESOLVE_GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '12'
+
+      - name: Install
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Build
+        run: |
+          yarn build
+
+      - name: Prepare
+        id: prepare-release
+        run: |
+          yarn release
+
+      - name: GitHub Release
+        if: steps.prepare-release.outputs.SKIP_RELEASE != 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RESOLVE_GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ steps.prepare-release.outputs.RELEASE_TAG }}
+          release_name: Release ${{ steps.prepare-release.outputs.RELEASE_TAG }}
+          draft: false
+          body: Automated release workflow
+          prerelease: false
+s
+
+
