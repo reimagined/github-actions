@@ -1,4 +1,4 @@
-import core from '@actions/core'
+import * as core from '@actions/core'
 
 export const entry = (): void => {
   core.debug(`message from action!`)
