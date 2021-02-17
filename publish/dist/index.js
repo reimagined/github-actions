@@ -338,6 +338,7 @@ exports.entry = void 0;
 const core = __nccwpck_require__(316);
 const entry = () => {
     core.debug(`message from action!`);
+    core.debug(`another message!`);
 };
 exports.entry = entry;
 exports.entry();
