@@ -67,6 +67,7 @@ const release = async (): Promise<void> => {
   )
 
   const releaseTag = `v${nextVersion}`
+  const referenceTag = `v${latestVersion.major}`
 
   // eslint-disable-next-line no-console
   console.log(`::set-output name=RELEASE_TAG::${releaseTag}`)
@@ -80,7 +81,8 @@ const release = async (): Promise<void> => {
   let skipRelease = true
   try {
     await execCommand(`git commit -nam "Build artifacts"`)
-    await execCommand(`git tag ${releaseTag}`)
+    await execCommand(`git tag -a ${releaseTag}`)
+    await execCommand(`git tag -fa ${referenceTag}`)
     await execCommand(`git push --tags`)
     skipRelease = false
   } catch (error) {
