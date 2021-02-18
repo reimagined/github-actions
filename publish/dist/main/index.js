@@ -5473,6 +5473,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                 if (error) {
                     return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
                 }
+                core.debug(stdout);
                 resolve(stdout);
             });
         });
@@ -5627,7 +5628,9 @@ const bumpDependencies = (pkg, pattern, version) => {
 };
 exports.bumpDependencies = bumpDependencies;
 const processWorkspaces = (processor, debug) => __awaiter(void 0, void 0, void 0, function* () {
-    const info = JSON.parse(child_process_1.execSync(`yarn workspaces info --silent`).toString('utf-8'));
+    const output = child_process_1.execSync(`yarn workspaces info --silent`).toString('utf-8');
+    debug(output);
+    const info = JSON.parse(output);
     const workspaces = Object.keys(info).map((name) => {
         const location = path.resolve(info[name].location);
         debug(`[${name}] enqueue processing at ${location}`);
