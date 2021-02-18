@@ -11,7 +11,7 @@ Publishes framework packages to specified registry.
 | **registry** | Package registry to publish to. Provide **github**, **npm**, **npmjs** (same as **npm**) values to automatically determine desired well known registries, or custom URL for others. |
 | **token** | Package registry auth token. |
 | **version** | Semver compliant version to publish or **auto** to generate unique version automatically. |
-| *build* | Used in conjunction with **version**=*auto*. The value set to semver *build* part (e.g. *1.0.3.build*). |
+| *build* | Used in conjunction with **version**=*auto*. The value set to semver *build* part (e.g. *1.0.3-build*). |
 | *tag* | Packages version tag. (default: empty) |
 | *unpublish* | Remove packages on post-job hook. (default: false)
 

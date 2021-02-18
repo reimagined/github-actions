@@ -32,10 +32,9 @@ const determineVersion = (): string => {
     const pkg = JSON.parse(
       readFileSync(path.resolve('./package.json')).toString('utf-8')
     )
-    const date = new Date()
     const build =
       core.getInput('build') ?? new Date().toISOString().replace(/[:.]/gi, '-')
-    return `${pkg.version}.${build}`
+    return `${pkg.version}-${build}`
   }
 
   if (!semver.parse(version)) {
