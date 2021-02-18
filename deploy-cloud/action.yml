@@ -1,0 +1,26 @@
+name: resolve-cloud install
+description: install resolve cloud environment
+inputs:
+  aws_access_key_id:
+    description: aws access key id
+    required: true
+  aws_secret_access_key:
+    description: aws secret aceess key
+    required: true
+  stage_name:
+    description: stage name
+    required: true
+  version:
+    description: resolve version
+    required: true
+  path:
+    description: path
+    required: true
+
+outputs:
+  api_url:
+    description: api url
+
+runs:
+  using: 'node12'
+  main: 'index.js'
