@@ -1,0 +1,21 @@
+{
+  "name": "@reimagined/github-actions-deploy",
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build": "rm -r dist && ncc build src/main-entry.ts -o dist/main --license lic.txt && ncc build src/post-entry.ts -o dist/post --license lic.txt",
+    "test": "jest --coverage --config=../jest.config.js",
+    "clean": "rm -r dist && rm -r lib && rm -r coverage",
+    "add-dist": "git add --force dist"
+  },
+  "dependencies": {
+    "@actions/core": "1.2.5",
+    "semver": "7.3.4"
+  },
+  "devDependencies": {
+    "@types/semver": "7.3.4",
+    "jest": "26.6.3",
+    "ts-jest": "26.5.1"
+  }
+}
