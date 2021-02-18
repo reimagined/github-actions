@@ -1,5 +1,5 @@
 import { ChildProcess, exec } from 'child_process'
-import { unlinkSync } from 'fs'
+import { unlinkSync, copyFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
@@ -18,6 +18,7 @@ const mCoreGetState = mocked(core.getState)
 const mCoreGetInput = mocked(core.getInput)
 const mCoreDebug = mocked(core.debug)
 const mUnlink = mocked(unlinkSync)
+const mCopyFile = mocked(copyFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 
 let originalArgv = process.argv
@@ -28,6 +29,7 @@ beforeEach(() => {
   jobState = {
     version: '1.2.3',
     npmrc_file: 'npm-rc-file',
+    npmrc_backup: 'npm-rc-backup',
   }
   actionInput = {
     unpublish: 'yes',
@@ -142,10 +144,20 @@ test('do not unpublish if "unpublish" input does not set to positive value', asy
   expect(mProcessWorkspaces).not.toHaveBeenCalled()
 })
 
-test('npmrc file removed', async () => {
+test('npmrc file removed and restored from backup', async () => {
   await post()
 
   expect(mUnlink).toHaveBeenCalledWith('npm-rc-file')
+  expect(mCopyFile).toHaveBeenCalledWith(`npm-rc-backup`, `npm-rc-file`)
+  expect(mUnlink).toHaveBeenCalledWith('npm-rc-backup')
+})
+
+test('skip restore from backup if no backup file within state', async () => {
+  jobState.npmrc_backup = ''
+
+  await post()
+
+  expect(mCopyFile).not.toHaveBeenCalled()
 })
 
 test('skip npmrc file remove if no file name within state', async () => {

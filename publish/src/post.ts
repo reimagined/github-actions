@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { exec } from 'child_process'
-import { unlinkSync } from 'fs'
+import { unlinkSync, copyFileSync } from 'fs'
 import minimist from 'minimist'
 import { unpublish } from './unpublish'
 import { processWorkspaces } from './utils'
@@ -52,5 +52,12 @@ export const post = async (): Promise<void> => {
   if (npmRc) {
     core.info(`removing ${npmRc}`)
     unlinkSync(npmRc)
+  }
+
+  const npmRcBackup = core.getState('npmrc_backup')
+  if (npmRc && npmRcBackup) {
+    core.info(`restoring npmrc from ${npmRcBackup}`)
+    copyFileSync(npmRcBackup, npmRc)
+    unlinkSync(npmRcBackup)
   }
 }
