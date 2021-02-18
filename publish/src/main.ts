@@ -1,10 +1,11 @@
 import { URL } from 'url'
 import * as core from '@actions/core'
 import * as path from 'path'
-import { execSync } from 'child_process'
+import { exec } from 'child_process'
 import { writeFileSync } from 'fs'
 import minimist from 'minimist'
 import { publish } from './publish'
+import { processWorkspaces } from './utils'
 
 const determineRegistry = (): URL => {
   const registry = core.getInput('registry')
@@ -39,6 +40,7 @@ export const main = async (): Promise<void> => {
   const command = args._.length ? args._[0] : ''
 
   if (command === 'publish') {
+    core.info(`starting in "publish" mode`)
     return await publish(args.version, args.tag)
   }
 
@@ -65,12 +67,27 @@ export const main = async (): Promise<void> => {
   core.saveState('version', version)
   core.saveState('tag', tag)
 
-  execSync(
-    `yarn workspaces run "${process.argv[0]} ${process.argv[1]} publish --version=${version} --tag=${tag}"`,
-    {
-      stdio: 'inherit',
-    }
-  )
+  await processWorkspaces(async (w) => {
+    await new Promise((resolve, reject) => {
+      core.debug(`[${w.name}] executing publish script`)
+      exec(
+        `${process.argv[0]} ${process.argv[1]} publish --version=${version}${
+          tag ? ` --tag=${tag}` : ''
+        }`,
+        {
+          cwd: w.location,
+        },
+        (error, stdout, stderr) => {
+          if (error) {
+            return reject(
+              Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`)
+            )
+          }
+          resolve(stdout)
+        }
+      )
+    })
+  }, core.debug)
 
   core.setOutput('registry_url', registryURL.href)
   core.setOutput('version', version)
