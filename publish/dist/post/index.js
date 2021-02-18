@@ -5453,6 +5453,12 @@ const post = () => __awaiter(void 0, void 0, void 0, function* () {
         core.info(`removing ${npmRc}`);
         fs_1.unlinkSync(npmRc);
     }
+    const npmRcBackup = core.getState('npmrc_backup');
+    if (npmRc && npmRcBackup) {
+        core.info(`restoring npmrc from ${npmRcBackup}`);
+        fs_1.copyFileSync(npmRcBackup, npmRc);
+        fs_1.unlinkSync(npmRcBackup);
+    }
 });
 exports.post = post;
 
