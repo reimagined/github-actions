@@ -97,5 +97,4 @@ jobs:
           stage_name: dev
           version: 0.0.1
           path: ./resolve-cloud
-
 ```

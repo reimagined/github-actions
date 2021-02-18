@@ -4,13 +4,13 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-    "declaration": true,
+    "declaration": false,
     "emitDeclarationOnly": false,
     "strict": true,
     "outDir": "lib",
-    "declarationDir": "types",
     "typeRoots": ["./node_modules/@types", "../node_modules/@types"]
   },
   "include": ["src"]
