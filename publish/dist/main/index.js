@@ -5488,7 +5488,9 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                 if (error) {
                     return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
                 }
-                core.debug(stdout);
+                if (stdout) {
+                    core.debug(stdout);
+                }
                 resolve(stdout);
             });
         });
@@ -5551,7 +5553,7 @@ const publish = (version, tag) => __awaiter(void 0, void 0, void 0, function* ()
         }
     }
     catch (error) {
-        if (!error.message.includes('ERR! 404 Not Found')) {
+        if (!error.message.includes('ERR! 404')) {
             throw error;
         }
     }

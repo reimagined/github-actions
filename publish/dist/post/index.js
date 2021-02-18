@@ -5440,7 +5440,9 @@ const post = () => __awaiter(void 0, void 0, void 0, function* () {
                     if (error) {
                         return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
                     }
-                    core.debug(stdout);
+                    if (stdout) {
+                        core.debug(stdout);
+                    }
                     resolve(stdout);
                 });
             });
