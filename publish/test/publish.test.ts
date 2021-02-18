@@ -37,10 +37,6 @@ test('invalid input: bad release version', async () => {
   await expect(publish('', 'release')).rejects.toBeInstanceOf(Error)
 })
 
-test('invalid input: bad tag name', async () => {
-  await expect(publish('2.0.0', '')).rejects.toBeInstanceOf(Error)
-})
-
 test('package.json read', async () => {
   await publish('2.0.0', 'latest')
 
@@ -104,7 +100,15 @@ test('npm publish invoked', async () => {
   await publish('2.0.0', 'latest')
 
   expect(mExec).toHaveBeenCalledWith(
-    `npm publish --access=public --tag=latest --unsafe-perm`
+    `npm publish --access=public --unsafe-perm --tag=latest`
+  )
+})
+
+test('npm publish invoked (no tag)', async () => {
+  await publish('2.0.0')
+
+  expect(mExec).toHaveBeenCalledWith(
+    `npm publish --access=public --unsafe-perm`
   )
 })
 

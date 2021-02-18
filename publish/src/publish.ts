@@ -12,13 +12,10 @@ const exec = (command: string) => {
   return execSync(command).toString('utf-8')
 }
 
-export const publish = async (version: string, tag: string): Promise<void> => {
+export const publish = async (version: string, tag?: string): Promise<void> => {
   const publishVersion = semver.parse(version)
   if (!publishVersion) {
     throw Error(`invalid publish version: ${version}`)
-  }
-  if (!tag) {
-    throw Error(`invalid publish tag: ${tag}`)
   }
 
   core.debug(`reading package.json`)
@@ -60,7 +57,11 @@ export const publish = async (version: string, tag: string): Promise<void> => {
   writeFileSync('./package.json', JSON.stringify(pkg, null, 2))
 
   try {
-    execSync(`npm publish --access=public --tag=${tag} --unsafe-perm`)
+    execSync(
+      `npm publish --access=public --unsafe-perm${
+        tag != null ? ` --tag=${tag}` : ''
+      }`
+    )
   } catch (error) {
     core.error(error)
     throw error
