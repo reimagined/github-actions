@@ -38,7 +38,9 @@ export const post = async (): Promise<void> => {
                 Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`)
               )
             }
-            core.debug(stdout)
+            if (stdout) {
+              core.debug(stdout)
+            }
             resolve(stdout)
           }
         )
