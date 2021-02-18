@@ -48,22 +48,22 @@ export const entry = async (): Promise<void> => {
   core.debug(`registry URL: ${registryURL}`)
 
   const registryToken = core.getInput('token', { required: true })
-  core.debug(`registry token: ${registryToken != null ? 'set' : 'not set'}`)
+  core.debug(`registry token obtained`)
 
   const npmRc = path.resolve(process.cwd(), '.npmrc')
   core.debug(`npmrc file path: ${npmRc}`)
 
   writeNpmRc(npmRc, registryURL, registryToken)
 
-  core.saveState('npm_rc_file', npmRc)
+  core.saveState('npmrc_file', npmRc)
 
   const version = core.getInput('version', { required: true })
   const tag = core.getInput('tag')
 
   core.info(`publishing packages to ${registryURL.host}`)
 
-  core.saveState('publish_version', version)
-  core.saveState('publish_tag', tag)
+  core.saveState('version', version)
+  core.saveState('tag', tag)
 
   execSync(
     `yarn workspaces run "${process.argv[0]} ${process.argv[1]} publish --version=${version} --tag=${tag}"`,

@@ -23,6 +23,7 @@ let actionInput: { [key: string]: string }
 beforeEach(() => {
   actionInput = {
     registry: 'github',
+    token: 'github-token',
     version: '1.2.3',
     tag: 'publish-tag',
   }
@@ -72,6 +73,10 @@ test('npmrc and output for "github" registry', async () => {
     registry=https://npm.pkg.github.com/
     "
   `)
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'registry_url',
+    'https://npm.pkg.github.com/'
+  )
 })
 
 test('npmrc and output for "npm" registry', async () => {
@@ -90,6 +95,10 @@ test('npmrc and output for "npm" registry', async () => {
     registry=https://registry.npmjs.org/
     "
   `)
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'registry_url',
+    'https://registry.npmjs.org/'
+  )
 })
 
 test('npmrc and output for "npmjs" registry', async () => {
@@ -108,4 +117,67 @@ test('npmrc and output for "npmjs" registry', async () => {
     registry=https://registry.npmjs.org/
     "
   `)
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'registry_url',
+    'https://registry.npmjs.org/'
+  )
+})
+
+test('npmrc and output for custom registry', async () => {
+  actionInput.registry = 'http://resolve-dev.ml:10080'
+  actionInput.token = 'resolve-token'
+
+  await entry()
+
+  expect(mWriteFile).toHaveBeenCalledWith(
+    `${process.cwd()}/.npmrc`,
+    expect.any(String)
+  )
+  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
+    "//resolve-dev.ml:10080/:_authToken=resolve-token
+    //resolve-dev.ml:10080/:always-auth=true
+    registry=http://resolve-dev.ml:10080/
+    "
+  `)
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'registry_url',
+    'http://resolve-dev.ml:10080/'
+  )
+})
+
+test('invalid input: bad registry URL', async () => {
+  actionInput.registry = 'bad-registry'
+
+  await expect(entry()).rejects.toBeInstanceOf(Error)
+
+  expect(mPublish).not.toHaveBeenCalled()
+})
+
+test('action state saved for post-job hook', async () => {
+  await entry()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith(
+    'npmrc_file',
+    `${process.cwd()}/.npmrc`
+  )
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
+  expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
+})
+
+test('action output (except registry)', async () => {
+  await entry()
+
+  expect(mCoreSetOutput).toHaveBeenCalledWith('version', '1.2.3')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('tag', 'publish-tag')
+})
+
+test('self-invoke on workspaces in "publish" mode', async () => {
+  process.argv = ['node', 'index.js']
+
+  await entry()
+
+  expect(mExec).toHaveBeenCalled()
+  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
+    `"yarn workspaces run \\"node index.js publish --version=1.2.3 --tag=publish-tag\\""`
+  )
 })
