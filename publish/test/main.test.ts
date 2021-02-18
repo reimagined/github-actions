@@ -1,5 +1,6 @@
+import * as os from 'os'
 import { ChildProcess, exec } from 'child_process'
-import { writeFileSync, readFileSync } from 'fs'
+import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
@@ -11,15 +12,20 @@ jest.mock('../src/utils')
 jest.mock('@actions/core')
 jest.mock('child_process')
 jest.mock('fs')
+jest.mock('os')
 
 const mExec = mocked(exec)
 const mPublish = mocked(publish)
 const mCoreGetInput = mocked(core.getInput)
 const mCoreSetOutput = mocked(core.setOutput)
 const mCoreSaveState = mocked(core.saveState)
+const mCoreDebug = mocked(core.debug)
 const mWriteFile = mocked(writeFileSync)
 const mReadFile = mocked(readFileSync)
+const mExists = mocked(existsSync)
+const mCopyFile = mocked(copyFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
+const mOSHomeDir = mocked(os.homedir)
 
 let originalArgv = process.argv
 let actionInput: { [key: string]: string }
@@ -44,6 +50,8 @@ beforeEach(() => {
       })
     )
   )
+  mExists.mockReturnValue(true)
+  mOSHomeDir.mockReturnValue('/user-home')
 })
 
 afterEach(() => {
@@ -79,7 +87,7 @@ test('npmrc and output for "github" registry', async () => {
   await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
-    `${process.cwd()}/.npmrc`,
+    `/user-home/.npmrc`,
     expect.any(String)
   )
   expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
@@ -101,7 +109,7 @@ test('npmrc and output for "npm" registry', async () => {
   await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
-    `${process.cwd()}/.npmrc`,
+    `/user-home/.npmrc`,
     expect.any(String)
   )
   expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
@@ -123,7 +131,7 @@ test('npmrc and output for "npmjs" registry', async () => {
   await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
-    `${process.cwd()}/.npmrc`,
+    `/user-home/.npmrc`,
     expect.any(String)
   )
   expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
@@ -145,7 +153,7 @@ test('npmrc and output for custom registry', async () => {
   await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
-    `${process.cwd()}/.npmrc`,
+    `/user-home/.npmrc`,
     expect.any(String)
   )
   expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
@@ -160,6 +168,33 @@ test('npmrc and output for custom registry', async () => {
   )
 })
 
+test('npmrc backup created', async () => {
+  await main()
+
+  expect(mExists).toHaveBeenCalledWith(`/user-home/.npmrc`)
+  expect(mCopyFile).toHaveBeenCalledWith(
+    `/user-home/.npmrc`,
+    `/user-home/._build_npmrc_orig_`
+  )
+  expect(mCoreSaveState).toHaveBeenCalledWith(
+    'npmrc_backup',
+    `/user-home/._build_npmrc_orig_`
+  )
+})
+
+test('skip npmrc backup if file not exists', async () => {
+  mExists.mockReturnValue(false)
+
+  await main()
+
+  expect(mExists).toHaveBeenCalledWith(`/user-home/.npmrc`)
+  expect(mCopyFile).not.toHaveBeenCalled()
+  expect(mCoreSaveState).not.toHaveBeenCalledWith(
+    'npmrc_backup',
+    expect.any(String)
+  )
+})
+
 test('invalid input: bad registry URL', async () => {
   actionInput.registry = 'bad-registry'
 
@@ -171,10 +206,7 @@ test('invalid input: bad registry URL', async () => {
 test('action state saved for post-job hook', async () => {
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith(
-    'npmrc_file',
-    `${process.cwd()}/.npmrc`
-  )
+  expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_file', `/user-home/.npmrc`)
   expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
 })
@@ -251,6 +283,29 @@ test('workspace processor failure', async () => {
       },
     })
   ).rejects.toBeInstanceOf(Error)
+})
+
+test('workspace processor skip debug output of stdout if its empty', async () => {
+  await main()
+
+  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+
+  mExec.mockImplementationOnce((command, options, callback) => {
+    callback?.(null, '', '')
+    return {} as ChildProcess
+  })
+
+  mCoreDebug.mockClear()
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+    },
+  })
+
+  expect(mCoreDebug).not.toHaveBeenCalledWith('')
 })
 
 test('determine version: valid semver specified', async () => {

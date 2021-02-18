@@ -8,8 +8,11 @@ inputs:
     description: NPM registry authentication token
     required: true
   version:
-    description: packages version (specify 'current' to use version from package.json)
+    description: packages version
     required: true
+  build:
+    description: build semver part for automatic versioning
+    required: false
   tag:
     description: packages tag
     required: false
