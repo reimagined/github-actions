@@ -50,7 +50,12 @@ export const publish = async (version: string, tag: string): Promise<void> => {
   core.debug(`bumping package.json version to (${publishVersion.version})`)
   pkg.version = publishVersion.version
   core.debug(`bumping framework dependencies`)
-  pkg = bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version)
+  pkg = bumpDependencies(
+    pkg,
+    '@reimagined/.*$',
+    publishVersion.version,
+    core.debug
+  )
 
   writeFileSync('./package.json', JSON.stringify(pkg, null, 2))
 

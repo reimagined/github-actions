@@ -1,1 +1,1 @@
-# resolve-github-actions
+# GitHub actions for reSolve framework 
