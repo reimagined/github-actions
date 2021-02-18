@@ -36,7 +36,7 @@ const release = async (): Promise<void> => {
 
   const tagMatch = `v${pkgVersion.major}.${pkgVersion.minor}.*`
 
-  const branch = execCommand(`git rev-parse --abbrev-ref HEAD`)
+  const branch = await execCommand(`git rev-parse --abbrev-ref HEAD`)
   log.info(`current branch ${branch}`)
 
   log.info(`fetching remote`)
