@@ -3,3 +3,4 @@ lib
 .idea
 types
 dist
+coverage

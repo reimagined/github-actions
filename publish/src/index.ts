@@ -1,10 +1,7 @@
 import * as core from '@actions/core'
+import { entry } from './entry'
 
-export const entry = (): void => {
-  core.debug(`message from action!`)
-  core.debug(`another message!`)
-  // eslint-disable-next-line no-console
-  console.log(`action output!`)
-}
-
-entry()
+entry().catch((error) => {
+  core.error(error)
+  process.exit(1)
+})
