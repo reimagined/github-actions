@@ -26,8 +26,6 @@ const execCommand = async (command: string): Promise<string> =>
 const release = async (): Promise<void> => {
   log.info('preparing release')
 
-  log.info(await execCommand(`cat ./.git/config`))
-
   const pkgContents = await readFile(path.resolve('./package.json'))
   const pkg = JSON.parse(pkgContents.toString())
 
@@ -37,6 +35,9 @@ const release = async (): Promise<void> => {
   }
 
   const tagMatch = `v${pkgVersion.major}.${pkgVersion.minor}.*`
+
+  const branch = execCommand(`git rev-parse --abbrev-ref HEAD`)
+  log.info(`current branch ${branch}`)
 
   log.info(`fetching remote`)
   await execCommand(`git fetch --tags`)
@@ -83,8 +84,7 @@ const release = async (): Promise<void> => {
     await execCommand(`git commit -nam "Build artifacts"`)
     await execCommand(`git tag ${releaseTag}`)
     await execCommand(`git tag -f ${referenceTag}`)
-    await execCommand(`git push`)
-    await execCommand(`git push origin ${releaseTag}`)
+    await execCommand(`git push --atomic origin ${branch} ${releaseTag}`)
     await execCommand(`git push origin ${referenceTag} --force`)
     skipRelease = false
   } catch (error) {

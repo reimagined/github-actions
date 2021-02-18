@@ -133,7 +133,7 @@ describe('processWorkspaces', () => {
 
     expect(mExec).toHaveBeenCalled()
     expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"yarn workspaces info --silent"`
+      `"yarn --silent workspaces info"`
     )
   })
 

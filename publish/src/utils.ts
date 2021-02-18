@@ -54,7 +54,7 @@ export const processWorkspaces = async (
   processor: WorkspaceProcessor,
   debug: Function
 ): Promise<void> => {
-  const output = execSync(`yarn workspaces info --silent`).toString('utf-8')
+  const output = execSync(`yarn --silent workspaces info`).toString('utf-8')
   debug(output)
   const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {
