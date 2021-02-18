@@ -3,7 +3,7 @@ import { writeFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
-import { main } from '../src/entry'
+import { main } from '../src/main'
 
 jest.mock('../src/publish')
 jest.mock('@actions/core')
