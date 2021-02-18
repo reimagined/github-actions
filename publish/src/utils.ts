@@ -54,9 +54,9 @@ export const processWorkspaces = async (
   processor: WorkspaceProcessor,
   debug: Function
 ): Promise<void> => {
-  const info = JSON.parse(
-    execSync(`yarn workspaces info --silent`).toString('utf-8')
-  )
+  const output = execSync(`yarn workspaces info --silent`).toString('utf-8')
+  debug(output)
+  const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {
     const location = path.resolve(info[name].location)
     debug(`[${name}] enqueue processing at ${location}`)
