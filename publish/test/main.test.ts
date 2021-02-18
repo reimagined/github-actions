@@ -269,7 +269,7 @@ test('determine version: auto without build', async () => {
 
   expect(mCoreSaveState).toHaveBeenCalledWith(
     'version',
-    `6.5.4.2000-01-01T01-01-01-001Z`
+    `6.5.4-2000-01-01T01-01-01-001Z`
   )
 
   spy.mockRestore()
@@ -281,7 +281,7 @@ test('determine version: auto with build', async () => {
 
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4.build`)
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4-build`)
 })
 
 test('determine version: invalid semver', async () => {
