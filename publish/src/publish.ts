@@ -34,7 +34,7 @@ export const publish = async (version: string, tag?: string): Promise<void> => {
       packagePublished = true
     }
   } catch (error) {
-    if (!error.message.includes('ERR! 404 Not Found')) {
+    if (!error.message.includes('ERR! 404')) {
       throw error
     }
   }
