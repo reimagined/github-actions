@@ -5420,6 +5420,7 @@ const fs_1 = __nccwpck_require__(5747);
 const minimist_1 = __importDefault(__nccwpck_require__(5982));
 const publish_1 = __nccwpck_require__(4430);
 const utils_1 = __nccwpck_require__(4893);
+const semver_1 = __importDefault(__nccwpck_require__(931));
 const determineRegistry = () => {
     const registry = core.getInput('registry');
     switch (registry.toLowerCase()) {
@@ -5436,6 +5437,20 @@ const determineRegistry = () => {
                 throw Error(`invalid input [registry]: ${error.message}`);
             }
     }
+};
+const determineVersion = () => {
+    var _a;
+    const version = core.getInput('version', { required: true });
+    if (version.toLowerCase() === 'auto') {
+        const pkg = JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
+        const date = new Date();
+        const build = (_a = core.getInput('build')) !== null && _a !== void 0 ? _a : new Date().toISOString().replace(/[:.]/gi, '-');
+        return `${pkg.version}.${build}`;
+    }
+    if (!semver_1.default.parse(version)) {
+        throw Error(`invalid version: ${version}`);
+    }
+    return version;
 };
 const writeNpmRc = (file, registry, token) => {
     core.debug(`writing ${file}`);
@@ -5459,7 +5474,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     core.debug(`npmrc file path: ${npmRc}`);
     writeNpmRc(npmRc, registryURL, registryToken);
     core.saveState('npmrc_file', npmRc);
-    const version = core.getInput('version', { required: true });
+    const version = determineVersion();
+    core.debug(`determined publish version: ${version}`);
     const tag = core.getInput('tag');
     core.info(`publishing packages to ${registryURL.host}`);
     core.saveState('version', version);
