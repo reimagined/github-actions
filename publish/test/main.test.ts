@@ -3,7 +3,7 @@ import { writeFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
-import { entry } from '../src/entry'
+import { main } from '../src/entry'
 
 jest.mock('../src/publish')
 jest.mock('@actions/core')
@@ -44,7 +44,7 @@ test('publish command invoked', async () => {
     '--tag=nightly',
   ]
 
-  await entry()
+  await main()
 
   expect(mPublish).toHaveBeenCalledWith('1.0.0', 'nightly')
 })
@@ -52,7 +52,7 @@ test('publish command invoked', async () => {
 test('publish command does not invoked if no command provided', async () => {
   process.argv = ['node', 'index.js']
 
-  await entry()
+  await main()
 
   expect(mPublish).not.toHaveBeenCalled()
 })
@@ -61,7 +61,7 @@ test('npmrc and output for "github" registry', async () => {
   actionInput.registry = 'github'
   actionInput.token = 'github-token'
 
-  await entry()
+  await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
     `${process.cwd()}/.npmrc`,
@@ -83,7 +83,7 @@ test('npmrc and output for "npm" registry', async () => {
   actionInput.registry = 'npm'
   actionInput.token = 'npm-token'
 
-  await entry()
+  await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
     `${process.cwd()}/.npmrc`,
@@ -105,7 +105,7 @@ test('npmrc and output for "npmjs" registry', async () => {
   actionInput.registry = 'npmjs'
   actionInput.token = 'npmjs-token'
 
-  await entry()
+  await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
     `${process.cwd()}/.npmrc`,
@@ -127,7 +127,7 @@ test('npmrc and output for custom registry', async () => {
   actionInput.registry = 'http://resolve-dev.ml:10080'
   actionInput.token = 'resolve-token'
 
-  await entry()
+  await main()
 
   expect(mWriteFile).toHaveBeenCalledWith(
     `${process.cwd()}/.npmrc`,
@@ -148,13 +148,13 @@ test('npmrc and output for custom registry', async () => {
 test('invalid input: bad registry URL', async () => {
   actionInput.registry = 'bad-registry'
 
-  await expect(entry()).rejects.toBeInstanceOf(Error)
+  await expect(main()).rejects.toBeInstanceOf(Error)
 
   expect(mPublish).not.toHaveBeenCalled()
 })
 
 test('action state saved for post-job hook', async () => {
-  await entry()
+  await main()
 
   expect(mCoreSaveState).toHaveBeenCalledWith(
     'npmrc_file',
@@ -165,7 +165,7 @@ test('action state saved for post-job hook', async () => {
 })
 
 test('action output (except registry)', async () => {
-  await entry()
+  await main()
 
   expect(mCoreSetOutput).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSetOutput).toHaveBeenCalledWith('tag', 'publish-tag')
@@ -174,7 +174,7 @@ test('action output (except registry)', async () => {
 test('self-invoke on workspaces in "publish" mode', async () => {
   process.argv = ['node', 'index.js']
 
-  await entry()
+  await main()
 
   expect(mExec).toHaveBeenCalled()
   expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(

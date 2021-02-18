@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts --license licenses.txt --target es2015",
+    "build": "ncc build src/main-entry.ts -o dist/main --license lic.txt && ncc build src/post-entry.ts -o dist/post --license lic.txt",
     "test": "jest --coverage --config=../jest.config.js",
     "clean": "tsc --clean",
     "add-dist": "git add --force dist"

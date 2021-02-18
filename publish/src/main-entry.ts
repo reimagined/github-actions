@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 import * as core from '@actions/core'
-import { entry } from './entry'
+import { main } from './main'
 
-entry().catch((error) => {
+main().catch((error) => {
   core.setFailed(error)
   process.exit(1)
 })

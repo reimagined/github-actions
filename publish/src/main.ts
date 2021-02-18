@@ -34,7 +34,7 @@ const writeNpmRc = (file: string, registry: URL, token: string) => {
   )
 }
 
-export const entry = async (): Promise<void> => {
+export const main = async (): Promise<void> => {
   const args = minimist(process.argv.slice(2))
   const command = args._.length ? args._[0] : ''
 

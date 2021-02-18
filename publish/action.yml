@@ -1,14 +1,11 @@
 name: npm publish
 description: publishes packages to specified repository
 inputs:
-  npm_registry:
+  registry:
     description: NPM registry to publish to
     required: true
-  npm_token:
+  token:
     description: NPM registry authentication token
-    required: true
-  release_type:
-    description: release type specifier (specify 'release' to use version as is)
     required: true
   version:
     description: packages version (specify 'current' to use version from package.json)
@@ -22,11 +19,14 @@ inputs:
     default: 'false'
 
 outputs:
-  release-version:
+  registry_url:
+    description: registry where package was published
+  version:
     description: published packages version
-  release-tag:
+  tag:
     description: published packages tag
 
 runs:
   using: 'node12'
-  main: 'dist/index.js'
+  main: 'dist/main/index.js'
+  post: 'dist/post/index.js'
