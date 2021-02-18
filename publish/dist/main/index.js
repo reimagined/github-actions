@@ -5443,9 +5443,8 @@ const determineVersion = () => {
     const version = core.getInput('version', { required: true });
     if (version.toLowerCase() === 'auto') {
         const pkg = JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
-        const date = new Date();
         const build = (_a = core.getInput('build')) !== null && _a !== void 0 ? _a : new Date().toISOString().replace(/[:.]/gi, '-');
-        return `${pkg.version}.${build}`;
+        return `${pkg.version}-${build}`;
     }
     if (!semver_1.default.parse(version)) {
         throw Error(`invalid version: ${version}`);
