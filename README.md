@@ -1,6 +1,6 @@
 # GitHub actions for reSolve framework 
 
-## publish
+## reimagined/github-actions/publish@v1
 
 Publishes framework packages to specified registry. 
 
