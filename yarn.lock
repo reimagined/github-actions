@@ -579,14 +579,14 @@
 
 "@types/lodash.clonedeep@4.5.6":
   version "4.5.6"
-  resolved "http://npm.resolve-dev.ml:10080/@types%2flodash.clonedeep/-/lodash.clonedeep-4.5.6.tgz#3b6c40a0affe0799a2ce823b440a6cf33571d32b"
+  resolved "https://registry.yarnpkg.com/@types%2flodash.clonedeep/-/lodash.clonedeep-4.5.6.tgz#3b6c40a0affe0799a2ce823b440a6cf33571d32b"
   integrity sha512-cE1jYr2dEg1wBImvXlNtp0xDoS79rfEdGozQVgliDZj1uERH4k+rmEMTudP9b4VQ8O6nRb5gPqft0QzEQGMQgA==
   dependencies:
     "@types/lodash" "*"
 
 "@types/lodash@*":
   version "4.14.168"
-  resolved "http://npm.resolve-dev.ml:10080/@types%2flodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
+  resolved "https://registry.yarnpkg.com/@types%2flodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
   integrity sha512-oVfRvqHV/V6D1yifJbVRU3TMp8OT6o6BG+U9MkwuJ3U8/CsDHvalRpsxBqivn71ztOFZBTfJMvETbqHiaNSj7Q==
 
 "@types/minimist@1.2.1":
@@ -3035,7 +3035,7 @@ locate-path@^5.0.0:
 
 lodash.clonedeep@4.5.0:
   version "4.5.0"
-  resolved "http://npm.resolve-dev.ml:10080/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
+  resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
   integrity sha1-4j8/nE+Pvd6HJSnBBxhXoIblzO8=
 
 lodash.sortby@^4.7.0:
