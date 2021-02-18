@@ -1,5 +1,5 @@
 import { ChildProcess, exec } from 'child_process'
-import { writeFileSync } from 'fs'
+import { writeFileSync, readFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
@@ -18,6 +18,7 @@ const mCoreGetInput = mocked(core.getInput)
 const mCoreSetOutput = mocked(core.setOutput)
 const mCoreSaveState = mocked(core.saveState)
 const mWriteFile = mocked(writeFileSync)
+const mReadFile = mocked(readFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 
 let originalArgv = process.argv
@@ -36,6 +37,13 @@ beforeEach(() => {
     callback?.(null, 'executed', '')
     return {} as ChildProcess
   })
+  mReadFile.mockReturnValue(
+    Buffer.from(
+      JSON.stringify({
+        version: '6.5.4',
+      })
+    )
+  )
 })
 
 afterEach(() => {
@@ -243,4 +251,41 @@ test('workspace processor failure', async () => {
       },
     })
   ).rejects.toBeInstanceOf(Error)
+})
+
+test('determine version: valid semver specified', async () => {
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
+})
+
+test('determine version: auto without build', async () => {
+  const mockDate = new Date('2000-01-01T01:01:01.001Z') as any
+  const spy = jest.spyOn(global, 'Date').mockImplementation(() => mockDate)
+
+  actionInput.version = 'auto'
+
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith(
+    'version',
+    `6.5.4.2000-01-01T01-01-01-001Z`
+  )
+
+  spy.mockRestore()
+})
+
+test('determine version: auto with build', async () => {
+  actionInput.version = 'auto'
+  actionInput.build = 'build'
+
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4.build`)
+})
+
+test('determine version: invalid semver', async () => {
+  actionInput.version = '2'
+
+  await expect(main()).rejects.toBeInstanceOf(Error)
 })

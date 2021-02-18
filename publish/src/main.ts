@@ -2,10 +2,11 @@ import { URL } from 'url'
 import * as core from '@actions/core'
 import * as path from 'path'
 import { exec } from 'child_process'
-import { writeFileSync } from 'fs'
+import { writeFileSync, readFileSync } from 'fs'
 import minimist from 'minimist'
 import { publish } from './publish'
 import { processWorkspaces } from './utils'
+import semver from 'semver'
 
 const determineRegistry = (): URL => {
   const registry = core.getInput('registry')
@@ -23,6 +24,25 @@ const determineRegistry = (): URL => {
         throw Error(`invalid input [registry]: ${error.message}`)
       }
   }
+}
+
+const determineVersion = (): string => {
+  const version = core.getInput('version', { required: true })
+  if (version.toLowerCase() === 'auto') {
+    const pkg = JSON.parse(
+      readFileSync(path.resolve('./package.json')).toString('utf-8')
+    )
+    const date = new Date()
+    const build =
+      core.getInput('build') ?? new Date().toISOString().replace(/[:.]/gi, '-')
+    return `${pkg.version}.${build}`
+  }
+
+  if (!semver.parse(version)) {
+    throw Error(`invalid version: ${version}`)
+  }
+
+  return version
 }
 
 const writeNpmRc = (file: string, registry: URL, token: string) => {
@@ -59,7 +79,8 @@ export const main = async (): Promise<void> => {
 
   core.saveState('npmrc_file', npmRc)
 
-  const version = core.getInput('version', { required: true })
+  const version = determineVersion()
+  core.debug(`determined publish version: ${version}`)
   const tag = core.getInput('tag')
 
   core.info(`publishing packages to ${registryURL.host}`)
