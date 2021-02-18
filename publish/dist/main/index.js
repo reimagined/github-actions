@@ -5366,6 +5366,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* istanbul ignore file */
 const core = __importStar(__nccwpck_require__(5316));
 const main_1 = __nccwpck_require__(1844);
+console.log('entry');
 main_1.main().catch((error) => {
     core.setFailed(error);
     process.exit(1);
@@ -5419,6 +5420,7 @@ const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __nccwpck_require__(5747);
 const minimist_1 = __importDefault(__nccwpck_require__(5982));
 const publish_1 = __nccwpck_require__(4430);
+const utils_1 = __nccwpck_require__(4893);
 const determineRegistry = () => {
     const registry = core.getInput('registry');
     switch (registry.toLowerCase()) {
@@ -5446,6 +5448,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const args = minimist_1.default(process.argv.slice(2));
     const command = args._.length ? args._[0] : '';
     if (command === 'publish') {
+        core.info(`starting in "publish" mode`);
         return yield publish_1.publish(args.version, args.tag);
     }
     core.info(`configuring registry`);
@@ -5462,9 +5465,19 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`publishing packages to ${registryURL.host}`);
     core.saveState('version', version);
     core.saveState('tag', tag);
-    child_process_1.execSync(`yarn workspaces run "${process.argv[0]} ${process.argv[1]} publish --version=${version} --tag=${tag}"`, {
-        stdio: 'inherit',
-    });
+    yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
+        yield new Promise((resolve, reject) => {
+            core.debug(`[${w.name}] executing publish script`);
+            child_process_1.exec(`${process.argv[0]} ${process.argv[1]} publish --version=${version}${tag ? ` --tag=${tag}` : ''}`, {
+                cwd: w.location,
+            }, (error, stdout, stderr) => {
+                if (error) {
+                    return reject(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`);
+                }
+                resolve(stdout);
+            });
+        });
+    }), core.debug);
     core.setOutput('registry_url', registryURL.href);
     core.setOutput('version', version);
     core.setOutput('tag', tag);
@@ -5476,6 +5489,79 @@ exports.main = main;
 /***/ }),
 
 /***/ 4430:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.publish = void 0;
+const fs_1 = __nccwpck_require__(5747);
+const child_process_1 = __nccwpck_require__(3129);
+const semver_1 = __importDefault(__nccwpck_require__(931));
+const utils_1 = __nccwpck_require__(4893);
+const readString = (file) => {
+    return fs_1.readFileSync(file).toString('utf-8');
+};
+const exec = (command) => {
+    return child_process_1.execSync(command, { stdio: 'pipe' }).toString('utf-8');
+};
+const publish = (version, tag) => __awaiter(void 0, void 0, void 0, function* () {
+    const publishVersion = semver_1.default.parse(version);
+    if (!publishVersion) {
+        throw Error(`invalid publish version: ${version}`);
+    }
+    const fileContents = readString('./package.json');
+    let pkg = JSON.parse(fileContents);
+    const { name, private: restricted } = pkg;
+    if (restricted) {
+        return;
+    }
+    let packagePublished = false;
+    try {
+        const registryData = exec(`npm view ${name}@${publishVersion.version}`);
+        if (registryData != '') {
+            packagePublished = true;
+        }
+    }
+    catch (error) {
+        if (!error.message.includes('ERR! 404 Not Found')) {
+            throw error;
+        }
+    }
+    if (packagePublished) {
+        return;
+    }
+    pkg.version = publishVersion.version;
+    pkg = utils_1.bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version);
+    fs_1.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+    try {
+        exec(`npm publish --access=public --unsafe-perm${tag != null ? ` --tag=${tag}` : ''}`);
+    }
+    catch (error) {
+        throw error;
+    }
+    finally {
+        fs_1.writeFileSync('./package.json', fileContents);
+    }
+});
+exports.publish = publish;
+
+
+/***/ }),
+
+/***/ 4893:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -5512,70 +5598,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.publish = void 0;
-const core = __importStar(__nccwpck_require__(5316));
-const fs_1 = __nccwpck_require__(5747);
-const child_process_1 = __nccwpck_require__(3129);
-const semver_1 = __importDefault(__nccwpck_require__(931));
-const utils_1 = __nccwpck_require__(4893);
-const readString = (file) => {
-    return fs_1.readFileSync(file).toString('utf-8');
-};
-const exec = (command) => {
-    return child_process_1.execSync(command).toString('utf-8');
-};
-const publish = (version, tag) => __awaiter(void 0, void 0, void 0, function* () {
-    const publishVersion = semver_1.default.parse(version);
-    if (!publishVersion) {
-        throw Error(`invalid publish version: ${version}`);
-    }
-    core.debug(`reading package.json`);
-    const fileContents = readString('./package.json');
-    let pkg = JSON.parse(fileContents);
-    const { name, private: restricted } = pkg;
-    if (restricted) {
-        core.info(`(${name}) is private package, exiting`);
-        return;
-    }
-    core.info(`preparing to publish (${name}) version (${publishVersion.version}) with tag (${tag})`);
-    const registryData = exec(`npm view ${name}@${publishVersion.version} 2>/dev/null`);
-    if (registryData !== '') {
-        core.warning(`package (${name}) version (${publishVersion.version}) already published, exiting`);
-        return;
-    }
-    core.debug(`bumping package.json version to (${publishVersion.version})`);
-    pkg.version = publishVersion.version;
-    core.debug(`bumping framework dependencies`);
-    pkg = utils_1.bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version, core.debug);
-    fs_1.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
-    try {
-        child_process_1.execSync(`npm publish --access=public --unsafe-perm${tag != null ? ` --tag=${tag}` : ''}`);
-    }
-    catch (error) {
-        core.error(error);
-        throw error;
-    }
-    finally {
-        fs_1.writeFileSync('./package.json', fileContents);
-    }
-});
-exports.publish = publish;
-
-
-/***/ }),
-
-/***/ 4893:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.bumpDependencies = void 0;
+exports.processWorkspaces = exports.bumpDependencies = void 0;
 const lodash_clonedeep_1 = __importDefault(__nccwpck_require__(4056));
-const bumpDependencies = (pkg, pattern, version, debug) => {
+const child_process_1 = __nccwpck_require__(3129);
+const fs_1 = __nccwpck_require__(5747);
+const path = __importStar(__nccwpck_require__(5622));
+const bumpDependencies = (pkg, pattern, version) => {
     const regExp = new RegExp('^' + pattern);
     const sections = [
         'dependencies',
@@ -5587,12 +5615,10 @@ const bumpDependencies = (pkg, pattern, version, debug) => {
     sections.forEach((name) => {
         const section = target[name];
         if (section == null) {
-            debug(`no [${section}] within package.json`);
         }
         else {
             Object.keys(section).forEach((lib) => {
                 if (regExp.test(lib)) {
-                    debug(`${section}.${lib} (${section[lib]} -> ${version})`);
                     section[lib] = version;
                 }
             });
@@ -5601,6 +5627,20 @@ const bumpDependencies = (pkg, pattern, version, debug) => {
     return target;
 };
 exports.bumpDependencies = bumpDependencies;
+const processWorkspaces = (processor, debug) => __awaiter(void 0, void 0, void 0, function* () {
+    const info = JSON.parse(child_process_1.execSync(`yarn workspaces info --silent`).toString('utf-8'));
+    const workspaces = Object.keys(info).map((name) => {
+        const location = path.resolve(info[name].location);
+        debug(`[${name}] enqueue processing at ${location}`);
+        return {
+            name,
+            location,
+            pkg: JSON.parse(fs_1.readFileSync(path.resolve(location, './package.json')).toString('utf-8')),
+        };
+    });
+    yield Promise.all(workspaces.map((w) => processor(w)));
+});
+exports.processWorkspaces = processWorkspaces;
 
 
 /***/ }),

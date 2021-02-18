@@ -1,4 +1,18 @@
-import { bumpDependencies } from '../src/utils'
+import { mocked } from 'ts-jest/utils'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import * as path from 'path'
+import {
+  bumpDependencies,
+  processWorkspaces,
+  WorkspaceProcessor,
+} from '../src/utils'
+
+jest.mock('child_process')
+jest.mock('fs')
+
+const mExec = mocked(execSync)
+const mReadFile = mocked(readFileSync)
 
 describe('bumpDependencies', () => {
   test('bump [dependencies]', () => {
@@ -11,8 +25,7 @@ describe('bumpDependencies', () => {
         },
       },
       '@scope/.*$',
-      '1.2.3',
-      jest.fn()
+      '1.2.3'
     )
 
     expect(result).toEqual({
@@ -34,8 +47,7 @@ describe('bumpDependencies', () => {
         },
       },
       '@scope/.*$',
-      '1.2.3',
-      jest.fn()
+      '1.2.3'
     )
 
     expect(result).toEqual({
@@ -57,8 +69,7 @@ describe('bumpDependencies', () => {
         },
       },
       '@scope/.*$',
-      '1.2.3',
-      jest.fn()
+      '1.2.3'
     )
 
     expect(result).toEqual({
@@ -80,8 +91,7 @@ describe('bumpDependencies', () => {
         },
       },
       '@scope/.*$',
-      '1.2.3',
-      jest.fn()
+      '1.2.3'
     )
 
     expect(result).toEqual({
@@ -91,5 +101,65 @@ describe('bumpDependencies', () => {
         jest: '4.3.2',
       },
     })
+  })
+})
+
+describe('processWorkspaces', () => {
+  let output: string
+  let processor: jest.MockedFunction<WorkspaceProcessor>
+
+  beforeEach(() => {
+    output = JSON.stringify({
+      'package-a': {
+        location: '/path/to/a',
+      },
+      'package-b': {
+        location: '/path/to/b',
+      },
+    })
+    mExec.mockReturnValue(Buffer.from(output))
+    processor = jest.fn()
+    mReadFile.mockImplementation((file) =>
+      Buffer.from(
+        JSON.stringify({
+          name: path.dirname(file.toString()),
+        })
+      )
+    )
+  })
+
+  test('yarn workspaces info requested', async () => {
+    await processWorkspaces(processor, jest.fn())
+
+    expect(mExec).toHaveBeenCalled()
+    expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"yarn workspaces info --silent"`
+    )
+  })
+
+  test('processor invoked for each workspace', async () => {
+    await processWorkspaces(processor, jest.fn())
+
+    expect(processor).toHaveBeenCalledWith({
+      name: 'package-a',
+      location: '/path/to/a',
+      pkg: {
+        name: '/path/to/a',
+      },
+    })
+    expect(processor).toHaveBeenCalledWith({
+      name: 'package-b',
+      location: '/path/to/b',
+      pkg: {
+        name: '/path/to/b',
+      },
+    })
+  })
+
+  test('package.json files read', async () => {
+    await processWorkspaces(processor, jest.fn())
+
+    expect(mReadFile).toHaveBeenCalledWith(`/path/to/a/package.json`)
+    expect(mReadFile).toHaveBeenCalledWith(`/path/to/b/package.json`)
   })
 })

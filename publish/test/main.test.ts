@@ -1,21 +1,24 @@
-import { execSync } from 'child_process'
+import { ChildProcess, exec } from 'child_process'
 import { writeFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
+import { processWorkspaces, WorkspaceProcessor } from '../src/utils'
 import { main } from '../src/main'
 
 jest.mock('../src/publish')
+jest.mock('../src/utils')
 jest.mock('@actions/core')
 jest.mock('child_process')
 jest.mock('fs')
 
-const mExec = mocked(execSync)
+const mExec = mocked(exec)
 const mPublish = mocked(publish)
 const mCoreGetInput = mocked(core.getInput)
 const mCoreSetOutput = mocked(core.setOutput)
 const mCoreSaveState = mocked(core.saveState)
 const mWriteFile = mocked(writeFileSync)
+const mProcessWorkspaces = mocked(processWorkspaces)
 
 let originalArgv = process.argv
 let actionInput: { [key: string]: string }
@@ -29,6 +32,10 @@ beforeEach(() => {
   }
 
   mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mExec.mockImplementation((command, options, callback) => {
+    callback?.(null, 'executed', '')
+    return {} as ChildProcess
+  })
 })
 
 afterEach(() => {
@@ -171,13 +178,69 @@ test('action output (except registry)', async () => {
   expect(mCoreSetOutput).toHaveBeenCalledWith('tag', 'publish-tag')
 })
 
-test('self-invoke on workspaces in "publish" mode', async () => {
+test('workspace processor', async () => {
   process.argv = ['node', 'index.js']
 
   await main()
 
+  expect(mProcessWorkspaces).toHaveBeenCalled()
+  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+    },
+  })
+
   expect(mExec).toHaveBeenCalled()
   expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"yarn workspaces run \\"node index.js publish --version=1.2.3 --tag=publish-tag\\""`
+    `"node index.js publish --version=1.2.3 --tag=publish-tag"`
   )
+})
+
+test('workspace processor (no tag)', async () => {
+  actionInput.tag = ''
+  process.argv = ['node', 'index.js']
+
+  await main()
+
+  expect(mProcessWorkspaces).toHaveBeenCalled()
+  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+    },
+  })
+
+  expect(mExec).toHaveBeenCalled()
+  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
+    `"node index.js publish --version=1.2.3"`
+  )
+})
+
+test('workspace processor failure', async () => {
+  await main()
+
+  expect(mProcessWorkspaces).toHaveBeenCalled()
+  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+
+  mExec.mockImplementationOnce((command, options, callback) => {
+    callback?.(Error('failure'), '', '')
+    return {} as ChildProcess
+  })
+
+  await expect(
+    processor({
+      name: 'mock-package',
+      location: '/path/to/package',
+      pkg: {
+        name: 'mock-package',
+      },
+    })
+  ).rejects.toBeInstanceOf(Error)
 })

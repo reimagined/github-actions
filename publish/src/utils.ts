@@ -1,4 +1,7 @@
 import clone from 'lodash.clonedeep'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import * as path from 'path'
 
 type Dependencies = {
   [key: string]: string
@@ -13,8 +16,7 @@ type PackageDependencies = {
 export const bumpDependencies = (
   pkg: PackageDependencies,
   pattern: string,
-  version: string,
-  debug: Function
+  version: string
 ): any => {
   const regExp = new RegExp('^' + pattern)
 
@@ -29,11 +31,9 @@ export const bumpDependencies = (
   sections.forEach((name) => {
     const section = target[name]
     if (section == null) {
-      debug(`no [${section}] within package.json`)
     } else {
       Object.keys(section).forEach((lib) => {
         if (regExp.test(lib)) {
-          debug(`${section}.${lib} (${section[lib]} -> ${version})`)
           section[lib] = version
         }
       })
@@ -41,4 +41,33 @@ export const bumpDependencies = (
   })
 
   return target
+}
+
+type Workspace = {
+  name: string
+  location: string
+  pkg: object
+}
+export type WorkspaceProcessor = (w: Workspace) => Promise<void>
+
+export const processWorkspaces = async (
+  processor: WorkspaceProcessor,
+  debug: Function
+): Promise<void> => {
+  const info = JSON.parse(
+    execSync(`yarn workspaces info --silent`).toString('utf-8')
+  )
+  const workspaces = Object.keys(info).map((name) => {
+    const location = path.resolve(info[name].location)
+    debug(`[${name}] enqueue processing at ${location}`)
+    return {
+      name,
+      location,
+      pkg: JSON.parse(
+        readFileSync(path.resolve(location, './package.json')).toString('utf-8')
+      ),
+    }
+  })
+
+  await Promise.all(workspaces.map((w) => processor(w)))
 }
