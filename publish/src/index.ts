@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import * as core from '@actions/core'
 import { entry } from './entry'
 
