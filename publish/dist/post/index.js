@@ -5572,7 +5572,7 @@ const bumpDependencies = (pkg, pattern, version) => {
 };
 exports.bumpDependencies = bumpDependencies;
 const processWorkspaces = (processor, debug) => __awaiter(void 0, void 0, void 0, function* () {
-    const output = child_process_1.execSync(`yarn workspaces info --silent`).toString('utf-8');
+    const output = child_process_1.execSync(`yarn --silent workspaces info`).toString('utf-8');
     debug(output);
     const info = JSON.parse(output);
     const workspaces = Object.keys(info).map((name) => {
