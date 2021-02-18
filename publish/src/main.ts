@@ -83,6 +83,7 @@ export const main = async (): Promise<void> => {
               Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`)
             )
           }
+          core.debug(stdout)
           resolve(stdout)
         }
       )
