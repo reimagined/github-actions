@@ -1,8 +1,9 @@
 import { URL } from 'url'
 import * as core from '@actions/core'
 import * as path from 'path'
+import * as os from 'os'
 import { exec } from 'child_process'
-import { writeFileSync, readFileSync } from 'fs'
+import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
 import minimist from 'minimist'
 import { publish } from './publish'
 import { processWorkspaces } from './utils'
@@ -44,7 +45,18 @@ const determineVersion = (): string => {
   return version
 }
 
-const writeNpmRc = (file: string, registry: URL, token: string) => {
+const writeNpmRc = (
+  file: string,
+  registry: URL,
+  token: string
+): string | null => {
+  let backupFile = null
+  if (existsSync(file)) {
+    backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_')
+    core.info(`npmrc file exists, backing up to: ${backupFile}`)
+    copyFileSync(file, backupFile)
+  }
+
   core.debug(`writing ${file}`)
   writeFileSync(
     file,
@@ -52,6 +64,7 @@ const writeNpmRc = (file: string, registry: URL, token: string) => {
       `//${registry.host}/:always-auth=true\n` +
       `registry=${registry.href}\n`
   )
+  return backupFile
 }
 
 export const main = async (): Promise<void> => {
@@ -71,12 +84,15 @@ export const main = async (): Promise<void> => {
   const registryToken = core.getInput('token', { required: true })
   core.debug(`registry token obtained`)
 
-  const npmRc = path.resolve(process.cwd(), '.npmrc')
+  const npmRc = path.resolve(os.homedir(), '.npmrc')
   core.debug(`npmrc file path: ${npmRc}`)
 
-  writeNpmRc(npmRc, registryURL, registryToken)
+  const npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken)
 
   core.saveState('npmrc_file', npmRc)
+  if (npmRcBackup != null) {
+    core.saveState('npmrc_backup', npmRcBackup)
+  }
 
   const version = determineVersion()
   core.debug(`determined publish version: ${version}`)

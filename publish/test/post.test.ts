@@ -16,6 +16,7 @@ const mExec = mocked(exec)
 const mUnpublish = mocked(unpublish)
 const mCoreGetState = mocked(core.getState)
 const mCoreGetInput = mocked(core.getInput)
+const mCoreDebug = mocked(core.debug)
 const mUnlink = mocked(unlinkSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 
@@ -108,6 +109,29 @@ test('workspace processor failure', async () => {
       },
     })
   ).rejects.toBeInstanceOf(Error)
+})
+
+test('workspace processor skip debug output of stdout if its empty', async () => {
+  await post()
+
+  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+
+  mExec.mockImplementationOnce((command, options, callback) => {
+    callback?.(null, '', '')
+    return {} as ChildProcess
+  })
+
+  mCoreDebug.mockClear()
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+    },
+  })
+
+  expect(mCoreDebug).not.toHaveBeenCalledWith('')
 })
 
 test('do not unpublish if "unpublish" input does not set to positive value', async () => {
