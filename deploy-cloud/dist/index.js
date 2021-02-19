@@ -5271,11 +5271,8 @@ const entry = () => __awaiter(void 0, void 0, void 0, function* () {
         createNpmRc(registryURL, token, scopes);
     }
     yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
-        const { pkg, name, location } = w;
-        if (name.startsWith('@reimagined/')) {
-            const patchedPkg = Object.assign(Object.assign({}, pkg), { version });
-            fs_1.writeFileSync(path.resolve(location, './package.json'), JSON.stringify(utils_1.bumpDependencies(patchedPkg, '@reimagined/.*$', version), null, 2));
-        }
+        const { pkg, location } = w;
+        fs_1.writeFileSync(path.resolve(location, './package.json'), JSON.stringify(utils_1.bumpDependencies(pkg, '@reimagined/.*$', version), null, 2));
     }), core.debug, sourcePath);
     const commandExecutor = createExecutor(sourcePath);
     commandExecutor(`yarn install`);
