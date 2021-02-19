@@ -16,6 +16,12 @@ inputs:
   path:
     description: path
     required: true
+  registry:
+    description: NPM registry to publish to
+    required: false
+  token:
+    description: NPM registry authentication token
+    required: false
 
 outputs:
   api_url:
