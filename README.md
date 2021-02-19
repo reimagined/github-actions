@@ -64,6 +64,9 @@ Install resolve cloud environment.
 | **stage_name** | Resolve cloud stage name |
 | **version** | Resolve version |
 | **path** | Path to checkout repo |
+| *registry* | Custom NPM registry URL used to install packages **version** |
+| *token* | Custom NPM registry auth token (e.g. personal access token for GitHub) |
+| *scopes* | Comma-separated packages scope list (e.g. "**@reimagined**,**@babel**"). Restricts custom registry option to packages scopes.  |
 
 ### Output
 
@@ -101,4 +104,7 @@ jobs:
           stage_name: dev
           version: 0.0.1
           path: ./resolve-cloud
+          registry: https://npm.pkg.github.com/reimagined
+          token: <GITHUB_PAT>
+          scopes: @reimagined,@babel
 ```
