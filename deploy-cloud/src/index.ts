@@ -86,19 +86,16 @@ const entry = async (): Promise<void> => {
 
   await processWorkspaces(
     async (w) => {
-      const { pkg, name, location } = w
+      const { pkg, location } = w
 
-      if (name.startsWith('@reimagined/')) {
-        const patchedPkg = { ...pkg, version }
-        writeFileSync(
-          path.resolve(location, './package.json'),
-          JSON.stringify(
-            bumpDependencies(patchedPkg, '@reimagined/.*$', version),
-            null,
-            2
-          )
+      writeFileSync(
+        path.resolve(location, './package.json'),
+        JSON.stringify(
+          bumpDependencies(pkg, '@reimagined/.*$', version),
+          null,
+          2
         )
-      }
+      )
     },
     core.debug,
     sourcePath
