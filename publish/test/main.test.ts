@@ -99,7 +99,7 @@ test('npmrc and output for "github" registry', async () => {
   `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
-    'https://npm.pkg.github.com/'
+    'https://npm.pkg.github.com/package-owner'
   )
 })
 
