@@ -6,12 +6,12 @@ import * as path from 'path'
 import { parse as parseVersion } from 'semver'
 import { processWorkspaces, bumpDependencies } from '../../common/src/utils'
 
-const createExecutor = (path: string) => (
+const createExecutor = (cwd: string) => (
   args: string,
   stdio: StdioOptions = 'inherit'
 ): Buffer =>
   execSync(args, {
-    cwd: path,
+    cwd,
     stdio,
     env: {
       ...process.env,
@@ -84,21 +84,25 @@ const entry = async (): Promise<void> => {
     createNpmRc(registryURL, token, scopes)
   }
 
-  await processWorkspaces(async (w) => {
-    const { pkg, name, location } = w
+  await processWorkspaces(
+    async (w) => {
+      const { pkg, name, location } = w
 
-    if (name.startsWith('@reimagined/')) {
-      const patchedPkg = { ...pkg, version }
-      writeFileSync(
-        path.resolve(location, './package.json'),
-        JSON.stringify(
-          bumpDependencies(patchedPkg, '@reimagined/.*$', version),
-          null,
-          2
+      if (name.startsWith('@reimagined/')) {
+        const patchedPkg = { ...pkg, version }
+        writeFileSync(
+          path.resolve(location, './package.json'),
+          JSON.stringify(
+            bumpDependencies(patchedPkg, '@reimagined/.*$', version),
+            null,
+            2
+          )
         )
-      )
-    }
-  }, core.debug)
+      }
+    },
+    core.debug,
+    sourcePath
+  )
 
   const commandExecutor = createExecutor(sourcePath)
 
