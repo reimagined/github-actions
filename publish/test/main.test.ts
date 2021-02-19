@@ -81,7 +81,7 @@ test('publish command does not invoked if no command provided', async () => {
   expect(mPublish).not.toHaveBeenCalled()
 })
 
-test('npmrc and output for "github" registry', async () => {
+test('npmrc and output for "github" registry (owner - auto)', async () => {
   actionInput.registry = 'github'
   actionInput.token = 'github-token'
 
@@ -101,6 +101,45 @@ test('npmrc and output for "github" registry', async () => {
     'registry_url',
     'https://npm.pkg.github.com/package-owner'
   )
+})
+
+test('npmrc and output for "github" registry (owner - specified)', async () => {
+  actionInput.registry = 'github'
+  actionInput.token = 'github-token'
+  actionInput.owner = 'custom-owner'
+
+  await main()
+
+  expect(mWriteFile).toHaveBeenCalledWith(
+    `/user-home/.npmrc`,
+    expect.any(String)
+  )
+  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
+    "//npm.pkg.github.com/:_authToken=github-token
+    //npm.pkg.github.com/:always-auth=true
+    registry=https://npm.pkg.github.com/custom-owner
+    "
+  `)
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'registry_url',
+    'https://npm.pkg.github.com/custom-owner'
+  )
+})
+
+test('npmrc and output for "github" registry (owner - failure)', async () => {
+  actionInput.registry = 'github'
+  actionInput.token = 'github-token'
+
+  mReadFile.mockReturnValueOnce(
+    Buffer.from(
+      JSON.stringify({
+        name: 'package-name',
+        version: '6.5.4',
+      })
+    )
+  )
+
+  await expect(main()).rejects.toBeInstanceOf(Error)
 })
 
 test('npmrc and output for "npm" registry', async () => {

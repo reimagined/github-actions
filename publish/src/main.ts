@@ -14,19 +14,8 @@ type Package = {
   version: string
 }
 
-let cachedPkg: Package | null = null
-
-const readPackage = (): Package => {
-  if (cachedPkg == null) {
-    cachedPkg = JSON.parse(
-      readFileSync(path.resolve('./package.json')).toString('utf-8')
-    )
-  }
-  if (cachedPkg == null) {
-    throw Error(`unable to read package.json`)
-  }
-  return cachedPkg
-}
+const readPackage = (): Package =>
+  JSON.parse(readFileSync(path.resolve('./package.json')).toString('utf-8'))
 
 const determineOwner = (): string => {
   const owner = core.getInput('owner')
@@ -34,7 +23,7 @@ const determineOwner = (): string => {
   if (!owner) {
     const { name } = readPackage()
     if (!name.startsWith('@')) {
-      return ''
+      throw Error(`unable to determine GitHub owner from package name: ${name}`)
     }
     return name.slice(1).split('/')[0]
   }
