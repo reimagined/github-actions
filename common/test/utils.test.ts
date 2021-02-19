@@ -11,11 +11,9 @@ import {
 
 jest.mock('child_process')
 jest.mock('fs')
-jest.mock('process')
 
 const mExec = mocked(execSync)
 const mReadFile = mocked(readFileSync)
-const mProcessCWD = mocked(process.cwd)
 
 describe('bumpDependencies', () => {
   test('bump [dependencies]', () => {
@@ -129,14 +127,13 @@ describe('processWorkspaces', () => {
         })
       )
     )
-    mProcessCWD.mockReturnValue('/current-directory')
   })
 
   test('yarn workspaces info requested in current directory', async () => {
     await processWorkspaces(processor, jest.fn())
 
     expect(mExec).toHaveBeenCalledWith(expect.any(String), {
-      cwd: '/current-directory',
+      cwd: process.cwd(),
     })
     expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
       `"yarn --silent workspaces info"`
