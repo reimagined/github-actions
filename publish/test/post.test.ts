@@ -82,6 +82,7 @@ test('workspace processor', async () => {
     location: '/path/to/package',
     pkg: {
       name: 'mock-package',
+      version: '1.0.0',
     },
   })
 
@@ -108,6 +109,7 @@ test('workspace processor failure', async () => {
       location: '/path/to/package',
       pkg: {
         name: 'mock-package',
+        version: '1.0.0',
       },
     })
   ).rejects.toBeInstanceOf(Error)
@@ -130,6 +132,7 @@ test('workspace processor skip debug output of stdout if its empty', async () =>
     location: '/path/to/package',
     pkg: {
       name: 'mock-package',
+      version: '1.0.0',
     },
   })
 
