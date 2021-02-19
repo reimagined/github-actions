@@ -4,11 +4,11 @@ import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
-import { processWorkspaces, WorkspaceProcessor } from '../src/utils'
+import { processWorkspaces, WorkspaceProcessor } from '../../common/src/utils'
 import { main } from '../src/main'
 
 jest.mock('../src/publish')
-jest.mock('../src/utils')
+jest.mock('../../common/src/utils')
 jest.mock('@actions/core')
 jest.mock('child_process')
 jest.mock('fs')

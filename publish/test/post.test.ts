@@ -4,10 +4,10 @@ import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
 import { post } from '../src/post'
-import { processWorkspaces, WorkspaceProcessor } from '../src/utils'
+import { processWorkspaces, WorkspaceProcessor } from '../../common/src/utils'
 
 jest.mock('../src/unpublish')
-jest.mock('../src/utils')
+jest.mock('../../common/src/utils')
 jest.mock('@actions/core')
 jest.mock('child_process')
 jest.mock('fs')

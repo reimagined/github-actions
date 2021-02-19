@@ -6,9 +6,9 @@ import { exec } from 'child_process'
 import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
 import minimist from 'minimist'
 import { publish } from './publish'
-import { processWorkspaces } from './utils'
+import { processWorkspaces } from '../../common/src/utils'
 import semver from 'semver'
-import { Package } from './types'
+import { Package } from '../../common/src/types'
 
 const readPackage = (): Package =>
   JSON.parse(readFileSync(path.resolve('./package.json')).toString('utf-8'))

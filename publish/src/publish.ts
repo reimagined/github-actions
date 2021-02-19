@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { execSync } from 'child_process'
 import semver from 'semver'
-import { bumpDependencies } from './utils'
+import { bumpDependencies } from '../../common/src/utils'
 
 const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
