@@ -32,6 +32,17 @@ const createNpmRc = (registry: URL, token: string | null) => {
   )
 }
 
+const getScopes = (): string[] => {
+  const raw = core.getInput('scopes')
+  if (raw != null) {
+    return raw
+      .split(',')
+      .map((scope) => scope.trim())
+      .filter((scope) => scope.length)
+  }
+  return []
+}
+
 try {
   const path = core.getInput('path')
   const stage = core.getInput('stage_name')
@@ -40,6 +51,7 @@ try {
   const awsSecretAccessKey = core.getInput('aws_secret_access_key')
   const registry = core.getInput('registry')
   const token = core.getInput('token')
+  const scopes = getScopes()
 
   if (!parseVersion(version)) {
     throw new Error('wrong version pattern (1.2.3, 0.0.1-alpha)')
