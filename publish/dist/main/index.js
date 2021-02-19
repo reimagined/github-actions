@@ -5422,11 +5422,23 @@ const minimist_1 = __importDefault(__nccwpck_require__(5982));
 const publish_1 = __nccwpck_require__(4430);
 const utils_1 = __nccwpck_require__(4893);
 const semver_1 = __importDefault(__nccwpck_require__(931));
+const readPackage = () => JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
+const determineOwner = () => {
+    const owner = core.getInput('owner');
+    if (!owner) {
+        const { name } = readPackage();
+        if (!name.startsWith('@')) {
+            throw Error(`unable to determine GitHub owner from package name: ${name}`);
+        }
+        return name.slice(1).split('/')[0];
+    }
+    return owner;
+};
 const determineRegistry = () => {
     const registry = core.getInput('registry');
     switch (registry.toLowerCase()) {
         case 'github':
-            return new url_1.URL('https://npm.pkg.github.com');
+            return new url_1.URL(`https://npm.pkg.github.com/${determineOwner()}`);
         case 'npm':
         case 'npmjs':
             return new url_1.URL('https://registry.npmjs.org');
@@ -5443,7 +5455,7 @@ const determineVersion = () => {
     var _a;
     const version = core.getInput('version', { required: true });
     if (version.toLowerCase() === 'auto') {
-        const pkg = JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
+        const pkg = readPackage();
         const build = (_a = core.getInput('build')) !== null && _a !== void 0 ? _a : new Date().toISOString().replace(/[:.]/gi, '-');
         return `${pkg.version}-${build}`;
     }
