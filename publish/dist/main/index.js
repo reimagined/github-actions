@@ -5380,6 +5380,7 @@ const lodash_clonedeep_1 = __importDefault(__nccwpck_require__(4056));
 const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __nccwpck_require__(5747);
 const path = __importStar(__nccwpck_require__(5622));
+const process = __importStar(__nccwpck_require__(1765));
 const bumpDependencies = (pkg, pattern, version) => {
     const regExp = new RegExp('^' + pattern);
     const sections = [
@@ -5404,8 +5405,10 @@ const bumpDependencies = (pkg, pattern, version) => {
     return target;
 };
 exports.bumpDependencies = bumpDependencies;
-const processWorkspaces = (processor, debug) => __awaiter(void 0, void 0, void 0, function* () {
-    const output = child_process_1.execSync(`yarn --silent workspaces info`).toString('utf-8');
+const processWorkspaces = (processor, debug, cwd = process.cwd()) => __awaiter(void 0, void 0, void 0, function* () {
+    const output = child_process_1.execSync(`yarn --silent workspaces info`, {
+        cwd,
+    }).toString('utf-8');
     debug(output);
     const info = JSON.parse(output);
     const workspaces = Object.keys(info).map((name) => {
@@ -5741,6 +5744,14 @@ module.exports = require("os");;
 
 "use strict";
 module.exports = require("path");;
+
+/***/ }),
+
+/***/ 1765:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("process");;
 
 /***/ }),
 

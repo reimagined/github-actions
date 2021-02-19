@@ -5128,6 +5128,7 @@ const lodash_clonedeep_1 = __importDefault(__nccwpck_require__(4056));
 const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __nccwpck_require__(5747);
 const path = __importStar(__nccwpck_require__(5622));
+const process = __importStar(__nccwpck_require__(1765));
 const bumpDependencies = (pkg, pattern, version) => {
     const regExp = new RegExp('^' + pattern);
     const sections = [
@@ -5152,8 +5153,10 @@ const bumpDependencies = (pkg, pattern, version) => {
     return target;
 };
 exports.bumpDependencies = bumpDependencies;
-const processWorkspaces = (processor, debug) => __awaiter(void 0, void 0, void 0, function* () {
-    const output = child_process_1.execSync(`yarn --silent workspaces info`).toString('utf-8');
+const processWorkspaces = (processor, debug, cwd = process.cwd()) => __awaiter(void 0, void 0, void 0, function* () {
+    const output = child_process_1.execSync(`yarn --silent workspaces info`, {
+        cwd,
+    }).toString('utf-8');
     debug(output);
     const info = JSON.parse(output);
     const workspaces = Object.keys(info).map((name) => {
@@ -5213,8 +5216,8 @@ const fs_1 = __nccwpck_require__(5747);
 const path = __importStar(__nccwpck_require__(5622));
 const semver_1 = __nccwpck_require__(931);
 const utils_1 = __nccwpck_require__(4196);
-const createExecutor = (path) => (args, stdio = 'inherit') => child_process_1.execSync(args, {
-    cwd: path,
+const createExecutor = (cwd) => (args, stdio = 'inherit') => child_process_1.execSync(args, {
+    cwd,
     stdio,
     env: Object.assign({}, process.env),
 });
@@ -5273,7 +5276,7 @@ const entry = () => __awaiter(void 0, void 0, void 0, function* () {
             const patchedPkg = Object.assign(Object.assign({}, pkg), { version });
             fs_1.writeFileSync(path.resolve(location, './package.json'), JSON.stringify(utils_1.bumpDependencies(patchedPkg, '@reimagined/.*$', version), null, 2));
         }
-    }), core.debug);
+    }), core.debug, sourcePath);
     const commandExecutor = createExecutor(sourcePath);
     commandExecutor(`yarn install`);
     commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`);
@@ -5320,6 +5323,14 @@ module.exports = require("os");;
 
 "use strict";
 module.exports = require("path");;
+
+/***/ }),
+
+/***/ 1765:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("process");;
 
 /***/ }),
 
