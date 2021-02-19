@@ -106,6 +106,7 @@ const entry = async (): Promise<void> => {
   const commandExecutor = createExecutor(sourcePath)
 
   commandExecutor(`yarn install`)
+  commandExecutor(`yarn build-assets`)
   commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`)
   commandExecutor(
     `yarn -s admin-cli version-resources install --stage=${stage} --version=${version}`
