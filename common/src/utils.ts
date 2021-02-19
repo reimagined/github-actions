@@ -2,6 +2,7 @@ import clone from 'lodash.clonedeep'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
 import * as path from 'path'
+import * as process from 'process'
 import { Package, PackageDependencies } from './types'
 
 export const bumpDependencies = (
@@ -43,9 +44,12 @@ export type WorkspaceProcessor = (w: Workspace) => Promise<void>
 
 export const processWorkspaces = async (
   processor: WorkspaceProcessor,
-  debug: Function
+  debug: Function,
+  cwd: string = process.cwd()
 ): Promise<void> => {
-  const output = execSync(`yarn --silent workspaces info`).toString('utf-8')
+  const output = execSync(`yarn --silent workspaces info`, {
+    cwd,
+  }).toString('utf-8')
   debug(output)
   const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {

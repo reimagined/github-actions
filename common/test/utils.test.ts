@@ -2,6 +2,7 @@ import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
 import * as path from 'path'
+import * as process from 'process'
 import {
   bumpDependencies,
   processWorkspaces,
@@ -128,13 +129,23 @@ describe('processWorkspaces', () => {
     )
   })
 
-  test('yarn workspaces info requested', async () => {
+  test('yarn workspaces info requested in current directory', async () => {
     await processWorkspaces(processor, jest.fn())
 
-    expect(mExec).toHaveBeenCalled()
+    expect(mExec).toHaveBeenCalledWith(expect.any(String), {
+      cwd: process.cwd(),
+    })
     expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
       `"yarn --silent workspaces info"`
     )
+  })
+
+  test('yarn workspaces info requested within specified directory', async () => {
+    await processWorkspaces(processor, jest.fn(), '/working-directory')
+
+    expect(mExec).toHaveBeenCalledWith(expect.any(String), {
+      cwd: '/working-directory',
+    })
   })
 
   test('processor invoked for each workspace', async () => {
