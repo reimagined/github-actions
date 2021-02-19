@@ -2,16 +2,7 @@ import clone from 'lodash.clonedeep'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-
-type Dependencies = {
-  [key: string]: string
-}
-type PackageDependencies = {
-  dependencies?: Dependencies
-  devDependencies?: Dependencies
-  peerDependencies?: Dependencies
-  optionalDependencies?: Dependencies
-}
+import { PackageDependencies } from './types'
 
 export const bumpDependencies = (
   pkg: PackageDependencies,

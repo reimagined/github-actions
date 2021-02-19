@@ -8,11 +8,7 @@ import minimist from 'minimist'
 import { publish } from './publish'
 import { processWorkspaces } from './utils'
 import semver from 'semver'
-
-type Package = {
-  name: string
-  version: string
-}
+import { Package } from './types'
 
 const readPackage = (): Package =>
   JSON.parse(readFileSync(path.resolve('./package.json')).toString('utf-8'))
