@@ -5278,6 +5278,7 @@ const entry = () => __awaiter(void 0, void 0, void 0, function* () {
     }), core.debug, sourcePath);
     const commandExecutor = createExecutor(sourcePath);
     commandExecutor(`yarn install`);
+    commandExecutor(`yarn build-assets`);
     commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`);
     commandExecutor(`yarn -s admin-cli version-resources install --stage=${stage} --version=${version}`);
     const apiUrl = commandExecutor(`yarn -s admin-cli get-api-url --stage=${stage}`, 'pipe')
