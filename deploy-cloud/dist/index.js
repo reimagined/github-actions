@@ -5247,10 +5247,12 @@ const getScopes = () => {
 };
 const entry = () => __awaiter(void 0, void 0, void 0, function* () {
     const sourcePath = core.getInput('path');
-    const stage = core.getInput('stage_name');
-    const version = core.getInput('version');
-    const awsAccessKeyId = core.getInput('aws_access_key_id');
-    const awsSecretAccessKey = core.getInput('aws_secret_access_key');
+    const stage = core.getInput('stage_name', { required: true });
+    const version = core.getInput('version', { required: true });
+    const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true });
+    const awsSecretAccessKey = core.getInput('aws_secret_access_key', {
+        required: true,
+    });
     const registry = core.getInput('registry');
     const token = core.getInput('token');
     const scopes = getScopes();
