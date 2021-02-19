@@ -5423,10 +5423,11 @@ const publish_1 = __nccwpck_require__(4430);
 const utils_1 = __nccwpck_require__(4893);
 const semver_1 = __importDefault(__nccwpck_require__(931));
 const readPackage = () => JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
-const determineOwner = () => {
+const isGitHubRegistry = (url) => url.host.toLowerCase() === 'npm.pkg.github.com';
+const determineOwner = (pkg) => {
     const owner = core.getInput('owner');
     if (!owner) {
-        const { name } = readPackage();
+        const { name } = pkg;
         if (!name.startsWith('@')) {
             throw Error(`unable to determine GitHub owner from package name: ${name}`);
         }
@@ -5438,7 +5439,7 @@ const determineRegistry = () => {
     const registry = core.getInput('registry');
     switch (registry.toLowerCase()) {
         case 'github':
-            return new url_1.URL(`https://npm.pkg.github.com/${determineOwner()}`);
+            return new url_1.URL(`https://npm.pkg.github.com/${determineOwner(readPackage())}`);
         case 'npm':
         case 'npmjs':
             return new url_1.URL('https://registry.npmjs.org');
@@ -5503,10 +5504,34 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     core.saveState('version', version);
     core.saveState('tag', tag);
     yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
+        const { pkg, location, name } = w;
+        if (pkg.private) {
+            core.debug(`[${name}] the package is private, skipping processing`);
+            return;
+        }
+        if (isGitHubRegistry(registryURL)) {
+            const targetOwner = registryURL.pathname.slice(1);
+            if (!targetOwner) {
+                core.error(`[${name}] unable to determine target github owner from registry URL, aborting all`);
+                throw Error(`invalid github registry URL`);
+            }
+            let packageOwner;
+            try {
+                packageOwner = determineOwner(pkg);
+            }
+            catch (error) {
+                core.warning(`[${name}] unable to determine github owner, skipping the package`);
+                return;
+            }
+            if (packageOwner !== targetOwner) {
+                core.warning(`[${name}] owner (${packageOwner}) mismatch: target owner (${targetOwner}), skipping the package`);
+                return;
+            }
+        }
         yield new Promise((resolve, reject) => {
-            core.debug(`[${w.name}] executing publish script`);
+            core.debug(`[${name}] executing publish script`);
             child_process_1.exec(`${process.argv[0]} ${process.argv[1]} publish --version=${version}${tag ? ` --tag=${tag}` : ''}`, {
-                cwd: w.location,
+                cwd: location,
             }, (error, stdout, stderr) => {
                 if (error) {
                     return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
