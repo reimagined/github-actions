@@ -1,7 +1,6 @@
 import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
-import * as path from 'path'
 import * as process from 'process'
 import {
   bumpDependencies,
@@ -112,10 +111,10 @@ describe('processWorkspaces', () => {
   beforeEach(() => {
     output = JSON.stringify({
       'package-a': {
-        location: '/path/to/a',
+        location: 'path/to/a',
       },
       'package-b': {
-        location: '/path/to/b',
+        location: 'path/to/b',
       },
     })
     mExec.mockReturnValue(Buffer.from(output))
@@ -123,7 +122,7 @@ describe('processWorkspaces', () => {
     mReadFile.mockImplementation((file) =>
       Buffer.from(
         JSON.stringify({
-          name: path.dirname(file.toString()),
+          name: file,
         })
       )
     )
@@ -148,29 +147,59 @@ describe('processWorkspaces', () => {
     })
   })
 
-  test('processor invoked for each workspace', async () => {
+  test('processor invoked for each workspace in current working directory', async () => {
     await processWorkspaces(processor, jest.fn())
 
     expect(processor).toHaveBeenCalledWith({
       name: 'package-a',
-      location: '/path/to/a',
+      location: `${process.cwd()}/path/to/a`,
       pkg: {
-        name: '/path/to/a',
+        name: `${process.cwd()}/path/to/a/package.json`,
       },
     })
     expect(processor).toHaveBeenCalledWith({
       name: 'package-b',
-      location: '/path/to/b',
+      location: `${process.cwd()}/path/to/b`,
       pkg: {
-        name: '/path/to/b',
+        name: `${process.cwd()}/path/to/b/package.json`,
       },
     })
   })
 
-  test('package.json files read', async () => {
+  test('package.json files read in current working directory', async () => {
     await processWorkspaces(processor, jest.fn())
 
-    expect(mReadFile).toHaveBeenCalledWith(`/path/to/a/package.json`)
-    expect(mReadFile).toHaveBeenCalledWith(`/path/to/b/package.json`)
+    expect(mReadFile).toHaveBeenCalledWith(
+      `${process.cwd()}/path/to/a/package.json`
+    )
+    expect(mReadFile).toHaveBeenCalledWith(
+      `${process.cwd()}/path/to/b/package.json`
+    )
+  })
+
+  test('processor invoked for each workspace in specified directory', async () => {
+    await processWorkspaces(processor, jest.fn(), '/specified')
+
+    expect(processor).toHaveBeenCalledWith({
+      name: 'package-a',
+      location: `/specified/path/to/a`,
+      pkg: {
+        name: `/specified/path/to/a/package.json`,
+      },
+    })
+    expect(processor).toHaveBeenCalledWith({
+      name: 'package-b',
+      location: `/specified/path/to/b`,
+      pkg: {
+        name: `/specified/path/to/b/package.json`,
+      },
+    })
+  })
+
+  test('package.json files read in specified directory', async () => {
+    await processWorkspaces(processor, jest.fn(), '/specified')
+
+    expect(mReadFile).toHaveBeenCalledWith(`/specified/path/to/a/package.json`)
+    expect(mReadFile).toHaveBeenCalledWith(`/specified/path/to/b/package.json`)
   })
 })
