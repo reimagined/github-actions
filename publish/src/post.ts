@@ -3,7 +3,7 @@ import { exec } from 'child_process'
 import { unlinkSync, copyFileSync } from 'fs'
 import minimist from 'minimist'
 import { unpublish } from './unpublish'
-import { processWorkspaces } from './utils'
+import { processWorkspaces } from '../../common/src/utils'
 
 const isTrue = (value: string) =>
   value != null && ['yes', 'true', '1'].includes(value.toLowerCase())

@@ -1,0 +1,20 @@
+{
+  "name": "@reimagined/github-actions-common",
+  "license": "MIT",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo skip",
+    "test": "jest --coverage --config=../jest.config.js",
+    "clean": "echo skip",
+    "add-dist": "echo skip"
+  },
+  "dependencies": {
+    "lodash.clonedeep": "4.5.0"
+  },
+  "devDependencies": {
+    "@types/lodash.clonedeep": "4.5.6",
+    "jest": "26.6.3",
+    "ts-jest": "26.5.1"
+  }
+}

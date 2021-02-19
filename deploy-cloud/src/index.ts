@@ -4,6 +4,7 @@ import { URL } from 'url'
 import { writeFileSync } from 'fs'
 import * as path from 'path'
 import { parse as parseVersion } from 'semver'
+import { processWorkspaces, bumpDependencies } from '../../common/src/utils'
 
 const createExecutor = (path: string) => (
   args: string,
@@ -55,8 +56,8 @@ const getScopes = (): Array<string> => {
   return []
 }
 
-try {
-  const path = core.getInput('path')
+const entry = async (): Promise<void> => {
+  const sourcePath = core.getInput('path')
   const stage = core.getInput('stage_name')
   const version = core.getInput('version')
   const awsAccessKeyId = core.getInput('aws_access_key_id')
@@ -68,8 +69,6 @@ try {
   if (!parseVersion(version)) {
     throw new Error('wrong version pattern (1.2.3, 0.0.1-alpha)')
   }
-
-  const commandExecutor = createExecutor(path)
 
   process.env.AWS_ACCESS_KEY_ID = awsAccessKeyId
   process.env.AWS_SECRET_ACCESS_KEY = awsSecretAccessKey
@@ -85,9 +84,25 @@ try {
     createNpmRc(registryURL, token, scopes)
   }
 
-  commandExecutor(`yarn bump-version --version=${version}`)
-  commandExecutor(`yarn install`)
+  await processWorkspaces(async (w) => {
+    const { pkg, name, location } = w
 
+    if (name.startsWith('@reimagined/')) {
+      const patchedPkg = { ...pkg, version }
+      writeFileSync(
+        path.resolve(location, './package.json'),
+        JSON.stringify(
+          bumpDependencies(patchedPkg, '@reimagined/.*$', version),
+          null,
+          2
+        )
+      )
+    }
+  }, core.debug)
+
+  const commandExecutor = createExecutor(sourcePath)
+
+  commandExecutor(`yarn install`)
   commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`)
   commandExecutor(
     `yarn -s admin-cli version-resources install --stage=${stage} --version=${version}`
@@ -101,6 +116,9 @@ try {
     .trim()
 
   core.setOutput('api_url', apiUrl)
-} catch (error) {
-  core.setFailed(error)
 }
+
+entry().catch((error) => {
+  core.setFailed(error)
+  process.exit(1)
+})

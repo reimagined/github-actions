@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@actions/core": "1.2.5",
-    "semver": "^7.3.4"
+    "semver": "^7.3.4",
+    "lodash.clonedeep": "4.5.0"
+  },
+  "devDependencies": {
+    "@types/lodash.clonedeep": "4.5.6"
   }
 }
