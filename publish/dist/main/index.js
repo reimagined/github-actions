@@ -5415,6 +5415,7 @@ exports.main = void 0;
 const url_1 = __nccwpck_require__(8835);
 const core = __importStar(__nccwpck_require__(5316));
 const path = __importStar(__nccwpck_require__(5622));
+const os = __importStar(__nccwpck_require__(2087));
 const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __nccwpck_require__(5747);
 const minimist_1 = __importDefault(__nccwpck_require__(5982));
@@ -5452,10 +5453,17 @@ const determineVersion = () => {
     return version;
 };
 const writeNpmRc = (file, registry, token) => {
+    let backupFile = null;
+    if (fs_1.existsSync(file)) {
+        backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_');
+        core.info(`npmrc file exists, backing up to: ${backupFile}`);
+        fs_1.copyFileSync(file, backupFile);
+    }
     core.debug(`writing ${file}`);
     fs_1.writeFileSync(file, `//${registry.host}/:_authToken=${token}\n` +
         `//${registry.host}/:always-auth=true\n` +
         `registry=${registry.href}\n`);
+    return backupFile;
 };
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const args = minimist_1.default(process.argv.slice(2));
@@ -5469,10 +5477,13 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     core.debug(`registry URL: ${registryURL}`);
     const registryToken = core.getInput('token', { required: true });
     core.debug(`registry token obtained`);
-    const npmRc = path.resolve(process.cwd(), '.npmrc');
+    const npmRc = path.resolve(os.homedir(), '.npmrc');
     core.debug(`npmrc file path: ${npmRc}`);
-    writeNpmRc(npmRc, registryURL, registryToken);
+    const npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken);
     core.saveState('npmrc_file', npmRc);
+    if (npmRcBackup != null) {
+        core.saveState('npmrc_backup', npmRcBackup);
+    }
     const version = determineVersion();
     core.debug(`determined publish version: ${version}`);
     const tag = core.getInput('tag');
