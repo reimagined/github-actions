@@ -1,5 +1,6 @@
 import { execSync, StdioOptions } from 'child_process'
 import * as core from '@actions/core'
+import { parse as parseVersion } from 'semver'
 
 const createExecutor = (path: string) => (
   args: string,
@@ -20,7 +21,7 @@ try {
   const awsAccessKeyId = core.getInput('aws_access_key_id')
   const awsSecretAccessKey = core.getInput('aws_secret_access_key')
 
-  if (!/^\d\.\d\.\d(-.\w)?$/.test(version)) {
+  if (!parseVersion(version)) {
     throw new Error('wrong version pattern (1.2.3, 0.0.1-alpha)')
   }
 
