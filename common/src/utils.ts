@@ -53,7 +53,7 @@ export const processWorkspaces = async (
   debug(output)
   const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {
-    const location = path.resolve(info[name].location)
+    const location = path.resolve(cwd, info[name].location)
     debug(`[${name}] enqueue processing at ${location}`)
     return {
       name,
