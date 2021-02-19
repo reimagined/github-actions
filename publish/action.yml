@@ -20,6 +20,9 @@ inputs:
     description: automatically unpublish packages on post hook
     required: false
     default: 'false'
+  owner:
+    description: when registry was set to 'github' this field contains github organization or user
+    required: false
 
 outputs:
   registry_url:

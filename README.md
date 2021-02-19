@@ -13,7 +13,8 @@ Publishes framework packages to specified registry.
 | **version** | Semver compliant version to publish or **auto** to generate unique version automatically. |
 | *build* | Used in conjunction with **version**=*auto*. The value set to semver *build* part (e.g. *1.0.3-build*). |
 | *tag* | Packages version tag. (default: empty) |
-| *unpublish* | Remove packages on post-job hook. (default: false)
+| *unpublish* | Remove packages on post-job hook. (default: false) |
+| *owner* | GitHub owner (only valid when registry set to 'github'). If no value provided the action will try to obtain it from package name scope. |
 
 ### Output
 
@@ -43,8 +44,10 @@ jobs:
           registry: github
           token: {{ secrets.GITHUB_PAT }}
           version: auto
+          build: 1234
           tag: dev
           unpublish: true
+          owner: reimagined
 
 ```
 
