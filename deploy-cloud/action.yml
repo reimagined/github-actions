@@ -16,6 +16,15 @@ inputs:
   path:
     description: path
     required: true
+  registry:
+    description: NPM registry to install packages from
+    required: false
+  token:
+    description: NPM registry authentication token
+    required: false
+  scopes:
+    description: a list of comma separated scopes to map to custom NPM registry
+    required: false
 
 outputs:
   api_url:

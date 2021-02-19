@@ -1,5 +1,9 @@
 import { execSync, StdioOptions } from 'child_process'
 import * as core from '@actions/core'
+import { URL } from 'url'
+import { writeFileSync } from 'fs'
+import * as path from 'path'
+import { parse as parseVersion } from 'semver'
 
 const createExecutor = (path: string) => (
   args: string,
@@ -13,14 +17,55 @@ const createExecutor = (path: string) => (
     },
   })
 
+const createNpmRc = (
+  registry: URL,
+  token: string | null,
+  scopes: Array<string>
+) => {
+  const file = path.resolve(process.cwd(), './.npmrc')
+  const data =
+    scopes.length > 0
+      ? scopes
+          .map(
+            (scope) =>
+              `${scope}:registry=${registry.protocol}//${registry.host}\n`
+          )
+          .join('')
+      : `registry=${registry.href}\n`
+
+  core.debug(`writing ${file}`)
+  writeFileSync(
+    file,
+    token == null
+      ? data
+      : data +
+          `//${registry.host}/:_authToken=${token}\n` +
+          `//${registry.host}/:always-auth=true\n`
+  )
+}
+
+const getScopes = (): Array<string> => {
+  const raw = core.getInput('scopes')
+  if (raw != null) {
+    return raw
+      .split(',')
+      .map((scope) => scope.trim())
+      .filter((scope) => scope.length)
+  }
+  return []
+}
+
 try {
   const path = core.getInput('path')
   const stage = core.getInput('stage_name')
   const version = core.getInput('version')
   const awsAccessKeyId = core.getInput('aws_access_key_id')
   const awsSecretAccessKey = core.getInput('aws_secret_access_key')
+  const registry = core.getInput('registry')
+  const token = core.getInput('token')
+  const scopes = getScopes()
 
-  if (!/^\d\.\d\.\d(-.\w)?$/.test(version)) {
+  if (!parseVersion(version)) {
     throw new Error('wrong version pattern (1.2.3, 0.0.1-alpha)')
   }
 
@@ -28,6 +73,17 @@ try {
 
   process.env.AWS_ACCESS_KEY_ID = awsAccessKeyId
   process.env.AWS_SECRET_ACCESS_KEY = awsSecretAccessKey
+
+  if (registry != null) {
+    let registryURL: URL
+    try {
+      registryURL = new URL(registry)
+    } catch (error) {
+      core.debug(`invalid registry URL: ${registry}`)
+      throw Error(error.message)
+    }
+    createNpmRc(registryURL, token, scopes)
+  }
 
   commandExecutor(`yarn bump-version --version=${version}`)
   commandExecutor(`yarn install`)
