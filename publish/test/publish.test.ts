@@ -2,12 +2,12 @@ import { readFileSync, writeFileSync } from 'fs'
 import { execSync } from 'child_process'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
-import { bumpDependencies } from '../src/utils'
+import { bumpDependencies } from '../../common/src/utils'
 
 jest.mock('@actions/core')
 jest.mock('fs')
 jest.mock('child_process')
-jest.mock('../src/utils')
+jest.mock('../../common/src/utils')
 
 const mReadFile = mocked(readFileSync)
 const mWriteFile = mocked(writeFileSync)
