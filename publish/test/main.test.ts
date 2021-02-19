@@ -27,6 +27,15 @@ const mCopyFile = mocked(copyFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 const mOSHomeDir = mocked(os.homedir)
 
+const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
+  process.argv = ['node', 'index.js']
+
+  await main()
+
+  expect(mProcessWorkspaces).toHaveBeenCalled()
+  return mProcessWorkspaces.mock.calls[0][0]
+}
+
 let originalArgv = process.argv
 let actionInput: { [key: string]: string }
 
@@ -259,18 +268,14 @@ test('action output (except registry)', async () => {
 })
 
 test('workspace processor', async () => {
-  process.argv = ['node', 'index.js']
-
-  await main()
-
-  expect(mProcessWorkspaces).toHaveBeenCalled()
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+  const processor = await getWorkspaceProcessor()
 
   await processor({
-    name: 'mock-package',
+    name: '@package-owner/mock-package',
     location: '/path/to/package',
     pkg: {
-      name: 'mock-package',
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
     },
   })
 
@@ -280,20 +285,17 @@ test('workspace processor', async () => {
   )
 })
 
-test('workspace processor (no tag)', async () => {
+test('workspace processor: (no tag)', async () => {
   actionInput.tag = ''
-  process.argv = ['node', 'index.js']
 
-  await main()
-
-  expect(mProcessWorkspaces).toHaveBeenCalled()
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+  const processor = await getWorkspaceProcessor()
 
   await processor({
-    name: 'mock-package',
+    name: '@package-owner/mock-package',
     location: '/path/to/package',
     pkg: {
-      name: 'mock-package',
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
     },
   })
 
@@ -303,11 +305,8 @@ test('workspace processor (no tag)', async () => {
   )
 })
 
-test('workspace processor failure', async () => {
-  await main()
-
-  expect(mProcessWorkspaces).toHaveBeenCalled()
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+test('workspace processor: failure', async () => {
+  const processor = await getWorkspaceProcessor()
 
   mExec.mockImplementationOnce((command, options, callback) => {
     callback?.(Error('failure'), '', '')
@@ -316,19 +315,18 @@ test('workspace processor failure', async () => {
 
   await expect(
     processor({
-      name: 'mock-package',
+      name: '@package-owner/mock-package',
       location: '/path/to/package',
       pkg: {
-        name: 'mock-package',
+        name: '@package-owner/mock-package',
+        version: '1.0.0',
       },
     })
   ).rejects.toBeInstanceOf(Error)
 })
 
-test('workspace processor skip debug output of stdout if its empty', async () => {
-  await main()
-
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+test('workspace processor: skip debug output of stdout if its empty', async () => {
+  const processor = await getWorkspaceProcessor()
 
   mExec.mockImplementationOnce((command, options, callback) => {
     callback?.(null, '', '')
@@ -338,14 +336,107 @@ test('workspace processor skip debug output of stdout if its empty', async () =>
   mCoreDebug.mockClear()
 
   await processor({
-    name: 'mock-package',
+    name: '@package-owner/mock-package',
     location: '/path/to/package',
     pkg: {
-      name: 'mock-package',
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
     },
   })
 
   expect(mCoreDebug).not.toHaveBeenCalledWith('')
+})
+
+test('workspace processor: skip private packages', async () => {
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@package-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
+      private: true,
+    },
+  })
+
+  expect(mExec).not.toBeCalledWith(expect.stringContaining('publish'))
+})
+
+test('workspace processor: skip unrelated github packages', async () => {
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@other-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@other-owner/mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mExec).not.toBeCalledWith(
+    expect.stringContaining('publish'),
+    expect.anything(),
+    expect.anything()
+  )
+})
+
+test('workspace processor: skip unscoped github packages', async () => {
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mExec).not.toBeCalledWith(
+    expect.stringContaining('publish'),
+    expect.anything(),
+    expect.anything()
+  )
+})
+
+test('workspace processor: error on bad custom github registry URL', async () => {
+  actionInput.registry = 'https://npm.pkg.github.com/'
+
+  const processor = await getWorkspaceProcessor()
+
+  await expect(
+    processor({
+      name: '@package-owner/mock-package',
+      location: '/path/to/package',
+      pkg: {
+        name: '@package-owner/mock-package',
+        version: '1.0.0',
+      },
+    })
+  ).rejects.toBeInstanceOf(Error)
+})
+
+test('workspace processor: bypass github checks for other registries', async () => {
+  actionInput.registry = 'npm'
+
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: 'mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: 'mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mExec).toBeCalledWith(
+    expect.stringContaining('publish'),
+    expect.anything(),
+    expect.anything()
+  )
 })
 
 test('determine version: valid semver specified', async () => {

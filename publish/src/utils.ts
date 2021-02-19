@@ -2,7 +2,7 @@ import clone from 'lodash.clonedeep'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { PackageDependencies } from './types'
+import { Package, PackageDependencies } from './types'
 
 export const bumpDependencies = (
   pkg: PackageDependencies,
@@ -37,7 +37,7 @@ export const bumpDependencies = (
 type Workspace = {
   name: string
   location: string
-  pkg: object
+  pkg: Package
 }
 export type WorkspaceProcessor = (w: Workspace) => Promise<void>
 

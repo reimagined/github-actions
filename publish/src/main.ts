@@ -13,11 +13,14 @@ import { Package } from './types'
 const readPackage = (): Package =>
   JSON.parse(readFileSync(path.resolve('./package.json')).toString('utf-8'))
 
-const determineOwner = (): string => {
+const isGitHubRegistry = (url: URL): boolean =>
+  url.host.toLowerCase() === 'npm.pkg.github.com'
+
+const determineOwner = (pkg: Package): string => {
   const owner = core.getInput('owner')
 
   if (!owner) {
-    const { name } = readPackage()
+    const { name } = pkg
     if (!name.startsWith('@')) {
       throw Error(`unable to determine GitHub owner from package name: ${name}`)
     }
@@ -32,7 +35,9 @@ const determineRegistry = (): URL => {
 
   switch (registry.toLowerCase()) {
     case 'github':
-      return new URL(`https://npm.pkg.github.com/${determineOwner()}`)
+      return new URL(
+        `https://npm.pkg.github.com/${determineOwner(readPackage())}`
+      )
     case 'npm':
     case 'npmjs':
       return new URL('https://registry.npmjs.org')
@@ -120,14 +125,48 @@ export const main = async (): Promise<void> => {
   core.saveState('tag', tag)
 
   await processWorkspaces(async (w) => {
+    const { pkg, location, name } = w
+
+    if (pkg.private) {
+      core.debug(`[${name}] the package is private, skipping processing`)
+      return
+    }
+
+    if (isGitHubRegistry(registryURL)) {
+      const targetOwner = registryURL.pathname.slice(1)
+      if (!targetOwner) {
+        core.error(
+          `[${name}] unable to determine target github owner from registry URL, aborting all`
+        )
+        throw Error(`invalid github registry URL`)
+      }
+
+      let packageOwner
+      try {
+        packageOwner = determineOwner(pkg)
+      } catch (error) {
+        core.warning(
+          `[${name}] unable to determine github owner, skipping the package`
+        )
+        return
+      }
+
+      if (packageOwner !== targetOwner) {
+        core.warning(
+          `[${name}] owner (${packageOwner}) mismatch: target owner (${targetOwner}), skipping the package`
+        )
+        return
+      }
+    }
+
     await new Promise((resolve, reject) => {
-      core.debug(`[${w.name}] executing publish script`)
+      core.debug(`[${name}] executing publish script`)
       exec(
         `${process.argv[0]} ${process.argv[1]} publish --version=${version}${
           tag ? ` --tag=${tag}` : ''
         }`,
         {
-          cwd: w.location,
+          cwd: location,
         },
         (error, stdout, stderr) => {
           if (error) {
