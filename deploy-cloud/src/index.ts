@@ -17,9 +17,21 @@ const createExecutor = (path: string) => (
     },
   })
 
-const createNpmRc = (registry: URL, token: string | null) => {
+const createNpmRc = (
+  registry: URL,
+  token: string | null,
+  scopes: Array<string>
+) => {
   const file = path.resolve(process.cwd(), './.npmrc')
-  const data = `registry=${registry.href}\n`
+  const data =
+    scopes.length > 0
+      ? scopes
+          .map(
+            (scope) =>
+              `${scope}:registry=${registry.protocol}//${registry.host}\n`
+          )
+          .join('')
+      : `registry=${registry.href}\n`
 
   core.debug(`writing ${file}`)
   writeFileSync(
@@ -32,7 +44,7 @@ const createNpmRc = (registry: URL, token: string | null) => {
   )
 }
 
-const getScopes = (): string[] => {
+const getScopes = (): Array<string> => {
   const raw = core.getInput('scopes')
   if (raw != null) {
     return raw
@@ -70,7 +82,7 @@ try {
       core.debug(`invalid registry URL: ${registry}`)
       throw Error(error.message)
     }
-    createNpmRc(registryURL, token)
+    createNpmRc(registryURL, token, scopes)
   }
 
   commandExecutor(`yarn bump-version --version=${version}`)
