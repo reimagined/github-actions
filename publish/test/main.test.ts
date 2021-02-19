@@ -46,6 +46,7 @@ beforeEach(() => {
   mReadFile.mockReturnValue(
     Buffer.from(
       JSON.stringify({
+        name: '@package-owner/package-name',
         version: '6.5.4',
       })
     )
@@ -93,7 +94,7 @@ test('npmrc and output for "github" registry', async () => {
   expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
     "//npm.pkg.github.com/:_authToken=github-token
     //npm.pkg.github.com/:always-auth=true
-    registry=https://npm.pkg.github.com/
+    registry=https://npm.pkg.github.com/package-owner
     "
   `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(

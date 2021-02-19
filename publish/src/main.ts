@@ -9,12 +9,45 @@ import { publish } from './publish'
 import { processWorkspaces } from './utils'
 import semver from 'semver'
 
+type Package = {
+  name: string
+  version: string
+}
+
+let cachedPkg: Package | null = null
+
+const readPackage = (): Package => {
+  if (cachedPkg == null) {
+    cachedPkg = JSON.parse(
+      readFileSync(path.resolve('./package.json')).toString('utf-8')
+    )
+  }
+  if (cachedPkg == null) {
+    throw Error(`unable to read package.json`)
+  }
+  return cachedPkg
+}
+
+const determineOwner = (): string => {
+  const owner = core.getInput('owner')
+
+  if (!owner) {
+    const { name } = readPackage()
+    if (!name.startsWith('@')) {
+      return ''
+    }
+    return name.slice(1).split('/')[0]
+  }
+
+  return owner
+}
+
 const determineRegistry = (): URL => {
   const registry = core.getInput('registry')
 
   switch (registry.toLowerCase()) {
     case 'github':
-      return new URL('https://npm.pkg.github.com')
+      return new URL(`https://npm.pkg.github.com/${determineOwner()}`)
     case 'npm':
     case 'npmjs':
       return new URL('https://registry.npmjs.org')
@@ -30,9 +63,7 @@ const determineRegistry = (): URL => {
 const determineVersion = (): string => {
   const version = core.getInput('version', { required: true })
   if (version.toLowerCase() === 'auto') {
-    const pkg = JSON.parse(
-      readFileSync(path.resolve('./package.json')).toString('utf-8')
-    )
+    const pkg = readPackage()
     const build =
       core.getInput('build') ?? new Date().toISOString().replace(/[:.]/gi, '-')
     return `${pkg.version}-${build}`
