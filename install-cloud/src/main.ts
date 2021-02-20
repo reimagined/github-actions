@@ -1,12 +1,12 @@
 import { execSync, StdioOptions } from 'child_process'
-import * as core from '@actions/core'
 import { URL } from 'url'
-import { writeFileSync } from 'fs'
+import { writeFileSync, readFileSync } from 'fs'
 import * as path from 'path'
-import { parse as parseVersion } from 'semver'
+import * as core from '@actions/core'
+import * as semver from 'semver'
 import { processWorkspaces, bumpDependencies } from '../../common/src/utils'
 
-const createExecutor = (cwd: string) => (
+const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
   args: string,
   stdio: StdioOptions = 'inherit'
 ): Buffer =>
@@ -15,15 +15,16 @@ const createExecutor = (cwd: string) => (
     stdio,
     env: {
       ...process.env,
+      ...env,
     },
   })
 
 const createNpmRc = (
+  file: string,
   registry: URL,
   token: string | null,
   scopes: Array<string>
 ) => {
-  const file = path.resolve(process.cwd(), './.npmrc')
   const data =
     scopes.length > 0
       ? scopes
@@ -39,9 +40,9 @@ const createNpmRc = (
     file,
     token == null
       ? data
-      : data +
-          `//${registry.host}/:_authToken=${token}\n` +
-          `//${registry.host}/:always-auth=true\n`
+      : `//${registry.host}/:_authToken=${token}\n` +
+          `//${registry.host}/:always-auth=true\n` +
+          data
   )
 }
 
@@ -56,24 +57,17 @@ const getScopes = (): Array<string> => {
   return []
 }
 
-const entry = async (): Promise<void> => {
-  const sourcePath = core.getInput('path')
-  const stage = core.getInput('stage_name', { required: true })
-  const version = core.getInput('version', { required: true })
+export const main = async (): Promise<void> => {
   const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true })
   const awsSecretAccessKey = core.getInput('aws_secret_access_key', {
     required: true,
   })
+  const source = core.getInput('source', { required: true })
+  const stage = core.getInput('stage', { required: true })
+
   const registry = core.getInput('registry')
   const token = core.getInput('token')
   const scopes = getScopes()
-
-  if (!parseVersion(version)) {
-    throw new Error('wrong version pattern (1.2.3, 0.0.1-alpha)')
-  }
-
-  process.env.AWS_ACCESS_KEY_ID = awsAccessKeyId
-  process.env.AWS_SECRET_ACCESS_KEY = awsSecretAccessKey
 
   if (registry != null) {
     let registryURL: URL
@@ -83,33 +77,51 @@ const entry = async (): Promise<void> => {
       core.debug(`invalid registry URL: ${registry}`)
       throw Error(error.message)
     }
-    createNpmRc(registryURL, token, scopes)
+    createNpmRc(path.resolve(source, '.npmrc'), registryURL, token, scopes)
   }
 
-  await processWorkspaces(
-    async (w) => {
-      const { pkg, location } = w
+  let versionSource = core.getInput('version')
+  let determinedVersion: string
+  const bumpVersion = semver.parse(versionSource)
+  if (bumpVersion) {
+    determinedVersion = bumpVersion.version
+    await processWorkspaces(
+      async (w) => {
+        const { pkg, location } = w
 
-      writeFileSync(
-        path.resolve(location, './package.json'),
-        JSON.stringify(
-          bumpDependencies(pkg, '@reimagined/.*$', version),
-          null,
-          2
+        writeFileSync(
+          path.resolve(location, './package.json'),
+          JSON.stringify(
+            bumpDependencies(pkg, '@reimagined/.*$', determinedVersion),
+            null,
+            2
+          )
         )
-      )
-    },
-    core.debug,
-    sourcePath
-  )
+      },
+      core.debug,
+      source
+    )
+  } else {
+    if (versionSource != null && versionSource.trim().length) {
+      throw Error(`Invalid [version] non-empty input value: ${versionSource}`)
+    }
+    core.debug(`no version input, reading from source package.json`)
+    const { version } = JSON.parse(
+      readFileSync(path.resolve(source, './package.json')).toString('utf-8')
+    )
+    determinedVersion = version
+  }
 
-  const commandExecutor = createExecutor(sourcePath)
+  const commandExecutor = createExecutor(source, {
+    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+  })
 
   commandExecutor(`yarn install`)
   commandExecutor(`yarn build-assets`)
   commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`)
   commandExecutor(
-    `yarn -s admin-cli version-resources install --stage=${stage} --version=${version}`
+    `yarn -s admin-cli version-resources install --stage=${stage} --version=${determinedVersion}`
   )
 
   const apiUrl = commandExecutor(
@@ -121,8 +133,3 @@ const entry = async (): Promise<void> => {
 
   core.setOutput('api_url', apiUrl)
 }
-
-entry().catch((error) => {
-  core.setFailed(error)
-  process.exit(1)
-})

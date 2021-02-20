@@ -6,6 +6,7 @@
     "validate-lock-file": "ts-node validate-lock-file.ts",
     "prettier": "prettier --write \"**/**.{ts,tsx,js,json}\"",
     "prettier:check": "prettier --list-different \"**/**.{ts,tsx,js,json}\"",
+    "clean": "yarn workspaces run clean && rm -rf node_modules yarn.lock",
     "lint": "eslint . --ext=.js,.jsx,.ts,.tsx",
     "build": "yarn workspaces run build",
     "add-dist": "yarn workspaces run add-dist",
@@ -33,6 +34,6 @@
   "workspaces": [
     "common",
     "publish",
-    "deploy-cloud"
+    "install-cloud"
   ]
 }
