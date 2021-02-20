@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rm -r dist && ncc build src/main-entry.ts -o dist/main --license lic.txt && ncc build src/post-entry.ts -o dist/post --license lic.txt",
     "test": "jest --coverage --config=../jest.config.js",
-    "clean": "rm -r dist && rm -r lib && rm -r coverage",
+    "clean": "rm -rf dist node_modules coverage lib",
     "add-dist": "git add --force dist"
   },
   "dependencies": {
