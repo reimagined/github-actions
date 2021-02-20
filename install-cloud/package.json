@@ -1,25 +1,22 @@
 {
-  "name": "@reimagined/github-actions-publish",
+  "name": "@reimagined/github-actions-install-cloud",
   "license": "MIT",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/main-entry.ts -o dist/main --license lic.txt && ncc build src/post-entry.ts -o dist/post --license lic.txt",
+    "build": "rm -rf dist && ncc build src/index.ts -o dist/main --license lic.txt",
     "test": "jest --coverage --config=../jest.config.js",
     "clean": "rm -rf dist node_modules coverage lib",
     "add-dist": "git add --force dist"
   },
   "dependencies": {
     "@actions/core": "1.2.5",
-    "minimist": "1.2.5",
-    "semver": "7.3.4",
+    "semver": "^7.3.4",
     "lodash.clonedeep": "4.5.0"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "4.5.6",
-    "@types/minimist": "1.2.1",
-    "@types/semver": "7.3.4",
-    "jest": "26.6.3",
-    "ts-jest": "26.5.1"
+    "ts-jest": "26.5.1",
+    "jest": "26.6.3"
   }
 }
