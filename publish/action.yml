@@ -8,8 +8,11 @@ inputs:
     description: NPM registry authentication token
     required: true
   version:
-    description: packages version (specify 'current' to use version from package.json)
+    description: packages version
     required: true
+  build:
+    description: build semver part for automatic versioning
+    required: false
   tag:
     description: packages tag
     required: false
@@ -17,6 +20,9 @@ inputs:
     description: automatically unpublish packages on post hook
     required: false
     default: 'false'
+  owner:
+    description: when registry was set to 'github' this field contains github organization or user
+    required: false
 
 outputs:
   registry_url:

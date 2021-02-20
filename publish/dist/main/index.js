@@ -5338,6 +5338,95 @@ try {
 
 /***/ }),
 
+/***/ 4196:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processWorkspaces = exports.bumpDependencies = void 0;
+const lodash_clonedeep_1 = __importDefault(__nccwpck_require__(4056));
+const child_process_1 = __nccwpck_require__(3129);
+const fs_1 = __nccwpck_require__(5747);
+const path = __importStar(__nccwpck_require__(5622));
+const process = __importStar(__nccwpck_require__(1765));
+const bumpDependencies = (pkg, pattern, version) => {
+    const regExp = new RegExp('^' + pattern);
+    const sections = [
+        'dependencies',
+        'devDependencies',
+        'peerDependencies',
+        'optionalDependencies',
+    ];
+    const target = lodash_clonedeep_1.default(pkg);
+    sections.forEach((name) => {
+        const section = target[name];
+        if (section == null) {
+        }
+        else {
+            Object.keys(section).forEach((lib) => {
+                if (regExp.test(lib)) {
+                    section[lib] = version;
+                }
+            });
+        }
+    });
+    return target;
+};
+exports.bumpDependencies = bumpDependencies;
+const processWorkspaces = (processor, debug, cwd = process.cwd()) => __awaiter(void 0, void 0, void 0, function* () {
+    const output = child_process_1.execSync(`yarn --silent workspaces info`, {
+        cwd,
+    }).toString('utf-8');
+    debug(output);
+    const info = JSON.parse(output);
+    const workspaces = Object.keys(info).map((name) => {
+        const location = path.resolve(cwd, info[name].location);
+        debug(`[${name}] enqueue processing at ${location}`);
+        return {
+            name,
+            location,
+            pkg: JSON.parse(fs_1.readFileSync(path.resolve(location, './package.json')).toString('utf-8')),
+        };
+    });
+    yield Promise.all(workspaces.map((w) => processor(w)));
+});
+exports.processWorkspaces = processWorkspaces;
+
+
+/***/ }),
+
 /***/ 2902:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -5415,15 +5504,31 @@ exports.main = void 0;
 const url_1 = __nccwpck_require__(8835);
 const core = __importStar(__nccwpck_require__(5316));
 const path = __importStar(__nccwpck_require__(5622));
+const os = __importStar(__nccwpck_require__(2087));
 const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __nccwpck_require__(5747);
 const minimist_1 = __importDefault(__nccwpck_require__(5982));
 const publish_1 = __nccwpck_require__(4430);
+const utils_1 = __nccwpck_require__(4196);
+const semver_1 = __importDefault(__nccwpck_require__(931));
+const readPackage = () => JSON.parse(fs_1.readFileSync(path.resolve('./package.json')).toString('utf-8'));
+const isGitHubRegistry = (url) => url.host.toLowerCase() === 'npm.pkg.github.com';
+const determineOwner = (pkg) => {
+    const owner = core.getInput('owner');
+    if (!owner) {
+        const { name } = pkg;
+        if (!name.startsWith('@')) {
+            throw Error(`unable to determine GitHub owner from package name: ${name}`);
+        }
+        return name.slice(1).split('/')[0];
+    }
+    return owner;
+};
 const determineRegistry = () => {
     const registry = core.getInput('registry');
     switch (registry.toLowerCase()) {
         case 'github':
-            return new url_1.URL('https://npm.pkg.github.com');
+            return new url_1.URL(`https://npm.pkg.github.com/${determineOwner(readPackage())}`);
         case 'npm':
         case 'npmjs':
             return new url_1.URL('https://registry.npmjs.org');
@@ -5436,16 +5541,37 @@ const determineRegistry = () => {
             }
     }
 };
+const determineVersion = () => {
+    var _a;
+    const version = core.getInput('version', { required: true });
+    if (version.toLowerCase() === 'auto') {
+        const pkg = readPackage();
+        const build = (_a = core.getInput('build')) !== null && _a !== void 0 ? _a : new Date().toISOString().replace(/[:.]/gi, '-');
+        return `${pkg.version}-${build}`;
+    }
+    if (!semver_1.default.parse(version)) {
+        throw Error(`invalid version: ${version}`);
+    }
+    return version;
+};
 const writeNpmRc = (file, registry, token) => {
+    let backupFile = null;
+    if (fs_1.existsSync(file)) {
+        backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_');
+        core.info(`npmrc file exists, backing up to: ${backupFile}`);
+        fs_1.copyFileSync(file, backupFile);
+    }
     core.debug(`writing ${file}`);
     fs_1.writeFileSync(file, `//${registry.host}/:_authToken=${token}\n` +
         `//${registry.host}/:always-auth=true\n` +
         `registry=${registry.href}\n`);
+    return backupFile;
 };
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const args = minimist_1.default(process.argv.slice(2));
     const command = args._.length ? args._[0] : '';
     if (command === 'publish') {
+        core.info(`starting in "publish" mode`);
         return yield publish_1.publish(args.version, args.tag);
     }
     core.info(`configuring registry`);
@@ -5453,18 +5579,59 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     core.debug(`registry URL: ${registryURL}`);
     const registryToken = core.getInput('token', { required: true });
     core.debug(`registry token obtained`);
-    const npmRc = path.resolve(process.cwd(), '.npmrc');
+    const npmRc = path.resolve(os.homedir(), '.npmrc');
     core.debug(`npmrc file path: ${npmRc}`);
-    writeNpmRc(npmRc, registryURL, registryToken);
+    const npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken);
     core.saveState('npmrc_file', npmRc);
-    const version = core.getInput('version', { required: true });
+    if (npmRcBackup != null) {
+        core.saveState('npmrc_backup', npmRcBackup);
+    }
+    const version = determineVersion();
+    core.debug(`determined publish version: ${version}`);
     const tag = core.getInput('tag');
     core.info(`publishing packages to ${registryURL.host}`);
     core.saveState('version', version);
     core.saveState('tag', tag);
-    child_process_1.execSync(`yarn workspaces run "${process.argv[0]} ${process.argv[1]} publish --version=${version} --tag=${tag}"`, {
-        stdio: 'inherit',
-    });
+    yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
+        const { pkg, location, name } = w;
+        if (pkg.private) {
+            core.debug(`[${name}] the package is private, skipping processing`);
+            return;
+        }
+        if (isGitHubRegistry(registryURL)) {
+            const targetOwner = registryURL.pathname.slice(1);
+            if (!targetOwner) {
+                core.error(`[${name}] unable to determine target github owner from registry URL, aborting all`);
+                throw Error(`invalid github registry URL`);
+            }
+            let packageOwner;
+            try {
+                packageOwner = determineOwner(pkg);
+            }
+            catch (error) {
+                core.warning(`[${name}] unable to determine github owner, skipping the package`);
+                return;
+            }
+            if (packageOwner !== targetOwner) {
+                core.warning(`[${name}] owner (${packageOwner}) mismatch: target owner (${targetOwner}), skipping the package`);
+                return;
+            }
+        }
+        yield new Promise((resolve, reject) => {
+            core.debug(`[${name}] executing publish script`);
+            child_process_1.exec(`${process.argv[0]} ${process.argv[1]} publish --version=${version}${tag ? ` --tag=${tag}` : ''}`, {
+                cwd: location,
+            }, (error, stdout, stderr) => {
+                if (error) {
+                    return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
+                }
+                if (stdout) {
+                    core.debug(stdout);
+                }
+                resolve(stdout);
+            });
+        });
+    }), core.debug);
     core.setOutput('registry_url', registryURL.href);
     core.setOutput('version', version);
     core.setOutput('tag', tag);
@@ -5480,25 +5647,6 @@ exports.main = main;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -5513,46 +5661,49 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.publish = void 0;
-const core = __importStar(__nccwpck_require__(5316));
 const fs_1 = __nccwpck_require__(5747);
 const child_process_1 = __nccwpck_require__(3129);
 const semver_1 = __importDefault(__nccwpck_require__(931));
-const utils_1 = __nccwpck_require__(4893);
+const utils_1 = __nccwpck_require__(4196);
 const readString = (file) => {
     return fs_1.readFileSync(file).toString('utf-8');
 };
 const exec = (command) => {
-    return child_process_1.execSync(command).toString('utf-8');
+    return child_process_1.execSync(command, { stdio: 'pipe' }).toString('utf-8');
 };
 const publish = (version, tag) => __awaiter(void 0, void 0, void 0, function* () {
     const publishVersion = semver_1.default.parse(version);
     if (!publishVersion) {
         throw Error(`invalid publish version: ${version}`);
     }
-    core.debug(`reading package.json`);
     const fileContents = readString('./package.json');
     let pkg = JSON.parse(fileContents);
     const { name, private: restricted } = pkg;
     if (restricted) {
-        core.info(`(${name}) is private package, exiting`);
         return;
     }
-    core.info(`preparing to publish (${name}) version (${publishVersion.version}) with tag (${tag})`);
-    const registryData = exec(`npm view ${name}@${publishVersion.version} 2>/dev/null`);
-    if (registryData !== '') {
-        core.warning(`package (${name}) version (${publishVersion.version}) already published, exiting`);
-        return;
-    }
-    core.debug(`bumping package.json version to (${publishVersion.version})`);
-    pkg.version = publishVersion.version;
-    core.debug(`bumping framework dependencies`);
-    pkg = utils_1.bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version, core.debug);
-    fs_1.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+    let packagePublished = false;
     try {
-        child_process_1.execSync(`npm publish --access=public --unsafe-perm${tag != null ? ` --tag=${tag}` : ''}`);
+        const registryData = exec(`npm view ${name}@${publishVersion.version}`);
+        if (registryData != '') {
+            packagePublished = true;
+        }
     }
     catch (error) {
-        core.error(error);
+        if (!error.message.includes('ERR! 404')) {
+            throw error;
+        }
+    }
+    if (packagePublished) {
+        return;
+    }
+    pkg.version = publishVersion.version;
+    pkg = utils_1.bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version);
+    fs_1.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+    try {
+        exec(`npm publish --access=public --unsafe-perm${tag != null ? ` --tag=${tag}` : ''}`);
+    }
+    catch (error) {
         throw error;
     }
     finally {
@@ -5560,47 +5711,6 @@ const publish = (version, tag) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.publish = publish;
-
-
-/***/ }),
-
-/***/ 4893:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.bumpDependencies = void 0;
-const lodash_clonedeep_1 = __importDefault(__nccwpck_require__(4056));
-const bumpDependencies = (pkg, pattern, version, debug) => {
-    const regExp = new RegExp('^' + pattern);
-    const sections = [
-        'dependencies',
-        'devDependencies',
-        'peerDependencies',
-        'optionalDependencies',
-    ];
-    const target = lodash_clonedeep_1.default(pkg);
-    sections.forEach((name) => {
-        const section = target[name];
-        if (section == null) {
-            debug(`no [${section}] within package.json`);
-        }
-        else {
-            Object.keys(section).forEach((lib) => {
-                if (regExp.test(lib)) {
-                    debug(`${section}.${lib} (${section[lib]} -> ${version})`);
-                    section[lib] = version;
-                }
-            });
-        }
-    });
-    return target;
-};
-exports.bumpDependencies = bumpDependencies;
 
 
 /***/ }),
@@ -5634,6 +5744,14 @@ module.exports = require("os");;
 
 "use strict";
 module.exports = require("path");;
+
+/***/ }),
+
+/***/ 1765:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("process");;
 
 /***/ }),
 

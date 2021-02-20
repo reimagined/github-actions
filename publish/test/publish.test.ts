@@ -1,20 +1,18 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { execSync } from 'child_process'
 import { mocked } from 'ts-jest/utils'
-import * as core from '@actions/core'
 import { publish } from '../src/publish'
-import { bumpDependencies } from '../src/utils'
+import { bumpDependencies } from '../../common/src/utils'
 
 jest.mock('@actions/core')
 jest.mock('fs')
 jest.mock('child_process')
-jest.mock('../src/utils')
+jest.mock('../../common/src/utils')
 
 const mReadFile = mocked(readFileSync)
 const mWriteFile = mocked(writeFileSync)
 const mExec = mocked(execSync)
 const mBumpDependencies = mocked(bumpDependencies)
-const mCoreDebug = mocked(core.debug)
 
 let pkg: object
 let fileContents: string
@@ -46,7 +44,9 @@ test('package.json read', async () => {
 test('npm view requested', async () => {
   await publish('2.0.0', 'latest')
 
-  expect(mExec).toHaveBeenCalledWith(`npm view mock-package@2.0.0 2>/dev/null`)
+  expect(mExec).toHaveBeenCalledWith(`npm view mock-package@2.0.0`, {
+    stdio: 'pipe',
+  })
 })
 
 test('skip private packages', async () => {
@@ -65,7 +65,7 @@ test('skip private packages', async () => {
   expect(mBumpDependencies).not.toHaveBeenCalled()
 })
 
-test('skip already published packages', async () => {
+test('skip already published packages if npm view info retrieved', async () => {
   mExec.mockReturnValueOnce(
     Buffer.from('mock-package@2.0.0 | ISC | deps: 1 | versions: 92')
   )
@@ -76,14 +76,21 @@ test('skip already published packages', async () => {
   expect(mBumpDependencies).not.toHaveBeenCalled()
 })
 
+test('throw error on unexpected npm view failure', async () => {
+  mExec.mockImplementationOnce(() => {
+    throw Error('failure')
+  })
+
+  await expect(publish('2.0.0', 'latest')).rejects.toEqual(Error('failure'))
+})
+
 test('bumping framework dependencies', async () => {
   await publish('2.0.0', 'latest')
 
   expect(mBumpDependencies).toHaveBeenCalledWith(
     { ...pkg, version: '2.0.0' },
     '@reimagined/.*$',
-    '2.0.0',
-    mCoreDebug
+    '2.0.0'
   )
 })
 
@@ -99,8 +106,11 @@ test('patched package.json written', async () => {
 test('npm publish invoked', async () => {
   await publish('2.0.0', 'latest')
 
-  expect(mExec).toHaveBeenCalledWith(
-    `npm publish --access=public --unsafe-perm --tag=latest`
+  expect(
+    mExec
+  ).toHaveBeenCalledWith(
+    `npm publish --access=public --unsafe-perm --tag=latest`,
+    { stdio: 'pipe' }
   )
 })
 
@@ -108,7 +118,23 @@ test('npm publish invoked (no tag)', async () => {
   await publish('2.0.0')
 
   expect(mExec).toHaveBeenCalledWith(
-    `npm publish --access=public --unsafe-perm`
+    `npm publish --access=public --unsafe-perm`,
+    {
+      stdio: 'pipe',
+    }
+  )
+})
+
+test('npm publish invoked if npm view returns 404', async () => {
+  mExec.mockImplementationOnce(() => {
+    throw Error('noise ERR! 404 Not Found noise')
+  })
+
+  await publish('2.0.0', 'latest')
+
+  expect(mExec).toHaveBeenCalledWith(
+    expect.stringContaining(`npm publish`),
+    expect.any(Object)
   )
 })
 

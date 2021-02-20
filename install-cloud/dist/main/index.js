@@ -2428,258 +2428,6 @@ module.exports = LRUCache
 
 /***/ }),
 
-/***/ 5982:
-/***/ ((module) => {
-
-module.exports = function (args, opts) {
-    if (!opts) opts = {};
-    
-    var flags = { bools : {}, strings : {}, unknownFn: null };
-
-    if (typeof opts['unknown'] === 'function') {
-        flags.unknownFn = opts['unknown'];
-    }
-
-    if (typeof opts['boolean'] === 'boolean' && opts['boolean']) {
-      flags.allBools = true;
-    } else {
-      [].concat(opts['boolean']).filter(Boolean).forEach(function (key) {
-          flags.bools[key] = true;
-      });
-    }
-    
-    var aliases = {};
-    Object.keys(opts.alias || {}).forEach(function (key) {
-        aliases[key] = [].concat(opts.alias[key]);
-        aliases[key].forEach(function (x) {
-            aliases[x] = [key].concat(aliases[key].filter(function (y) {
-                return x !== y;
-            }));
-        });
-    });
-
-    [].concat(opts.string).filter(Boolean).forEach(function (key) {
-        flags.strings[key] = true;
-        if (aliases[key]) {
-            flags.strings[aliases[key]] = true;
-        }
-     });
-
-    var defaults = opts['default'] || {};
-    
-    var argv = { _ : [] };
-    Object.keys(flags.bools).forEach(function (key) {
-        setArg(key, defaults[key] === undefined ? false : defaults[key]);
-    });
-    
-    var notFlags = [];
-
-    if (args.indexOf('--') !== -1) {
-        notFlags = args.slice(args.indexOf('--')+1);
-        args = args.slice(0, args.indexOf('--'));
-    }
-
-    function argDefined(key, arg) {
-        return (flags.allBools && /^--[^=]+$/.test(arg)) ||
-            flags.strings[key] || flags.bools[key] || aliases[key];
-    }
-
-    function setArg (key, val, arg) {
-        if (arg && flags.unknownFn && !argDefined(key, arg)) {
-            if (flags.unknownFn(arg) === false) return;
-        }
-
-        var value = !flags.strings[key] && isNumber(val)
-            ? Number(val) : val
-        ;
-        setKey(argv, key.split('.'), value);
-        
-        (aliases[key] || []).forEach(function (x) {
-            setKey(argv, x.split('.'), value);
-        });
-    }
-
-    function setKey (obj, keys, value) {
-        var o = obj;
-        for (var i = 0; i < keys.length-1; i++) {
-            var key = keys[i];
-            if (key === '__proto__') return;
-            if (o[key] === undefined) o[key] = {};
-            if (o[key] === Object.prototype || o[key] === Number.prototype
-                || o[key] === String.prototype) o[key] = {};
-            if (o[key] === Array.prototype) o[key] = [];
-            o = o[key];
-        }
-
-        var key = keys[keys.length - 1];
-        if (key === '__proto__') return;
-        if (o === Object.prototype || o === Number.prototype
-            || o === String.prototype) o = {};
-        if (o === Array.prototype) o = [];
-        if (o[key] === undefined || flags.bools[key] || typeof o[key] === 'boolean') {
-            o[key] = value;
-        }
-        else if (Array.isArray(o[key])) {
-            o[key].push(value);
-        }
-        else {
-            o[key] = [ o[key], value ];
-        }
-    }
-    
-    function aliasIsBoolean(key) {
-      return aliases[key].some(function (x) {
-          return flags.bools[x];
-      });
-    }
-
-    for (var i = 0; i < args.length; i++) {
-        var arg = args[i];
-        
-        if (/^--.+=/.test(arg)) {
-            // Using [\s\S] instead of . because js doesn't support the
-            // 'dotall' regex modifier. See:
-            // http://stackoverflow.com/a/1068308/13216
-            var m = arg.match(/^--([^=]+)=([\s\S]*)$/);
-            var key = m[1];
-            var value = m[2];
-            if (flags.bools[key]) {
-                value = value !== 'false';
-            }
-            setArg(key, value, arg);
-        }
-        else if (/^--no-.+/.test(arg)) {
-            var key = arg.match(/^--no-(.+)/)[1];
-            setArg(key, false, arg);
-        }
-        else if (/^--.+/.test(arg)) {
-            var key = arg.match(/^--(.+)/)[1];
-            var next = args[i + 1];
-            if (next !== undefined && !/^-/.test(next)
-            && !flags.bools[key]
-            && !flags.allBools
-            && (aliases[key] ? !aliasIsBoolean(key) : true)) {
-                setArg(key, next, arg);
-                i++;
-            }
-            else if (/^(true|false)$/.test(next)) {
-                setArg(key, next === 'true', arg);
-                i++;
-            }
-            else {
-                setArg(key, flags.strings[key] ? '' : true, arg);
-            }
-        }
-        else if (/^-[^-]+/.test(arg)) {
-            var letters = arg.slice(1,-1).split('');
-            
-            var broken = false;
-            for (var j = 0; j < letters.length; j++) {
-                var next = arg.slice(j+2);
-                
-                if (next === '-') {
-                    setArg(letters[j], next, arg)
-                    continue;
-                }
-                
-                if (/[A-Za-z]/.test(letters[j]) && /=/.test(next)) {
-                    setArg(letters[j], next.split('=')[1], arg);
-                    broken = true;
-                    break;
-                }
-                
-                if (/[A-Za-z]/.test(letters[j])
-                && /-?\d+(\.\d*)?(e-?\d+)?$/.test(next)) {
-                    setArg(letters[j], next, arg);
-                    broken = true;
-                    break;
-                }
-                
-                if (letters[j+1] && letters[j+1].match(/\W/)) {
-                    setArg(letters[j], arg.slice(j+2), arg);
-                    broken = true;
-                    break;
-                }
-                else {
-                    setArg(letters[j], flags.strings[letters[j]] ? '' : true, arg);
-                }
-            }
-            
-            var key = arg.slice(-1)[0];
-            if (!broken && key !== '-') {
-                if (args[i+1] && !/^(-|--)[^-]/.test(args[i+1])
-                && !flags.bools[key]
-                && (aliases[key] ? !aliasIsBoolean(key) : true)) {
-                    setArg(key, args[i+1], arg);
-                    i++;
-                }
-                else if (args[i+1] && /^(true|false)$/.test(args[i+1])) {
-                    setArg(key, args[i+1] === 'true', arg);
-                    i++;
-                }
-                else {
-                    setArg(key, flags.strings[key] ? '' : true, arg);
-                }
-            }
-        }
-        else {
-            if (!flags.unknownFn || flags.unknownFn(arg) !== false) {
-                argv._.push(
-                    flags.strings['_'] || !isNumber(arg) ? arg : Number(arg)
-                );
-            }
-            if (opts.stopEarly) {
-                argv._.push.apply(argv._, args.slice(i + 1));
-                break;
-            }
-        }
-    }
-    
-    Object.keys(defaults).forEach(function (key) {
-        if (!hasKey(argv, key.split('.'))) {
-            setKey(argv, key.split('.'), defaults[key]);
-            
-            (aliases[key] || []).forEach(function (x) {
-                setKey(argv, x.split('.'), defaults[key]);
-            });
-        }
-    });
-    
-    if (opts['--']) {
-        argv['--'] = new Array();
-        notFlags.forEach(function(key) {
-            argv['--'].push(key);
-        });
-    }
-    else {
-        notFlags.forEach(function(key) {
-            argv._.push(key);
-        });
-    }
-
-    return argv;
-};
-
-function hasKey (obj, keys) {
-    var o = obj;
-    keys.slice(0,-1).forEach(function (key) {
-        o = (o[key] || {});
-    });
-
-    var key = keys[keys.length - 1];
-    return key in o;
-}
-
-function isNumber (x) {
-    if (typeof x === 'number') return true;
-    if (/^0x[0-9a-f]+$/i.test(x)) return true;
-    return /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(e[-+]?\d+)?$/.test(x);
-}
-
-
-
-/***/ }),
-
 /***/ 3365:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -5427,43 +5175,7 @@ exports.processWorkspaces = processWorkspaces;
 
 /***/ }),
 
-/***/ 3384:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-/* istanbul ignore file */
-const core = __importStar(__nccwpck_require__(5316));
-const post_1 = __nccwpck_require__(9178);
-post_1.post().catch((error) => {
-    core.setFailed(error);
-    process.exit(1);
-});
-
-
-/***/ }),
-
-/***/ 9178:
+/***/ 1844:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -5496,108 +5208,96 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.post = void 0;
-const core = __importStar(__nccwpck_require__(5316));
+exports.main = void 0;
 const child_process_1 = __nccwpck_require__(3129);
+const url_1 = __nccwpck_require__(8835);
 const fs_1 = __nccwpck_require__(5747);
-const minimist_1 = __importDefault(__nccwpck_require__(5982));
-const unpublish_1 = __nccwpck_require__(9317);
+const path = __importStar(__nccwpck_require__(5622));
+const core = __importStar(__nccwpck_require__(5316));
+const semver = __importStar(__nccwpck_require__(931));
 const utils_1 = __nccwpck_require__(4196);
-const isTrue = (value) => value != null && ['yes', 'true', '1'].includes(value.toLowerCase());
-const post = () => __awaiter(void 0, void 0, void 0, function* () {
-    const args = minimist_1.default(process.argv.slice(2));
-    const command = args._.length ? args._[0] : '';
-    if (command === 'unpublish') {
-        return yield unpublish_1.unpublish(args.version);
-    }
-    if (isTrue(core.getInput('unpublish'))) {
-        const version = core.getState('version');
-        if (!version) {
-            throw Error(`missing packages version to unpublish`);
-        }
-        core.info('removing published packages from the registry');
-        yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
-            yield new Promise((resolve, reject) => {
-                core.debug(`[${w.name}] executing unpublish script`);
-                child_process_1.exec(`${process.argv[0]} ${process.argv[1]} unpublish --version=${version}`, {
-                    cwd: w.location,
-                }, (error, stdout, stderr) => {
-                    if (error) {
-                        return reject(Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`));
-                    }
-                    if (stdout) {
-                        core.debug(stdout);
-                    }
-                    resolve(stdout);
-                });
-            });
-        }), core.debug);
-    }
-    const npmRc = core.getState('npmrc_file');
-    if (npmRc) {
-        core.info(`removing ${npmRc}`);
-        fs_1.unlinkSync(npmRc);
-    }
-    const npmRcBackup = core.getState('npmrc_backup');
-    if (npmRc && npmRcBackup) {
-        core.info(`restoring npmrc from ${npmRcBackup}`);
-        fs_1.copyFileSync(npmRcBackup, npmRc);
-        fs_1.unlinkSync(npmRcBackup);
-    }
+const createExecutor = (cwd, env) => (args, stdio = 'inherit') => child_process_1.execSync(args, {
+    cwd,
+    stdio,
+    env: Object.assign(Object.assign({}, process.env), env),
 });
-exports.post = post;
-
-
-/***/ }),
-
-/***/ 9317:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
+const createNpmRc = (file, registry, token, scopes) => {
+    const data = scopes.length > 0
+        ? scopes
+            .map((scope) => `${scope}:registry=${registry.protocol}//${registry.host}\n`)
+            .join('')
+        : `registry=${registry.href}\n`;
+    core.debug(`writing ${file}`);
+    fs_1.writeFileSync(file, token == null
+        ? data
+        : `//${registry.host}/:_authToken=${token}\n` +
+            `//${registry.host}/:always-auth=true\n` +
+            data);
+};
+const getScopes = () => {
+    const raw = core.getInput('scopes');
+    if (raw != null) {
+        return raw
+            .split(',')
+            .map((scope) => scope.trim())
+            .filter((scope) => scope.length);
+    }
+    return [];
+};
+const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true });
+    const awsSecretAccessKey = core.getInput('aws_secret_access_key', {
+        required: true,
     });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unpublish = void 0;
-const fs_1 = __nccwpck_require__(5747);
-const child_process_1 = __nccwpck_require__(3129);
-const semver_1 = __importDefault(__nccwpck_require__(931));
-const readString = (file) => {
-    return fs_1.readFileSync(file).toString('utf-8');
-};
-const exec = (command) => {
-    return child_process_1.execSync(command).toString('utf-8');
-};
-const unpublish = (version) => __awaiter(void 0, void 0, void 0, function* () {
-    const publishedVersion = semver_1.default.parse(version);
-    if (!publishedVersion) {
-        throw Error(`invalid publish version: ${version}`);
+    const source = core.getInput('source', { required: true });
+    const stage = core.getInput('stage', { required: true });
+    const registry = core.getInput('registry');
+    const token = core.getInput('token');
+    const scopes = getScopes();
+    if (registry != null) {
+        let registryURL;
+        try {
+            registryURL = new url_1.URL(registry);
+        }
+        catch (error) {
+            core.debug(`invalid registry URL: ${registry}`);
+            throw Error(error.message);
+        }
+        createNpmRc(path.resolve(source, '.npmrc'), registryURL, token, scopes);
     }
-    const pkg = JSON.parse(readString('./package.json'));
-    const { name, private: restricted } = pkg;
-    if (restricted) {
-        return;
+    let versionSource = core.getInput('version');
+    let determinedVersion;
+    const bumpVersion = semver.parse(versionSource);
+    if (bumpVersion) {
+        determinedVersion = bumpVersion.version;
+        yield utils_1.processWorkspaces((w) => __awaiter(void 0, void 0, void 0, function* () {
+            const { pkg, location } = w;
+            fs_1.writeFileSync(path.resolve(location, './package.json'), JSON.stringify(utils_1.bumpDependencies(pkg, '@reimagined/.*$', determinedVersion), null, 2));
+        }), core.debug, source);
     }
-    try {
-        exec(`npm unpublish --force ${name}@${publishedVersion.version}`);
+    else {
+        if (versionSource != null && versionSource.trim().length) {
+            throw Error(`Invalid [version] non-empty input value: ${versionSource}`);
+        }
+        core.debug(`no version input, reading from source package.json`);
+        const { version } = JSON.parse(fs_1.readFileSync(path.resolve(source, './package.json')).toString('utf-8'));
+        determinedVersion = version;
     }
-    catch (error) { }
+    const commandExecutor = createExecutor(source, {
+        AWS_ACCESS_KEY_ID: awsAccessKeyId,
+        AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+    });
+    commandExecutor(`yarn install`);
+    commandExecutor(`yarn build-assets`);
+    commandExecutor(`yarn -s admin-cli stage-resources install --stage=${stage}`);
+    commandExecutor(`yarn -s admin-cli version-resources install --stage=${stage} --version=${determinedVersion}`);
+    const apiUrl = commandExecutor(`yarn -s admin-cli get-api-url --stage=${stage}`, 'pipe')
+        .toString()
+        .trim();
+    core.setOutput('api_url', apiUrl);
 });
-exports.unpublish = unpublish;
+exports.main = main;
 
 
 /***/ }),
@@ -5639,6 +5339,14 @@ module.exports = require("path");;
 
 "use strict";
 module.exports = require("process");;
+
+/***/ }),
+
+/***/ 8835:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("url");;
 
 /***/ })
 
@@ -5692,6 +5400,6 @@ module.exports = require("process");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(3384);
+/******/ 	return __nccwpck_require__(1844);
 /******/ })()
 ;

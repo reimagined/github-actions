@@ -4,3 +4,5 @@ lib
 types
 dist
 coverage
+.npmrc
+yarn-error.log
