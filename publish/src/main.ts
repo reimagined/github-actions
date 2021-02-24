@@ -3,10 +3,10 @@ import * as core from '@actions/core'
 import * as path from 'path'
 import * as os from 'os'
 import { exec } from 'child_process'
-import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import minimist from 'minimist'
 import { publish } from './publish'
-import { processWorkspaces } from '../../common/src/utils'
+import { processWorkspaces, writeNpmRc } from '../../common/src/utils'
 import semver from 'semver'
 import { Package } from '../../common/src/types'
 
@@ -66,28 +66,6 @@ const determineVersion = (): string => {
   return version
 }
 
-const writeNpmRc = (
-  file: string,
-  registry: URL,
-  token: string
-): string | null => {
-  let backupFile = null
-  if (existsSync(file)) {
-    backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_')
-    core.info(`npmrc file exists, backing up to: ${backupFile}`)
-    copyFileSync(file, backupFile)
-  }
-
-  core.debug(`writing ${file}`)
-  writeFileSync(
-    file,
-    `//${registry.host}/:_authToken=${token}\n` +
-      `//${registry.host}/:always-auth=true\n` +
-      `registry=${registry.href}\n`
-  )
-  return backupFile
-}
-
 export const main = async (): Promise<void> => {
   const args = minimist(process.argv.slice(2))
   const command = args._.length ? args._[0] : ''
@@ -108,7 +86,10 @@ export const main = async (): Promise<void> => {
   const npmRc = path.resolve(os.homedir(), '.npmrc')
   core.debug(`npmrc file path: ${npmRc}`)
 
-  const npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken)
+  const npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken, {
+    createBackup: true,
+    core,
+  })
 
   core.saveState('npmrc_file', npmRc)
   if (npmRcBackup != null) {

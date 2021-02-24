@@ -1,6 +1,6 @@
 import clone from 'lodash.clonedeep'
 import { execSync } from 'child_process'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync, writeFileSync, copyFileSync } from 'fs'
 import * as path from 'path'
 import * as process from 'process'
 import { Package, PackageDependencies } from './types'
@@ -65,4 +65,53 @@ export const processWorkspaces = async (
   })
 
   await Promise.all(workspaces.map((w) => processor(w)))
+}
+
+type WriteNpmRcOptions = {
+  createBackup?: boolean
+  scopes?: string[]
+  core?: {
+    info: (message: string) => void
+    debug: (message: string) => void
+  }
+}
+
+export const writeNpmRc = (
+  file: string,
+  registry: URL,
+  token?: string,
+  options: WriteNpmRcOptions = {
+    createBackup: false,
+  }
+): string | null => {
+  const { core, createBackup, scopes } = options
+
+  let backupFile = null
+  if (createBackup && existsSync(file)) {
+    backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_')
+    core?.info(`npmrc file exists, backing up to: ${backupFile}`)
+    copyFileSync(file, backupFile)
+  }
+
+  const registryBinding =
+    scopes != null && scopes.length > 0
+      ? scopes
+          .map(
+            (scope) =>
+              `${scope}:registry=${registry.protocol}//${registry.host}\n`
+          )
+          .join('')
+      : `registry=${registry.href}\n`
+
+  core?.debug(`writing ${file}`)
+
+  writeFileSync(
+    file,
+    token == null
+      ? registryBinding
+      : `//${registry.host}/:_authToken=${token}\n` +
+          `//${registry.host}/:always-auth=true\n` +
+          registryBinding
+  )
+  return backupFile
 }

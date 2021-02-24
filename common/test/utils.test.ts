@@ -1,10 +1,11 @@
 import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs'
 import * as process from 'process'
 import {
   bumpDependencies,
   processWorkspaces,
+  writeNpmRc,
   WorkspaceProcessor,
 } from '../src/utils'
 
@@ -13,6 +14,14 @@ jest.mock('fs')
 
 const mExec = mocked(execSync)
 const mReadFile = mocked(readFileSync)
+const mWriteFile = mocked(writeFileSync)
+const mCopyFile = mocked(copyFileSync)
+const mExists = mocked(existsSync)
+
+const getNpmRcContent = (): string =>
+  mWriteFile.mock.calls.find(
+    (call) => call[0] === '/source/.npmrc'
+  )?.[1] as string
 
 describe('bumpDependencies', () => {
   test('bump [dependencies]', () => {
@@ -201,5 +210,177 @@ describe('processWorkspaces', () => {
 
     expect(mReadFile).toHaveBeenCalledWith(`/specified/path/to/a/package.json`)
     expect(mReadFile).toHaveBeenCalledWith(`/specified/path/to/b/package.json`)
+  })
+})
+
+describe('writeNpmRc', () => {
+  test('npmrc and output for custom registry', async () => {
+    await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('http://resolve-dev.ml:10080'),
+      'registry-token'
+    )
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      `/source/.npmrc`,
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "//resolve-dev.ml:10080/:_authToken=registry-token
+    //resolve-dev.ml:10080/:always-auth=true
+    registry=http://resolve-dev.ml:10080/
+    "
+  `)
+  })
+
+  test('npmrc backup created', async () => {
+    mExists.mockReturnValueOnce(true)
+
+    const result = await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('http://resolve-dev.ml:10080'),
+      'registry-token',
+      {
+        createBackup: true,
+      }
+    )
+
+    expect(mExists).toHaveBeenCalledWith(`/source/.npmrc`)
+    expect(mCopyFile).toHaveBeenCalledWith(
+      `/source/.npmrc`,
+      `/source/._build_npmrc_orig_`
+    )
+    expect(result).toEqual(`/source/._build_npmrc_orig_`)
+  })
+
+  test('core log used', async () => {
+    mExists.mockReturnValueOnce(true)
+    const core = {
+      debug: jest.fn(),
+      info: jest.fn(),
+    }
+
+    await writeNpmRc(
+      `/user/.npmrc`,
+      new URL('http://resolve-dev.ml:10080'),
+      'registry-token',
+      {
+        createBackup: true,
+        core,
+      }
+    )
+
+    expect(core.debug).toHaveBeenCalledWith(expect.any(String))
+    expect(core.info).toHaveBeenCalledWith(expect.any(String))
+  })
+
+  test('custom registry: set registry for whole project', async () => {
+    await writeNpmRc(`/source/.npmrc`, new URL('https://packages.org'))
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "registry=https://packages.org/
+    "
+  `)
+  })
+
+  test('custom registry: set registry for whole project (with auth token)', async () => {
+    await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('https://packages.org'),
+      'registry-token'
+    )
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "//packages.org/:_authToken=registry-token
+    //packages.org/:always-auth=true
+    registry=https://packages.org/
+    "
+  `)
+  })
+
+  test('custom registry: set registry for specified package scopes', async () => {
+    await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('https://packages.org'),
+      undefined,
+      {
+        scopes: ['@scope-a', '@scope-b'],
+      }
+    )
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "@scope-a:registry=https://packages.org
+    @scope-b:registry=https://packages.org
+    "
+  `)
+  })
+
+  test('custom registry: set registry for specified package scopes (with auth token)', async () => {
+    await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('https://packages.org'),
+      'registry-token',
+      {
+        scopes: ['@scope-a', '@scope-b'],
+      }
+    )
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "//packages.org/:_authToken=registry-token
+    //packages.org/:always-auth=true
+    @scope-a:registry=https://packages.org
+    @scope-b:registry=https://packages.org
+    "
+  `)
+  })
+
+  test('custom registry: github specific - registry URL with path', async () => {
+    await writeNpmRc(`/source/.npmrc`, new URL('https://packages.org/scope'))
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "registry=https://packages.org/scope
+    "
+  `)
+  })
+
+  test('custom registry: github specific - scopes should not contain path in registry URL', async () => {
+    await writeNpmRc(
+      `/source/.npmrc`,
+      new URL('https://packages.org/scope'),
+      undefined,
+      {
+        scopes: ['@scope-a', '@scope-b'],
+      }
+    )
+
+    expect(mWriteFile).toHaveBeenCalledWith(
+      '/source/.npmrc',
+      expect.any(String)
+    )
+    expect(getNpmRcContent()).toMatchInlineSnapshot(`
+    "@scope-a:registry=https://packages.org
+    @scope-b:registry=https://packages.org
+    "
+  `)
   })
 })

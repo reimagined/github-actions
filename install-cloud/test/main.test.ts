@@ -1,11 +1,13 @@
+import { URL } from 'url'
 import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
 import { writeFileSync, readFileSync } from 'fs'
-import { getInput, setOutput } from '@actions/core'
+import * as core from '@actions/core'
 import {
   WorkspaceProcessor,
   processWorkspaces,
   bumpDependencies,
+  writeNpmRc,
 } from '../../common/src/utils'
 import { main } from '../src/main'
 
@@ -17,10 +19,11 @@ jest.mock('../../common/src/utils')
 const mExec = mocked(execSync)
 const mWriteFile = mocked(writeFileSync)
 const mReadFile = mocked(readFileSync)
-const mCoreGetInput = mocked(getInput)
-const mCoreSetOutput = mocked(setOutput)
+const mCoreGetInput = mocked(core.getInput)
+const mCoreSetOutput = mocked(core.setOutput)
 const mProcessWorkspaces = mocked(processWorkspaces)
 const mBumpDependencies = mocked(bumpDependencies)
+const mWriteNpmRc = mocked(writeNpmRc)
 
 let actionInput: { [key: string]: string }
 
@@ -38,11 +41,6 @@ const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
   expect(mProcessWorkspaces).toHaveBeenCalled()
   return mProcessWorkspaces.mock.calls[0][0]
 }
-
-const getNpmRcContent = (): string =>
-  mWriteFile.mock.calls.find(
-    (call) => call[0] === '/source/.npmrc'
-  )?.[1] as string
 
 beforeEach(() => {
   actionInput = {
@@ -196,10 +194,7 @@ test('disable workspace processing if no version provided within input', async (
 test('custom registry: skip npmrc writing if no registry input provided', async () => {
   await main()
 
-  expect(mWriteFile).not.toHaveBeenCalledWith(
-    '/source/.npmrc',
-    expect.any(String)
-  )
+  expect(mWriteNpmRc).not.toHaveBeenCalled()
 })
 
 test('custom registry: throw error if registry is invalid URL', async () => {
@@ -213,11 +208,15 @@ test('custom registry: set registry for whole project', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "registry=https://packages.org/
-    "
-  `)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    `/source/.npmrc`,
+    new URL('https://packages.org'),
+    undefined,
+    {
+      core,
+      scopes: [],
+    }
+  )
 })
 
 test('custom registry: set registry for whole project (with auth token)', async () => {
@@ -226,13 +225,15 @@ test('custom registry: set registry for whole project (with auth token)', async 
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "//packages.org/:_authToken=registry-token
-    //packages.org/:always-auth=true
-    registry=https://packages.org/
-    "
-  `)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    `/source/.npmrc`,
+    new URL('https://packages.org'),
+    'registry-token',
+    {
+      core,
+      scopes: [],
+    }
+  )
 })
 
 test('custom registry: set registry for specified package scopes', async () => {
@@ -241,12 +242,15 @@ test('custom registry: set registry for specified package scopes', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "@scope-a:registry=https://packages.org
-    @scope-b:registry=https://packages.org
-    "
-  `)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    `/source/.npmrc`,
+    new URL('https://packages.org'),
+    undefined,
+    {
+      core,
+      scopes: ['@scope-a', '@scope-b'],
+    }
+  )
 })
 
 test('custom registry: set registry for specified package scopes (with auth token)', async () => {
@@ -256,40 +260,15 @@ test('custom registry: set registry for specified package scopes (with auth toke
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "//packages.org/:_authToken=registry-token
-    //packages.org/:always-auth=true
-    @scope-a:registry=https://packages.org
-    @scope-b:registry=https://packages.org
-    "
-  `)
-})
-
-test('custom registry: github specific - registry URL with path', async () => {
-  actionInput.registry = 'https://packages.org/scope'
-
-  await main()
-
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "registry=https://packages.org/scope
-    "
-  `)
-})
-
-test('custom registry: github specific - scopes should not contain path in registry URL', async () => {
-  actionInput.registry = 'https://packages.org/scope'
-  actionInput.scopes = '@scope-a,@scope-b'
-
-  await main()
-
-  expect(mWriteFile).toHaveBeenCalledWith('/source/.npmrc', expect.any(String))
-  expect(getNpmRcContent()).toMatchInlineSnapshot(`
-    "@scope-a:registry=https://packages.org
-    @scope-b:registry=https://packages.org
-    "
-  `)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    `/source/.npmrc`,
+    new URL('https://packages.org'),
+    'registry-token',
+    {
+      core,
+      scopes: ['@scope-a', '@scope-b'],
+    }
+  )
 })
 
 test('throw error if input version not semver compliant', async () => {
