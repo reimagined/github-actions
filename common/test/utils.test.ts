@@ -6,6 +6,7 @@ import {
   bumpDependencies,
   processWorkspaces,
   writeNpmRc,
+  parseScopes,
   WorkspaceProcessor,
 } from '../src/utils'
 
@@ -382,5 +383,26 @@ describe('writeNpmRc', () => {
     @scope-b:registry=https://packages.org
     "
   `)
+  })
+})
+
+describe('parseScopes', () => {
+  test('valid input', () => {
+    expect(parseScopes('@scope-a')).toEqual(['@scope-a'])
+    expect(parseScopes('@scope-a,@scope-b')).toEqual(['@scope-a', '@scope-b'])
+    expect(parseScopes('@scope-a, @scope-b')).toEqual(['@scope-a', '@scope-b'])
+    expect(parseScopes('@scope-a,,@scope-b')).toEqual(['@scope-a', '@scope-b'])
+    expect(parseScopes('@scope-a,@scope-b,')).toEqual(['@scope-a', '@scope-b'])
+    expect(parseScopes('@scope-a,@scope-b,@scope-c')).toEqual([
+      '@scope-a',
+      '@scope-b',
+      '@scope-c',
+    ])
+    expect(parseScopes('')).toEqual([])
+    expect(parseScopes(',')).toEqual([])
+    expect(parseScopes(',,')).toEqual([])
+    expect(parseScopes(',@scope-a')).toEqual(['@scope-a'])
+    expect(parseScopes(undefined)).toEqual([])
+    expect(parseScopes(null)).toEqual([])
   })
 })

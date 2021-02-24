@@ -1,7 +1,12 @@
+import { URL } from 'url'
 import * as path from 'path'
 import * as core from '@actions/core'
 import { readFileSync, writeFileSync } from 'fs'
-import { bumpDependencies } from '../../common/src/utils'
+import {
+  bumpDependencies,
+  parseScopes,
+  writeNpmRc,
+} from '../../common/src/utils'
 
 const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
@@ -22,6 +27,26 @@ export const main = async (): Promise<void> => {
     )
     writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
     core.debug(`framework version set`)
+  }
+
+  const registry = core.getInput('registry')
+  if (registry != null) {
+    let registryURL: URL
+    try {
+      registryURL = new URL(registry)
+    } catch (error) {
+      core.debug(`invalid registry URL: ${registry}`)
+      throw Error(error.message)
+    }
+    writeNpmRc(
+      path.resolve(appDir, '.npmrc'),
+      registryURL,
+      core.getInput('token'),
+      {
+        scopes: parseScopes(core.getInput('scopes')),
+        core,
+      }
+    )
   }
 
   /*

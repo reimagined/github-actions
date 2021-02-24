@@ -115,3 +115,15 @@ export const writeNpmRc = (
   )
   return backupFile
 }
+
+export const parseScopes = (
+  scopes: string | undefined | null
+): Array<string> => {
+  if (scopes != null) {
+    return scopes
+      .split(',')
+      .map((scope) => scope.trim())
+      .filter((scope) => scope.length)
+  }
+  return []
+}

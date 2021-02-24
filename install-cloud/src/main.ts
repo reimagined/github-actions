@@ -8,6 +8,7 @@ import {
   processWorkspaces,
   bumpDependencies,
   writeNpmRc,
+  parseScopes,
 } from '../../common/src/utils'
 
 const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
@@ -23,17 +24,6 @@ const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
     },
   })
 
-const getScopes = (): Array<string> => {
-  const raw = core.getInput('scopes')
-  if (raw != null) {
-    return raw
-      .split(',')
-      .map((scope) => scope.trim())
-      .filter((scope) => scope.length)
-  }
-  return []
-}
-
 export const main = async (): Promise<void> => {
   const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true })
   const awsSecretAccessKey = core.getInput('aws_secret_access_key', {
@@ -44,7 +34,7 @@ export const main = async (): Promise<void> => {
 
   const registry = core.getInput('registry')
   const token = core.getInput('token')
-  const scopes = getScopes()
+  const scopes = parseScopes(core.getInput('scopes'))
 
   if (registry != null) {
     let registryURL: URL

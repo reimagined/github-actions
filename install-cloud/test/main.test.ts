@@ -8,6 +8,7 @@ import {
   processWorkspaces,
   bumpDependencies,
   writeNpmRc,
+  parseScopes,
 } from '../../common/src/utils'
 import { main } from '../src/main'
 
@@ -24,6 +25,7 @@ const mCoreSetOutput = mocked(core.setOutput)
 const mProcessWorkspaces = mocked(processWorkspaces)
 const mBumpDependencies = mocked(bumpDependencies)
 const mWriteNpmRc = mocked(writeNpmRc)
+const mParseScopes = mocked(parseScopes)
 
 let actionInput: { [key: string]: string }
 
@@ -66,6 +68,7 @@ beforeEach(() => {
     )
   )
   mBumpDependencies.mockReturnValue({ name: 'bumped-package' })
+  mParseScopes.mockReturnValue([])
   process.env = {
     THIS_PROCESS_ENV: 'yes',
   }
@@ -238,25 +241,30 @@ test('custom registry: set registry for whole project (with auth token)', async 
 
 test('custom registry: set registry for specified package scopes', async () => {
   actionInput.registry = 'https://packages.org'
-  actionInput.scopes = '@scope-a,@scope-b'
+  actionInput.scopes = 'raw-scopes'
+
+  mParseScopes.mockReturnValueOnce(['parsed-scopes'])
 
   await main()
 
+  expect(mParseScopes).toHaveBeenCalledWith('raw-scopes')
   expect(mWriteNpmRc).toHaveBeenCalledWith(
     `/source/.npmrc`,
     new URL('https://packages.org'),
     undefined,
     {
       core,
-      scopes: ['@scope-a', '@scope-b'],
+      scopes: ['parsed-scopes'],
     }
   )
 })
 
 test('custom registry: set registry for specified package scopes (with auth token)', async () => {
   actionInput.registry = 'https://packages.org'
-  actionInput.scopes = '@scope-a,@scope-b'
+  actionInput.scopes = 'raw-scopes'
   actionInput.token = 'registry-token'
+
+  mParseScopes.mockReturnValueOnce(['parsed-scopes'])
 
   await main()
 
@@ -266,7 +274,7 @@ test('custom registry: set registry for specified package scopes (with auth toke
     'registry-token',
     {
       core,
-      scopes: ['@scope-a', '@scope-b'],
+      scopes: ['parsed-scopes'],
     }
   )
 })
