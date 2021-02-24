@@ -1,32 +1,30 @@
 import * as path from 'path'
 import * as core from '@actions/core'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
+import { bumpDependencies } from '../../common/src/utils'
 
 const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
 }
 
 export const main = async (): Promise<void> => {
-  /*
-  const sourceDirectory = core.getInput('directory')
-  const appDir = path.isAbsolute(sourceDirectory)
-    ? sourceDirectory
-    : path.resolve(process.cwd(), sourceDirectory)
+  const appDir = path.resolve(process.cwd(), core.getInput('source'))
+  core.debug(`application directory: ${appDir}`)
 
-  const readAppPackage = () => readPackageJSON(appDir)
-  const writeAppPackage = (content) => writePackageJSON(appDir, content)
-  const resolveCloud = (args, stdio) => execResolveCloud(appDir, args, stdio)
-
-  const resolveVersion = core.getInput('resolve_version')
-  if (resolveVersion) {
-    patchDependencies(
-      '(?!resolve-cloud-common$)(?!resolve-cloud$)(resolve-.*$)',
-      resolveVersion,
-      readAppPackage,
-      writeAppPackage
+  const frameworkVersion = core.getInput('framework_version')
+  if (frameworkVersion != null && frameworkVersion.trim().length) {
+    core.debug(`patching framework version to ${frameworkVersion}`)
+    const pkgFile = path.resolve(appDir, './package.json')
+    const pkg = bumpDependencies(
+      JSON.parse(readString(pkgFile)),
+      '@reimagined/.*$',
+      frameworkVersion
     )
+    writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
+    core.debug(`framework version set`)
   }
 
+  /*
   const npmRegistry = ensureHttp(core.getInput('npm_registry'))
   if (npmRegistry) {
     writeNpmRc(appDir, npmRegistry)

@@ -1,7 +1,7 @@
 name: deploy
 description: deploys an appliation to specified cloud environment
 inputs:
-  directory:
+  source:
     description: target application directory
     required: true
   cloud_api_url:
@@ -21,7 +21,7 @@ inputs:
     description: automatically generate uniquie app name
     required: false
     default: 'false'
-  version:
+  framework_version:
     description: reSolve framework version override
     required: false
   registry:
@@ -35,6 +35,10 @@ inputs:
     description: action running on developer machine
     required: false
     default: 'false'
+  cli_version:
+    description: use specific cloud CLI version
+    required: false
+    default: 'latest'
 
 outputs:
   id:
@@ -45,6 +49,8 @@ outputs:
     description: deployed application url
   runtime:
     description: deployed application runtime version
+  eventstore_id:
+    description: deployed application event store identifier
 
 runs:
   using: 'node12'
