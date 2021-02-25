@@ -16,11 +16,11 @@ const exec = (command: string) => {
 }
 
 const githubClient = (token: string) => {
-  const github = getOctokit(token)
+  const oktokit = getOctokit(token)
 
   const getPackageVersionId = async (packageName: string, version: string) => {
     const query = `
-    query getVersions($package: String!, $version: String!) {
+    query getVersions($packageName: String!, $version: String!) {
       repository(owner:\"reimagined\",name:\"resolve\") {
         packages(first:1, names: [$packageName]) {
           nodes {
@@ -34,7 +34,7 @@ const githubClient = (token: string) => {
         }
       }
     }`
-    const result: any = await github.graphql(query, {
+    const result: any = await oktokit.graphql(query, {
       packageName,
       version,
       headers: {
@@ -60,7 +60,7 @@ const githubClient = (token: string) => {
           success
       }
   }`
-    return await github.graphql(mutation, {
+    return await oktokit.graphql(mutation, {
       packageVersionId,
       headers: {
         Accept: 'application/vnd.github.package-deletes-preview+json',
@@ -71,11 +71,14 @@ const githubClient = (token: string) => {
 }
 
 const unpublishFromGithubRegistry = async (
-  packageName: string,
+  scopedPackageName: string,
   packageVersion: string
 ) => {
   const registryToken = core.getInput('token', { required: true })
-  await githubClient(registryToken).unpublish(packageName, packageVersion)
+  const reimaginedScope = '@reimagined/'
+  const packageName = scopedPackageName.replace(reimaginedScope, '')
+  const gh = githubClient(registryToken)
+  return await gh.unpublish(packageName, packageVersion)
 }
 
 const unpublishPackage = async (
