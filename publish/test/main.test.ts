@@ -99,7 +99,7 @@ test('npmrc and output for "github" registry (owner - auto)', async () => {
     'registry_url',
     'https://npm.pkg.github.com/package-owner'
   )
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', true)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - specified)', async () => {
@@ -122,7 +122,7 @@ test('npmrc and output for "github" registry (owner - specified)', async () => {
     'registry_url',
     'https://npm.pkg.github.com/custom-owner'
   )
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', true)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - failure)', async () => {
@@ -160,7 +160,7 @@ test('npmrc and output for "npm" registry', async () => {
     'registry_url',
     'https://registry.npmjs.org/'
   )
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', false)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for "npmjs" registry', async () => {
@@ -182,7 +182,7 @@ test('npmrc and output for "npmjs" registry', async () => {
     'registry_url',
     'https://registry.npmjs.org/'
   )
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', false)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for custom registry', async () => {
@@ -204,7 +204,7 @@ test('npmrc and output for custom registry', async () => {
     'registry_url',
     'http://resolve-dev.ml:10080/'
   )
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', false)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc backup registered within state', async () => {
@@ -229,7 +229,7 @@ test('action state saved for post-job hook', async () => {
   expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_file', `/user-home/.npmrc`)
   expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
-  expect(mCoreSaveState).toHaveBeenCalledWith('isGithubRegistry', true)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('action output (except registry)', async () => {

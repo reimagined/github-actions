@@ -96,7 +96,7 @@ export const main = async (): Promise<void> => {
   core.saveState('tag', tag)
 
   const isGitHub = isGitHubRegistry(registryURL)
-  core.saveState('isGithubRegistry', isGitHub)
+  core.saveState('is_github_registry', isGitHub)
 
   await processWorkspaces(async (w) => {
     const { pkg, location, name } = w

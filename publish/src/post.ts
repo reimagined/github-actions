@@ -1,10 +1,7 @@
 import * as core from '@actions/core'
 import { unlinkSync, copyFileSync } from 'fs'
 import { unpublish } from './unpublish'
-import { processWorkspaces } from '../../common/src/utils'
-
-const isTrue = (value: string) =>
-  value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
+import { processWorkspaces, isTrue } from '../../common/src/utils'
 
 export const post = async (): Promise<void> => {
   if (isTrue(core.getInput('unpublish'))) {
