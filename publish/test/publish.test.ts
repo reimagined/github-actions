@@ -114,6 +114,17 @@ test('npm publish invoked', async () => {
   )
 })
 
+test('npm publish invoked with location', async () => {
+  await publish('2.0.0', 'latest', '/path/to/package')
+
+  expect(
+    mExec
+  ).toHaveBeenCalledWith(
+    `npm publish --access=public --unsafe-perm --tag=latest`,
+    { stdio: 'pipe', cwd: '/path/to/package' }
+  )
+})
+
 test('npm publish invoked (no tag)', async () => {
   await publish('2.0.0')
 
