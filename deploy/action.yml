@@ -31,15 +31,15 @@ inputs:
     description: reSolve framework version override
     required: false
 
-  registry:
+  package_registry:
     description: packages registry override
     required: false
 
-  token:
+  package_registry_token:
     description: packages registry authentication token
     required: false
 
-  scopes:
+  package_registry_scopes:
     description: a list of comma separated scopes to map to custom NPM registry
     required: false
 

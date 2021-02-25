@@ -115,10 +115,11 @@ describe('describeApp', () => {
 
   test('complete deployment info returned', () => {
     expect(describeApp('my-app', cli)).toEqual({
-      deploymentId: 'deployment-id',
-      appUrl: 'https://deployment-id.resolve.sh',
-      appRuntime: '3.1.0',
-      appName: 'my-app',
+      id: 'deployment-id',
+      url: 'https://deployment-id.resolve.sh',
+      runtime: '3.1.0',
+      name: 'my-app',
+      eventStore: 'event-store-id',
     })
   })
 

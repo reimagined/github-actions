@@ -11,7 +11,7 @@ import {
   parseScopes,
   parseBoolean,
 } from '../../common/src/utils'
-import { getCLI, describeApp } from '../../common/src/cli'
+import { getCLI, describeApp, writeResolveRc } from '../../common/src/cli'
 import { CLI, Package } from '../../common/src/types'
 import { main } from '../src/main'
 
@@ -27,11 +27,14 @@ const mReadFile = mocked(readFileSync)
 const mBumpDependencies = mocked(bumpDependencies)
 const mWriteNpmRc = mocked(writeNpmRc)
 const mCoreGetInput = mocked(core.getInput)
+const mCoreSetOutput = mocked(core.setOutput)
+const mCoreSaveState = mocked(core.saveState)
 const mParseScopes = mocked(parseScopes)
 const mExec = mocked(execSync)
 const mParseBoolean = mocked(parseBoolean)
 const mLatestVersion = mocked(latestVersion)
 const mGetCLI = mocked(getCLI)
+const mWriteResolveRc = mocked(writeResolveRc)
 const mDescribeApp = mocked(describeApp)
 
 const getPackageContent = (): Package | undefined => {
@@ -49,6 +52,8 @@ let mCLI: jest.MockedFunction<CLI>
 beforeEach(() => {
   actionInput = {
     source: '/source/dir',
+    cloud_user: 'cloud-user',
+    cloud_token: 'cloud-token',
   }
   mCoreGetInput.mockImplementation((name) => actionInput[name])
   mParseScopes.mockReturnValue([])
@@ -70,6 +75,19 @@ beforeEach(() => {
   )
   mCLI = jest.fn()
   mGetCLI.mockReturnValue(mCLI)
+})
+
+test('input read', async () => {
+  await main()
+
+  expect(mCoreGetInput).toHaveBeenCalledWith('source', { required: true })
+  expect(mCoreGetInput).toHaveBeenCalledWith('name')
+  expect(mCoreGetInput).toHaveBeenCalledWith('cloud_user', { required: true })
+  expect(mCoreGetInput).toHaveBeenCalledWith('cloud_token', { required: true })
+  expect(mCoreGetInput).toHaveBeenCalledWith('cloud_api_url')
+  expect(mCoreGetInput).toHaveBeenCalledWith('package_registry')
+  expect(mCoreGetInput).toHaveBeenCalledWith('framework_version')
+  expect(mCoreGetInput).toHaveBeenCalledWith('cli_version')
 })
 
 test('framework version patched', async () => {
@@ -136,7 +154,7 @@ test('cloud cli version patched to specific version', async () => {
 })
 
 test('write npmrc for custom registry', async () => {
-  actionInput.registry = 'https://packages.org'
+  actionInput.package_registry = 'https://packages.org'
 
   await main()
 
@@ -149,11 +167,14 @@ test('write npmrc for custom registry', async () => {
       scopes: [],
     }
   )
+
+  expect(mCoreGetInput).toHaveBeenCalledWith('package_registry_scopes')
+  expect(mCoreGetInput).toHaveBeenCalledWith('package_registry_token')
 })
 
 test('write npmrc for custom registry and token', async () => {
-  actionInput.registry = 'https://packages.org'
-  actionInput.token = 'registry-token'
+  actionInput.package_registry = 'https://packages.org'
+  actionInput.package_registry_token = 'registry-token'
 
   await main()
 
@@ -169,9 +190,9 @@ test('write npmrc for custom registry and token', async () => {
 })
 
 test('write npmrc for custom registry, token and scopes', async () => {
-  actionInput.registry = 'https://packages.org'
-  actionInput.token = 'registry-token'
-  actionInput.scopes = '@scope-a,@scope-b'
+  actionInput.package_registry = 'https://packages.org'
+  actionInput.package_registry_token = 'registry-token'
+  actionInput.package_registry_scopes = '@scope-a,@scope-b'
   mParseScopes.mockReturnValueOnce(['parsed-scopes'])
 
   await main()
@@ -189,7 +210,7 @@ test('write npmrc for custom registry, token and scopes', async () => {
 })
 
 test('throw error in registry is invalid URL', async () => {
-  actionInput.registry = 'bad-url'
+  actionInput.package_registry = 'bad-url'
 
   await expect(main()).rejects.toBeInstanceOf(Error)
 })
@@ -265,4 +286,104 @@ test('randomized app name from package.json', async () => {
   )
 
   mRandom.mockRestore()
+})
+
+test('.resolverc file written with default URL', async () => {
+  await main()
+
+  expect(mWriteResolveRc).toHaveBeenLastCalledWith(
+    '/source/dir/.resolverc',
+    'cloud-user',
+    'cloud-token',
+    undefined,
+    core
+  )
+})
+
+test('.resolverc file written with custom URL', async () => {
+  actionInput.cloud_api_url = 'https://custom.api.com'
+
+  await main()
+
+  expect(mWriteResolveRc).toHaveBeenLastCalledWith(
+    '/source/dir/.resolverc',
+    'cloud-user',
+    'cloud-token',
+    'https://custom.api.com',
+    core
+  )
+})
+
+test('.resolverc not written in local_run mode', async () => {
+  actionInput.local_run = 'true'
+
+  await main()
+
+  expect(mWriteResolveRc).not.toHaveBeenCalled()
+
+  expect(mCoreGetInput).toHaveBeenCalledWith('local_run')
+})
+
+test('deployed application info retrieved and set to output', async () => {
+  mDescribeApp.mockReturnValueOnce({
+    name: 'app-name',
+    runtime: 'app-runtime',
+    url: 'https://app-url.com',
+    id: 'app-id',
+    eventStore: 'event-store-id',
+  })
+
+  await main()
+
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'event_store_id',
+    'event-store-id'
+  )
+})
+
+test('deployed application info retrieved and saved to state', async () => {
+  mDescribeApp.mockReturnValueOnce({
+    name: 'app-name',
+    runtime: 'app-runtime',
+    url: 'https://app-url.com',
+    id: 'app-id',
+    eventStore: 'event-store-id',
+  })
+
+  await main()
+
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mCoreSaveState).toHaveBeenCalledWith('app_id', 'app-id')
+  expect(mCoreSaveState).toHaveBeenCalledWith('app_dir', '/source/dir')
+})
+
+test('deployed application info retrieved on failed deploy operation', async () => {
+  mDescribeApp.mockReturnValueOnce({
+    name: 'app-name',
+    runtime: 'app-runtime',
+    url: 'https://app-url.com',
+    id: 'app-id',
+    eventStore: 'event-store-id',
+  })
+
+  mCLI.mockImplementationOnce(() => {
+    throw Error('deploy failed')
+  })
+
+  try {
+    await main()
+  } catch {}
+
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'event_store_id',
+    'event-store-id'
+  )
 })

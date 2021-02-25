@@ -84,13 +84,14 @@ export const describeApp = (
   }
 
   const { id, version } = deployment
-  const { applicationUrl } = description
+  const { applicationUrl, eventStore } = description
 
   return {
-    deploymentId: id,
-    appUrl: applicationUrl,
-    appRuntime: version,
-    appName,
+    id,
+    url: applicationUrl,
+    runtime: version,
+    name: appName,
+    eventStore,
   }
 }
 

@@ -21,7 +21,10 @@ const randomize = (str: string): string =>
   `${str}-${Math.floor(Math.random() * 1000000)}`
 
 export const main = async (): Promise<void> => {
-  const appDir = path.resolve(process.cwd(), core.getInput('source'))
+  const appDir = path.resolve(
+    process.cwd(),
+    core.getInput('source', { required: true })
+  )
   core.debug(`application directory: ${appDir}`)
   const pkgFile = path.resolve(appDir, './package.json')
   let pkg = readPackage(pkgFile)
@@ -42,7 +45,7 @@ export const main = async (): Promise<void> => {
   core.debug(`writing patched: ${pkgFile}`)
   writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
 
-  const registry = core.getInput('registry')
+  const registry = core.getInput('package_registry')
   if (registry != null) {
     let registryURL: URL
     try {
@@ -54,9 +57,9 @@ export const main = async (): Promise<void> => {
     writeNpmRc(
       path.resolve(appDir, '.npmrc'),
       registryURL,
-      core.getInput('token'),
+      core.getInput('package_registry_token'),
       {
-        scopes: parseScopes(core.getInput('scopes')),
+        scopes: parseScopes(core.getInput('package_registry_scopes')),
         core,
       }
     )
@@ -82,9 +85,10 @@ export const main = async (): Promise<void> => {
   if (!parseBoolean(core.getInput('local_run'))) {
     writeResolveRc(
       path.resolve(appDir, '.resolverc'),
-      core.getInput('resolve_api_url'),
-      core.getInput('resolve_user'),
-      core.getInput('resolve_token')
+      core.getInput('cloud_user', { required: true }),
+      core.getInput('cloud_token', { required: true }),
+      core.getInput('cloud_api_url'),
+      core
     )
   }
 
@@ -92,9 +96,7 @@ export const main = async (): Promise<void> => {
 
   core.debug(`deploying the application to the cloud`)
 
-  let baseArgs = ''
-  baseArgs += targetAppName ? ` --name ${targetAppName}` : ''
-
+  const baseArgs = `--name ${targetAppName}`
   const cli = getCLI(appDir)
 
   try {
@@ -106,14 +108,15 @@ export const main = async (): Promise<void> => {
     const deployment = describeApp(targetAppName, cli)
 
     if (deployment != null) {
-      const { deploymentId, appName, appRuntime, appUrl } = deployment
+      const { id, name, runtime, url, eventStore } = deployment
 
-      core.setOutput('deployment_id', deploymentId)
-      core.setOutput('app_name', appName)
-      core.setOutput('app_runtime', appRuntime)
-      core.setOutput('app_url', appUrl)
+      core.setOutput('id', id)
+      core.setOutput('name', name)
+      core.setOutput('runtime', runtime)
+      core.setOutput('url', url)
+      core.setOutput('event_store_id', eventStore)
 
-      core.saveState(`deployment_id`, deploymentId)
+      core.saveState(`app_id`, id)
       core.saveState(`app_dir`, appDir)
     } else {
       core.error(`could not find cloud deployment for the app`)

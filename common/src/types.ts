@@ -16,10 +16,11 @@ export type Package = {
 } & PackageDependencies
 
 export type CloudDeployment = {
-  deploymentId: string
-  appUrl: string
-  appRuntime: string
-  appName: string
+  id: string
+  url: string
+  runtime: string
+  name: string
+  eventStore: string
 }
 
 export type CLI = (args: string, stdio?: StdioOptions) => string
