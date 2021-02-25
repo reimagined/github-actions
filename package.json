@@ -34,6 +34,7 @@
   "workspaces": [
     "common",
     "publish",
-    "install-cloud"
+    "install-cloud",
+    "deploy"
   ]
 }

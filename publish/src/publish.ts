@@ -7,17 +7,25 @@ const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
 }
 
-const exec = (command: string) => {
-  return execSync(command, { stdio: 'pipe' }).toString('utf-8')
+const exec = (command: string, cwd?: string) => {
+  const additionalOptions = cwd ? { cwd } : {}
+  return execSync(command, { stdio: 'pipe', ...additionalOptions }).toString(
+    'utf-8'
+  )
 }
 
-export const publish = async (version: string, tag?: string): Promise<void> => {
+export const publish = async (
+  version: string,
+  tag?: string,
+  location?: string
+): Promise<void> => {
   const publishVersion = semver.parse(version)
   if (!publishVersion) {
     throw Error(`invalid publish version: ${version}`)
   }
+  const packageLocation = location || '.'
 
-  const fileContents = readString('./package.json')
+  const fileContents = readString(`${packageLocation}/package.json`)
   let pkg = JSON.parse(fileContents)
 
   const { name, private: restricted } = pkg
@@ -46,17 +54,18 @@ export const publish = async (version: string, tag?: string): Promise<void> => {
   pkg.version = publishVersion.version
   pkg = bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version)
 
-  writeFileSync('./package.json', JSON.stringify(pkg, null, 2))
+  writeFileSync(`${packageLocation}/package.json`, JSON.stringify(pkg, null, 2))
 
   try {
     exec(
       `npm publish --access=public --unsafe-perm${
         tag != null ? ` --tag=${tag}` : ''
-      }`
+      }`,
+      location
     )
   } catch (error) {
     throw error
   } finally {
-    writeFileSync('./package.json', fileContents)
+    writeFileSync(`${packageLocation}/package.json`, fileContents)
   }
 }

@@ -4,7 +4,12 @@ import { writeFileSync, readFileSync } from 'fs'
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as semver from 'semver'
-import { processWorkspaces, bumpDependencies } from '../../common/src/utils'
+import {
+  processWorkspaces,
+  bumpDependencies,
+  writeNpmRc,
+  parseScopes,
+} from '../../common/src/utils'
 
 const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
   args: string,
@@ -19,44 +24,6 @@ const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
     },
   })
 
-const createNpmRc = (
-  file: string,
-  registry: URL,
-  token: string | null,
-  scopes: Array<string>
-) => {
-  const data =
-    scopes.length > 0
-      ? scopes
-          .map(
-            (scope) =>
-              `${scope}:registry=${registry.protocol}//${registry.host}\n`
-          )
-          .join('')
-      : `registry=${registry.href}\n`
-
-  core.debug(`writing ${file}`)
-  writeFileSync(
-    file,
-    token == null
-      ? data
-      : `//${registry.host}/:_authToken=${token}\n` +
-          `//${registry.host}/:always-auth=true\n` +
-          data
-  )
-}
-
-const getScopes = (): Array<string> => {
-  const raw = core.getInput('scopes')
-  if (raw != null) {
-    return raw
-      .split(',')
-      .map((scope) => scope.trim())
-      .filter((scope) => scope.length)
-  }
-  return []
-}
-
 export const main = async (): Promise<void> => {
   const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true })
   const awsSecretAccessKey = core.getInput('aws_secret_access_key', {
@@ -67,7 +34,7 @@ export const main = async (): Promise<void> => {
 
   const registry = core.getInput('registry')
   const token = core.getInput('token')
-  const scopes = getScopes()
+  const scopes = parseScopes(core.getInput('scopes'))
 
   if (registry != null) {
     let registryURL: URL
@@ -77,7 +44,10 @@ export const main = async (): Promise<void> => {
       core.debug(`invalid registry URL: ${registry}`)
       throw Error(error.message)
     }
-    createNpmRc(path.resolve(source, '.npmrc'), registryURL, token, scopes)
+    writeNpmRc(path.resolve(source, '.npmrc'), registryURL, token, {
+      scopes,
+      core,
+    })
   }
 
   let versionSource = core.getInput('version')

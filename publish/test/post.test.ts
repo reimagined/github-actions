@@ -47,15 +47,7 @@ afterEach(() => {
   process.argv = originalArgv
 })
 
-test('unpublish command invoked', async () => {
-  process.argv = ['node', 'index.js', 'unpublish', '--version=1.0.0']
-
-  await post()
-
-  expect(mUnpublish).toHaveBeenCalledWith('1.0.0')
-})
-
-test('unpublish command does not invoked if no command provided', async () => {
+test('unpublish command does not invoked if no workspace provided', async () => {
   process.argv = ['node', 'index.js']
 
   await post()
@@ -86,10 +78,8 @@ test('workspace processor', async () => {
     },
   })
 
-  expect(mExec).toHaveBeenCalled()
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"node index.js unpublish --version=1.2.3"`
-  )
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mUnpublish).toHaveBeenCalledWith('1.2.3', '/path/to/package')
 })
 
 test('workspace processor failure', async () => {
@@ -98,9 +88,8 @@ test('workspace processor failure', async () => {
   expect(mProcessWorkspaces).toHaveBeenCalled()
   const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
 
-  mExec.mockImplementationOnce((command, options, callback) => {
-    callback?.(Error('failure'), '', '')
-    return {} as ChildProcess
+  mUnpublish.mockImplementationOnce(() => {
+    throw Error('failure')
   })
 
   await expect(

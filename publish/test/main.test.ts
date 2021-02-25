@@ -1,10 +1,15 @@
+import { URL } from 'url'
 import * as os from 'os'
 import { ChildProcess, exec } from 'child_process'
-import { writeFileSync, readFileSync, existsSync, copyFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { publish } from '../src/publish'
-import { processWorkspaces, WorkspaceProcessor } from '../../common/src/utils'
+import {
+  processWorkspaces,
+  WorkspaceProcessor,
+  writeNpmRc,
+} from '../../common/src/utils'
 import { main } from '../src/main'
 
 jest.mock('../src/publish')
@@ -20,12 +25,11 @@ const mCoreGetInput = mocked(core.getInput)
 const mCoreSetOutput = mocked(core.setOutput)
 const mCoreSaveState = mocked(core.saveState)
 const mCoreDebug = mocked(core.debug)
-const mWriteFile = mocked(writeFileSync)
 const mReadFile = mocked(readFileSync)
 const mExists = mocked(existsSync)
-const mCopyFile = mocked(copyFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 const mOSHomeDir = mocked(os.homedir)
+const mWriteNpmRc = mocked(writeNpmRc)
 
 const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
   process.argv = ['node', 'index.js']
@@ -68,21 +72,7 @@ afterEach(() => {
   process.argv = originalArgv
 })
 
-test('publish command invoked', async () => {
-  process.argv = [
-    'node',
-    'index.js',
-    'publish',
-    '--version=1.0.0',
-    '--tag=nightly',
-  ]
-
-  await main()
-
-  expect(mPublish).toHaveBeenCalledWith('1.0.0', 'nightly')
-})
-
-test('publish command does not invoked if no command provided', async () => {
+test('publish command does not invoked if no workspace provided', async () => {
   process.argv = ['node', 'index.js']
 
   await main()
@@ -96,20 +86,20 @@ test('npmrc and output for "github" registry (owner - auto)', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    expect.any(String)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    new URL('https://npm.pkg.github.com/package-owner'),
+    'github-token',
+    {
+      createBackup: true,
+      core,
+    }
   )
-  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
-    "//npm.pkg.github.com/:_authToken=github-token
-    //npm.pkg.github.com/:always-auth=true
-    registry=https://npm.pkg.github.com/package-owner
-    "
-  `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
     'https://npm.pkg.github.com/package-owner'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - specified)', async () => {
@@ -119,20 +109,20 @@ test('npmrc and output for "github" registry (owner - specified)', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    expect.any(String)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    new URL('https://npm.pkg.github.com/custom-owner'),
+    'github-token',
+    {
+      createBackup: true,
+      core,
+    }
   )
-  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
-    "//npm.pkg.github.com/:_authToken=github-token
-    //npm.pkg.github.com/:always-auth=true
-    registry=https://npm.pkg.github.com/custom-owner
-    "
-  `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
     'https://npm.pkg.github.com/custom-owner'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - failure)', async () => {
@@ -157,20 +147,20 @@ test('npmrc and output for "npm" registry', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    expect.any(String)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    new URL('https://registry.npmjs.org/'),
+    'npm-token',
+    {
+      createBackup: true,
+      core,
+    }
   )
-  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
-    "//registry.npmjs.org/:_authToken=npm-token
-    //registry.npmjs.org/:always-auth=true
-    registry=https://registry.npmjs.org/
-    "
-  `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
     'https://registry.npmjs.org/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for "npmjs" registry', async () => {
@@ -179,20 +169,20 @@ test('npmrc and output for "npmjs" registry', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    expect.any(String)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    new URL('https://registry.npmjs.org/'),
+    'npmjs-token',
+    {
+      createBackup: true,
+      core,
+    }
   )
-  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
-    "//registry.npmjs.org/:_authToken=npmjs-token
-    //registry.npmjs.org/:always-auth=true
-    registry=https://registry.npmjs.org/
-    "
-  `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
     'https://registry.npmjs.org/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for custom registry', async () => {
@@ -201,47 +191,28 @@ test('npmrc and output for custom registry', async () => {
 
   await main()
 
-  expect(mWriteFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    expect.any(String)
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    new URL('http://resolve-dev.ml:10080/'),
+    'resolve-token',
+    {
+      createBackup: true,
+      core,
+    }
   )
-  expect(mWriteFile.mock.calls[0][1]).toMatchInlineSnapshot(`
-    "//resolve-dev.ml:10080/:_authToken=resolve-token
-    //resolve-dev.ml:10080/:always-auth=true
-    registry=http://resolve-dev.ml:10080/
-    "
-  `)
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'registry_url',
     'http://resolve-dev.ml:10080/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
-test('npmrc backup created', async () => {
-  await main()
-
-  expect(mExists).toHaveBeenCalledWith(`/user-home/.npmrc`)
-  expect(mCopyFile).toHaveBeenCalledWith(
-    `/user-home/.npmrc`,
-    `/user-home/._build_npmrc_orig_`
-  )
-  expect(mCoreSaveState).toHaveBeenCalledWith(
-    'npmrc_backup',
-    `/user-home/._build_npmrc_orig_`
-  )
-})
-
-test('skip npmrc backup if file not exists', async () => {
-  mExists.mockReturnValue(false)
+test('npmrc backup registered within state', async () => {
+  mWriteNpmRc.mockReturnValueOnce('backup-file')
 
   await main()
 
-  expect(mExists).toHaveBeenCalledWith(`/user-home/.npmrc`)
-  expect(mCopyFile).not.toHaveBeenCalled()
-  expect(mCoreSaveState).not.toHaveBeenCalledWith(
-    'npmrc_backup',
-    expect.any(String)
-  )
+  expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_backup', `backup-file`)
 })
 
 test('invalid input: bad registry URL', async () => {
@@ -258,6 +229,7 @@ test('action state saved for post-job hook', async () => {
   expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_file', `/user-home/.npmrc`)
   expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('action output (except registry)', async () => {
@@ -278,10 +250,11 @@ test('workspace processor', async () => {
       version: '1.0.0',
     },
   })
-
-  expect(mExec).toHaveBeenCalled()
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"node index.js publish --version=1.2.3 --tag=publish-tag"`
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    'publish-tag',
+    '/path/to/package'
   )
 })
 
@@ -299,18 +272,15 @@ test('workspace processor: (no tag)', async () => {
     },
   })
 
-  expect(mExec).toHaveBeenCalled()
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"node index.js publish --version=1.2.3"`
-  )
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mPublish).toHaveBeenCalledWith('1.2.3', '', '/path/to/package')
 })
 
 test('workspace processor: failure', async () => {
   const processor = await getWorkspaceProcessor()
 
-  mExec.mockImplementationOnce((command, options, callback) => {
-    callback?.(Error('failure'), '', '')
-    return {} as ChildProcess
+  mPublish.mockImplementationOnce(() => {
+    throw Error('failure')
   })
 
   await expect(
@@ -360,7 +330,7 @@ test('workspace processor: skip private packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(expect.stringContaining('publish'))
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: skip unrelated github packages', async () => {
@@ -375,11 +345,7 @@ test('workspace processor: skip unrelated github packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: skip unscoped github packages', async () => {
@@ -394,11 +360,7 @@ test('workspace processor: skip unscoped github packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: error on bad custom github registry URL', async () => {
@@ -432,11 +394,7 @@ test('workspace processor: bypass github checks for other registries', async () 
     },
   })
 
-  expect(mExec).toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).toBeCalledWith('1.2.3', 'publish-tag', '/path/to/package')
 })
 
 test('determine version: valid semver specified', async () => {
