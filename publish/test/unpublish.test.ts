@@ -1,18 +1,29 @@
 import { readFileSync } from 'fs'
+import * as core from '@actions/core'
+import * as github from '@actions/github/lib/github'
 import { execSync } from 'child_process'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
 
 jest.mock('@actions/core')
+jest.mock('@actions/github')
 jest.mock('fs')
 jest.mock('child_process')
 
 const mReadFile = mocked(readFileSync)
 const mExec = mocked(execSync)
+const mCoreGetState = mocked(core.getState)
+const mCoreGetInput = mocked(core.getInput)
+const mGetOctokit = mocked(github.getOctokit)
+const mGraphql = jest.fn()
 
 let pkg: object
+let actionInput: { [key: string]: string }
+let jobState: { [key: string]: string }
 
 beforeEach(() => {
+  actionInput = {}
+  jobState = {}
   pkg = {
     name: 'mock-package',
     version: '1.0.0',
@@ -20,6 +31,12 @@ beforeEach(() => {
   }
   mReadFile.mockReturnValue(Buffer.from(JSON.stringify(pkg)))
   mExec.mockReturnValue(Buffer.from(''))
+
+  mCoreGetState.mockImplementation((name) => jobState[name])
+  mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mGetOctokit.mockImplementation((): any => ({
+    graphql: mGraphql,
+  }))
 })
 
 test('invalid input: bad package version', async () => {
@@ -63,4 +80,19 @@ test('tolerate to unpublish errors', async () => {
   })
 
   await unpublish('2.0.0')
+})
+
+test('github unpublish invoked', async () => {
+  jobState = {
+    is_github_registry: 'true',
+  }
+  actionInput = {
+    token: 'github-token',
+  }
+
+  await unpublish('2.0.0')
+
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mGetOctokit).toHaveBeenCalledWith('github-token')
+  expect(mGraphql).toHaveBeenCalledTimes(1)
 })
