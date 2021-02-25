@@ -6,7 +6,7 @@
   "scripts": {
     "build": "echo skip",
     "test": "jest --coverage --config=../jest.config.js",
-    "clean": "rm -rf node_modules coverage 2>/dev/null || true",
+    "clean": "rm -rf node_modules coverage dist lib types tsconfig.tsbuildinfo 2>/dev/null || true",
     "add-dist": "echo skip"
   },
   "dependencies": {

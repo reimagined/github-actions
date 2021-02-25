@@ -71,5 +71,5 @@ outputs:
 
 runs:
   using: 'node12'
-  main: 'dist/main/index.js'
-  post: 'dist/main/index.js'
+  main: 'dist/main.js'
+  post: 'dist/post.js'
