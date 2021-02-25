@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf dist && ncc build src/main.ts -o dist/main --license lic.txt",
+    "build": "rm -r dist 2>/dev/null || true && ncc build src/main.ts -o dist/main --license lic.txt",
     "test": "jest --coverage --config=../jest.config.js",
     "clean": "rm -rf dist node_modules coverage lib",
     "add-dist": "git add --force dist"
