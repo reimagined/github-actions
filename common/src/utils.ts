@@ -127,3 +127,6 @@ export const parseScopes = (
   }
   return []
 }
+
+export const parseBoolean = (value: string) =>
+  value != null && ['yes', 'true', '1'].includes(value.toLowerCase())

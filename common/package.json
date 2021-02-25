@@ -10,10 +10,12 @@
     "add-dist": "echo skip"
   },
   "dependencies": {
-    "lodash.clonedeep": "4.5.0"
+    "lodash.clonedeep": "4.5.0",
+    "lodash.isempty": "4.4.0"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "4.5.6",
+    "@types/lodash.isempty": "4.4.6",
     "jest": "26.6.3",
     "ts-jest": "26.5.1"
   }
