@@ -2,9 +2,7 @@ import { URL } from 'url'
 import * as core from '@actions/core'
 import * as path from 'path'
 import * as os from 'os'
-import { exec } from 'child_process'
 import { readFileSync } from 'fs'
-import minimist from 'minimist'
 import { publish } from './publish'
 import { processWorkspaces, writeNpmRc } from '../../common/src/utils'
 import semver from 'semver'
@@ -67,14 +65,6 @@ const determineVersion = (): string => {
 }
 
 export const main = async (): Promise<void> => {
-  const args = minimist(process.argv.slice(2))
-  const command = args._.length ? args._[0] : ''
-
-  if (command === 'publish') {
-    core.info(`starting in "publish" mode`)
-    return await publish(args.version, args.tag)
-  }
-
   core.info(`configuring registry`)
 
   const registryURL = determineRegistry()
@@ -105,6 +95,9 @@ export const main = async (): Promise<void> => {
   core.saveState('version', version)
   core.saveState('tag', tag)
 
+  const isGitHub = isGitHubRegistry(registryURL)
+  core.saveState('is_github_registry', isGitHub)
+
   await processWorkspaces(async (w) => {
     const { pkg, location, name } = w
 
@@ -112,8 +105,7 @@ export const main = async (): Promise<void> => {
       core.debug(`[${name}] the package is private, skipping processing`)
       return
     }
-
-    if (isGitHubRegistry(registryURL)) {
+    if (isGitHub) {
       const targetOwner = registryURL.pathname.slice(1)
       if (!targetOwner) {
         core.error(
@@ -140,28 +132,8 @@ export const main = async (): Promise<void> => {
       }
     }
 
-    await new Promise((resolve, reject) => {
-      core.debug(`[${name}] executing publish script`)
-      exec(
-        `${process.argv[0]} ${process.argv[1]} publish --version=${version}${
-          tag ? ` --tag=${tag}` : ''
-        }`,
-        {
-          cwd: location,
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            return reject(
-              Error(`${error.message}:\nstderr:${stderr}\nstdout:${stdout}`)
-            )
-          }
-          if (stdout) {
-            core.debug(stdout)
-          }
-          resolve(stdout)
-        }
-      )
-    })
+    core.debug(`[${name}] executing publish`)
+    await publish(version, tag, location)
   }, core.debug)
 
   core.setOutput('registry_url', registryURL.href)

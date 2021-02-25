@@ -72,21 +72,7 @@ afterEach(() => {
   process.argv = originalArgv
 })
 
-test('publish command invoked', async () => {
-  process.argv = [
-    'node',
-    'index.js',
-    'publish',
-    '--version=1.0.0',
-    '--tag=nightly',
-  ]
-
-  await main()
-
-  expect(mPublish).toHaveBeenCalledWith('1.0.0', 'nightly')
-})
-
-test('publish command does not invoked if no command provided', async () => {
+test('publish command does not invoked if no workspace provided', async () => {
   process.argv = ['node', 'index.js']
 
   await main()
@@ -113,6 +99,7 @@ test('npmrc and output for "github" registry (owner - auto)', async () => {
     'registry_url',
     'https://npm.pkg.github.com/package-owner'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - specified)', async () => {
@@ -135,6 +122,7 @@ test('npmrc and output for "github" registry (owner - specified)', async () => {
     'registry_url',
     'https://npm.pkg.github.com/custom-owner'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('npmrc and output for "github" registry (owner - failure)', async () => {
@@ -172,6 +160,7 @@ test('npmrc and output for "npm" registry', async () => {
     'registry_url',
     'https://registry.npmjs.org/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for "npmjs" registry', async () => {
@@ -193,6 +182,7 @@ test('npmrc and output for "npmjs" registry', async () => {
     'registry_url',
     'https://registry.npmjs.org/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc and output for custom registry', async () => {
@@ -214,6 +204,7 @@ test('npmrc and output for custom registry', async () => {
     'registry_url',
     'http://resolve-dev.ml:10080/'
   )
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
 test('npmrc backup registered within state', async () => {
@@ -238,6 +229,7 @@ test('action state saved for post-job hook', async () => {
   expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_file', `/user-home/.npmrc`)
   expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
 })
 
 test('action output (except registry)', async () => {
@@ -258,10 +250,11 @@ test('workspace processor', async () => {
       version: '1.0.0',
     },
   })
-
-  expect(mExec).toHaveBeenCalled()
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"node index.js publish --version=1.2.3 --tag=publish-tag"`
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    'publish-tag',
+    '/path/to/package'
   )
 })
 
@@ -279,18 +272,15 @@ test('workspace processor: (no tag)', async () => {
     },
   })
 
-  expect(mExec).toHaveBeenCalled()
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"node index.js publish --version=1.2.3"`
-  )
+  expect(mExec).not.toHaveBeenCalled()
+  expect(mPublish).toHaveBeenCalledWith('1.2.3', '', '/path/to/package')
 })
 
 test('workspace processor: failure', async () => {
   const processor = await getWorkspaceProcessor()
 
-  mExec.mockImplementationOnce((command, options, callback) => {
-    callback?.(Error('failure'), '', '')
-    return {} as ChildProcess
+  mPublish.mockImplementationOnce(() => {
+    throw Error('failure')
   })
 
   await expect(
@@ -340,7 +330,7 @@ test('workspace processor: skip private packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(expect.stringContaining('publish'))
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: skip unrelated github packages', async () => {
@@ -355,11 +345,7 @@ test('workspace processor: skip unrelated github packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: skip unscoped github packages', async () => {
@@ -374,11 +360,7 @@ test('workspace processor: skip unscoped github packages', async () => {
     },
   })
 
-  expect(mExec).not.toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).not.toBeCalled()
 })
 
 test('workspace processor: error on bad custom github registry URL', async () => {
@@ -412,11 +394,7 @@ test('workspace processor: bypass github checks for other registries', async () 
     },
   })
 
-  expect(mExec).toBeCalledWith(
-    expect.stringContaining('publish'),
-    expect.anything(),
-    expect.anything()
-  )
+  expect(mPublish).toBeCalledWith('1.2.3', 'publish-tag', '/path/to/package')
 })
 
 test('determine version: valid semver specified', async () => {
