@@ -90,9 +90,29 @@ test('github unpublish invoked', async () => {
     token: 'github-token',
   }
 
+  mGraphql.mockReturnValueOnce({
+    repository: {
+      packages: {
+        nodes: [{ version: { id: 'github-package-version-id' } }],
+      },
+    },
+  })
+
   await unpublish('2.0.0')
 
   expect(mExec).not.toHaveBeenCalled()
   expect(mGetOctokit).toHaveBeenCalledWith('github-token')
-  expect(mGraphql).toHaveBeenCalledTimes(1)
+  expect(mGraphql.mock.calls[0][1]).toEqual({
+    packageName: 'mock-package',
+    version: '2.0.0',
+    headers: {
+      Accept: 'application/vnd.github.packages-preview+json',
+    },
+  })
+  expect(mGraphql.mock.calls[1][1]).toEqual({
+    packageVersionId: 'github-package-version-id',
+    headers: {
+      Accept: 'application/vnd.github.package-deletes-preview+json',
+    },
+  })
 })
