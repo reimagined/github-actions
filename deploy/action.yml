@@ -22,8 +22,8 @@ inputs:
     required: false
     default: ''
 
-  generate_app_name:
-    description: automatically generate uniquie app name
+  randomize_name:
+    description: add random salt to application name postfix
     required: false
     default: 'false'
 
@@ -56,7 +56,6 @@ inputs:
   cli_version:
     description: use specific cloud CLI version
     required: false
-    default: 'latest'
 
 outputs:
   id:

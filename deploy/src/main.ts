@@ -1,33 +1,39 @@
 import { URL } from 'url'
 import * as path from 'path'
 import * as core from '@actions/core'
+import setByPath from 'lodash.set'
+import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
-import {
-  bumpDependencies,
-  parseScopes,
-  writeNpmRc,
-} from '../../common/src/utils'
+import latestVersion from 'latest-version'
+import { Package } from '@reimagined/github-actions-common'
 
-const readString = (file: string): string => {
-  return readFileSync(file).toString('utf-8')
-}
+const readPackage = (file: string): Package =>
+  JSON.parse(readFileSync(file).toString('utf-8'))
+
+const randomize = (str: string): string =>
+  `${str}-${Math.floor(Math.random() * 1000000)}`
 
 export const main = async (): Promise<void> => {
   const appDir = path.resolve(process.cwd(), core.getInput('source'))
   core.debug(`application directory: ${appDir}`)
+  const pkgFile = path.resolve(appDir, './package.json')
+  let pkg = readPackage(pkgFile)
 
   const frameworkVersion = core.getInput('framework_version')
   if (frameworkVersion != null && frameworkVersion.trim().length) {
     core.debug(`patching framework version to ${frameworkVersion}`)
-    const pkgFile = path.resolve(appDir, './package.json')
-    const pkg = bumpDependencies(
-      JSON.parse(readString(pkgFile)),
-      '@reimagined/.*$',
-      frameworkVersion
-    )
-    writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
-    core.debug(`framework version set`)
+    pkg = bumpDependencies(pkg, '@reimagined/.*$', frameworkVersion)
   }
+
+  const specificCliVersion = core.getInput('cli_version')
+  const cliVersion =
+    specificCliVersion ?? (await latestVersion('resolve-cloud'))
+
+  core.debug(`setting cloud CLI version to (${cliVersion})`)
+  setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+
+  core.debug(`writing patched: ${pkgFile}`)
+  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
 
   const registry = core.getInput('registry')
   if (registry != null) {
@@ -49,34 +55,30 @@ export const main = async (): Promise<void> => {
     )
   }
 
-  /*
-  const npmRegistry = ensureHttp(core.getInput('npm_registry'))
-  if (npmRegistry) {
-    writeNpmRc(appDir, npmRegistry)
-  }
-
-  console.log(`installing packages within ${appDir}`)
+  core.info(`installing application dependencies`)
 
   execSync('yarn install --frozen-lockfile', {
     cwd: appDir,
     stdio: 'inherit',
   })
 
-  const inputAppName = core.getInput('app_name')
-  const generateName = isTrue(core.getInput('generate_app_name'))
+  const inputAppName = core.getInput('name')
+  const generateName = parseBoolean(core.getInput('randomize_name'))
 
   let targetAppName = ''
   if (generateName) {
-    const source = inputAppName !== '' ? inputAppName : readAppPackage().name
+    const source =
+      inputAppName !== '' ? inputAppName : readPackage(pkgFile).name
     targetAppName = randomize(source)
   } else if (inputAppName !== '') {
     targetAppName = inputAppName
   }
 
-  console.debug(`target application path: ${appDir}`)
-  console.debug(`target application name: ${targetAppName}`)
+  core.debug(`target application path: ${appDir}`)
+  core.debug(`target application name: ${targetAppName}`)
 
-  const localMode = isTrue(core.getInput('local_mode'))
+  /*
+  const localMode = parseBoolean(core.getInput('local_mode'))
 
   if (!localMode) {
     makeResolveRC(
@@ -86,34 +88,37 @@ export const main = async (): Promise<void> => {
       core.getInput('resolve_token')
     )
   }
+  */
 
   const customArgs = core.getInput('deploy_args')
 
-  console.debug(`deploying application to the cloud`)
+  core.debug(`deploying the application to the cloud`)
 
   let baseArgs = ''
   baseArgs += targetAppName ? ` --name ${targetAppName}` : ''
-  baseArgs += npmRegistry ? ` --npm-registry ${npmRegistry}` : ''
+
+  const cli = getCLI(appDir)
 
   try {
-    resolveCloud(`deploy ${baseArgs} ${customArgs}`, 'inherit')
-    console.debug('the application deployed successfully')
+    cli(`deploy ${baseArgs} ${customArgs}`, 'inherit')
+    core.debug('the application deployed successfully')
   } finally {
-    console.debug(`retrieving deployed application metadata`)
+    core.debug(`retrieving deployed application metadata`)
 
-    const { deploymentId, appName, appRuntime, appUrl } = describeApp(
-      targetAppName,
-      resolveCloud
-    )
+    const deployment = describeApp(targetAppName, cli)
 
-    core.setOutput('deployment_id', deploymentId)
-    core.setOutput('app_name', appName)
-    core.setOutput('app_runtime', appRuntime)
-    core.setOutput('app_url', appUrl)
+    if (deployment != null) {
+      const { deploymentId, appName, appRuntime, appUrl } = deployment
 
-    core.saveState(`deployment_id`, deploymentId)
-    core.saveState(`app_dir`, appDir)
+      core.setOutput('deployment_id', deploymentId)
+      core.setOutput('app_name', appName)
+      core.setOutput('app_runtime', appRuntime)
+      core.setOutput('app_url', appUrl)
+
+      core.saveState(`deployment_id`, deploymentId)
+      core.saveState(`app_dir`, appDir)
+    } else {
+      core.error(`could not find cloud deployment for the app`)
+    }
   }
-   */
-  return Promise.resolve()
 }
