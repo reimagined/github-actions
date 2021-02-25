@@ -1,10 +1,13 @@
 import * as core from '@actions/core'
 import { unlinkSync, copyFileSync } from 'fs'
 import { unpublish } from './unpublish'
-import { processWorkspaces, parseBoolean } from '../../common/src/utils'
+import { processWorkspaces } from '../../common/src/utils'
+
+const isTrue = (value: string) =>
+  value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
 
 export const post = async (): Promise<void> => {
-  if (parseBoolean(core.getInput('unpublish'))) {
+  if (isTrue(core.getInput('unpublish'))) {
     const version = core.getState('version')
     if (!version) {
       throw Error(`missing packages version to unpublish`)

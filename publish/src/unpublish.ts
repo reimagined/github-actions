@@ -3,7 +3,9 @@ import * as core from '@actions/core'
 import { execSync } from 'child_process'
 import semver from 'semver'
 import { getOctokit } from '@actions/github'
-import { parseBoolean } from '../../common/src/utils'
+
+const isTrue = (value: string) =>
+  value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
 
 const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
@@ -80,7 +82,7 @@ const unpublishPackage = async (
   packageName: string,
   packageVersion: string
 ) => {
-  const isGithubRegistry = parseBoolean(core.getState('is_github_registry'))
+  const isGithubRegistry = isTrue(core.getState('is_github_registry'))
   isGithubRegistry
     ? await unpublishFromGithubRegistry(packageName, packageVersion)
     : exec(`npm unpublish --force ${packageName}@${packageVersion}`)
