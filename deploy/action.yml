@@ -48,14 +48,14 @@ inputs:
     required: false
     default: ''
 
-  local_mode:
-    description: action running on developer machine
-    required: false
-    default: 'false'
-
   cli_version:
     description: use specific cloud CLI version
     required: false
+
+  local_run:
+    description: action running on developer machine
+    required: false
+    default: 'false'
 
 outputs:
   id:

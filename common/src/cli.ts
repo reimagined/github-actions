@@ -1,5 +1,6 @@
 import isEmpty from 'lodash.isempty'
 import * as os from 'os'
+import { writeFileSync } from 'fs'
 import { execSync, StdioOptions } from 'child_process'
 import { CLI, CloudDeployment } from './types'
 
@@ -91,4 +92,42 @@ export const describeApp = (
     appRuntime: version,
     appName,
   }
+}
+
+const determineApiUrl = (input: string) => {
+  return new URL(input)
+}
+
+export const writeResolveRc = (
+  file: string,
+  api: string,
+  user: string,
+  token: string,
+  core?: {
+    debug: (message: string) => void
+  }
+) => {
+  if (isEmpty(file)) {
+    throw Error(`missed .resolverc file path`)
+  }
+  if (isEmpty(user)) {
+    throw Error(`missed .resolverc entry [user]`)
+  }
+  if (isEmpty(token)) {
+    throw Error(`missed .resolverc entry [token]`)
+  }
+  const apiUrl = determineApiUrl(api)
+
+  core.debug(`writing ${file}`)
+
+  writeFileSync(
+    file,
+    JSON.stringify({
+      api_url: apiUrl,
+      credentials: {
+        user,
+        refresh_token: token,
+      },
+    })
+  )
 }

@@ -1,12 +1,20 @@
 import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
+import { writeFileSync } from 'fs'
 import * as os from 'os'
-import { getCLI, describeApp } from '../src/cli'
+import { getCLI, describeApp, writeResolveRc } from '../src/cli'
 import { CLI } from '../src/types'
 
 jest.mock('child_process')
+jest.mock('fs')
 
 const mExec = mocked(execSync)
+const mWriteFile = mocked(writeFileSync)
+
+const getResolveRcContent = (): string =>
+  mWriteFile.mock.calls.find(
+    (call) => call[0] === '/source/.resolverc'
+  )?.[1] as string
 
 let originalEnv = process.env
 
@@ -165,5 +173,18 @@ describe('describeApp', () => {
     describeApp('my-app', cli, core)
 
     expect(core.error).toHaveBeenCalled()
+  })
+})
+
+describe('writeResolveRc', () => {
+  test('valid rc-file written', () => {
+    writeResolveRc(
+      '/source/.resolverc',
+      'https://api.resolve.sh',
+      'user',
+      'token'
+    )
+
+    expect(getResolveRcContent()).toMatchInlineSnapshot()
   })
 })

@@ -11,7 +11,8 @@ import {
   parseScopes,
   parseBoolean,
 } from '../../common/src/utils'
-import { Package } from '../../common/src/types'
+import { getCLI, describeApp } from '../../common/src/cli'
+import { CLI, Package } from '../../common/src/types'
 import { main } from '../src/main'
 
 jest.mock('@actions/core')
@@ -19,6 +20,7 @@ jest.mock('fs')
 jest.mock('child_process')
 jest.mock('latest-version')
 jest.mock('../../common/src/utils')
+jest.mock('../../common/src/cli')
 
 const mWriteFile = mocked(writeFileSync)
 const mReadFile = mocked(readFileSync)
@@ -29,6 +31,8 @@ const mParseScopes = mocked(parseScopes)
 const mExec = mocked(execSync)
 const mParseBoolean = mocked(parseBoolean)
 const mLatestVersion = mocked(latestVersion)
+const mGetCLI = mocked(getCLI)
+const mDescribeApp = mocked(describeApp)
 
 const getPackageContent = (): Package | undefined => {
   const data = mWriteFile.mock.calls.find(
@@ -40,6 +44,7 @@ const getPackageContent = (): Package | undefined => {
 }
 
 let actionInput: { [key: string]: string }
+let mCLI: jest.MockedFunction<CLI>
 
 beforeEach(() => {
   actionInput = {
@@ -63,6 +68,8 @@ beforeEach(() => {
       )
     )
   )
+  mCLI = jest.fn()
+  mGetCLI.mockReturnValue(mCLI)
 })
 
 test('framework version patched', async () => {
@@ -196,17 +203,66 @@ test('app dependencies installation', async () => {
   })
 })
 
+test('cloud CLI requested', async () => {
+  await main()
+
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir')
+})
+
 test('app name from input', async () => {
   actionInput.name = 'app-name'
-  actionInput.randomize = 'false'
+  actionInput.randomize_name = 'false'
 
   await main()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`--name app-name`),
+    expect.anything()
+  )
 })
 
 test('randomized app name from input', async () => {
+  actionInput.name = 'app-name'
+  actionInput.randomize_name = 'true'
 
+  const mRandom = jest.spyOn(Math, 'random')
+  mRandom.mockReturnValue(777)
+
+  await main()
+
+  expect(mRandom).toHaveBeenCalled()
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`--name app-name-777000000`),
+    expect.anything()
+  )
+
+  mRandom.mockRestore()
 })
 
-test('app name from package.json', async () => {})
+test('app name from package.json', async () => {
+  actionInput.randomize_name = 'false'
 
-test('randomized app name from package.json', async () => {})
+  await main()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`--name package`),
+    expect.anything()
+  )
+})
+
+test('randomized app name from package.json', async () => {
+  actionInput.randomize_name = 'true'
+
+  const mRandom = jest.spyOn(Math, 'random')
+  mRandom.mockReturnValue(777)
+
+  await main()
+
+  expect(mRandom).toHaveBeenCalled()
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`--name package-777000000`),
+    expect.anything()
+  )
+
+  mRandom.mockRestore()
+})

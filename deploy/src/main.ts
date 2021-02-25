@@ -5,7 +5,14 @@ import setByPath from 'lodash.set'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import latestVersion from 'latest-version'
-import { Package } from '@reimagined/github-actions-common'
+import { Package } from '../../common/src/types'
+import {
+  bumpDependencies,
+  parseBoolean,
+  parseScopes,
+  writeNpmRc,
+} from '../../common/src/utils'
+import { describeApp, getCLI, writeResolveRc } from '../../common/src/cli'
 
 const readPackage = (file: string): Package =>
   JSON.parse(readFileSync(file).toString('utf-8'))
@@ -62,33 +69,24 @@ export const main = async (): Promise<void> => {
     stdio: 'inherit',
   })
 
-  const inputAppName = core.getInput('name')
-  const generateName = parseBoolean(core.getInput('randomize_name'))
+  const randomizer = parseBoolean(core.getInput('randomize_name'))
+    ? randomize
+    : (val) => val
 
-  let targetAppName = ''
-  if (generateName) {
-    const source =
-      inputAppName !== '' ? inputAppName : readPackage(pkgFile).name
-    targetAppName = randomize(source)
-  } else if (inputAppName !== '') {
-    targetAppName = inputAppName
-  }
+  const inputAppName = core.getInput('name')
+  let targetAppName = randomizer(inputAppName ?? readPackage(pkgFile).name)
 
   core.debug(`target application path: ${appDir}`)
   core.debug(`target application name: ${targetAppName}`)
 
-  /*
-  const localMode = parseBoolean(core.getInput('local_mode'))
-
-  if (!localMode) {
-    makeResolveRC(
-      appDir,
+  if (!parseBoolean(core.getInput('local_run'))) {
+    writeResolveRc(
+      path.resolve(appDir, '.resolverc'),
       core.getInput('resolve_api_url'),
       core.getInput('resolve_user'),
       core.getInput('resolve_token')
     )
   }
-  */
 
   const customArgs = core.getInput('deploy_args')
 
