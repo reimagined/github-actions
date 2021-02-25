@@ -3,7 +3,6 @@
   "include": ["src", "test"],
   "compilerOptions": {
     "outDir": "lib",
-    "rootDir": "./src",
+    "rootDir": "./src"
   }
 }
-
