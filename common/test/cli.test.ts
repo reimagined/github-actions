@@ -11,10 +11,15 @@ jest.mock('fs')
 const mExec = mocked(execSync)
 const mWriteFile = mocked(writeFileSync)
 
-const getResolveRcContent = (): string =>
-  mWriteFile.mock.calls.find(
+const getResolveRcContent = (): any => {
+  const data = mWriteFile.mock.calls.find(
     (call) => call[0] === '/source/.resolverc'
   )?.[1] as string
+  if (data) {
+    return JSON.parse(data)
+  }
+  return null
+}
 
 let originalEnv = process.env
 
@@ -177,14 +182,62 @@ describe('describeApp', () => {
 })
 
 describe('writeResolveRc', () => {
-  test('valid rc-file written', () => {
+  test('valid rc-file written with default API URL', () => {
+    writeResolveRc('/source/.resolverc', 'user', 'token')
+
+    expect(getResolveRcContent()).toMatchInlineSnapshot(`
+      Object {
+        "api_url": "https://api.resolve.sh/",
+        "credentials": Object {
+          "refresh_token": "token",
+          "user": "user",
+        },
+      }
+    `)
+  })
+
+  test('custom API URL', () => {
     writeResolveRc(
       '/source/.resolverc',
-      'https://api.resolve.sh',
       'user',
-      'token'
+      'token',
+      'https://api.custom.com'
     )
 
-    expect(getResolveRcContent()).toMatchInlineSnapshot()
+    expect(getResolveRcContent().api_url).toEqual('https://api.custom.com/')
+  })
+
+  test('error thrown if custom API URL is invalid', () => {
+    expect(() =>
+      writeResolveRc('/source/.resolverc', 'user', 'token', 'bla-bla')
+    ).toThrow()
+  })
+
+  test('error thrown if empty target file path', () => {
+    expect(() => writeResolveRc('', 'user', 'token')).toThrow()
+  })
+
+  test('error thrown if empty user', () => {
+    expect(() => writeResolveRc('/source/.resolverc', '', 'token')).toThrow()
+  })
+
+  test('error thrown if empty toke', () => {
+    expect(() => writeResolveRc('/source/.resolverc', 'user', '')).toThrow()
+  })
+
+  test('core debug logging used', () => {
+    const core = {
+      debug: jest.fn(),
+    }
+
+    writeResolveRc(
+      '/source/.resolverc',
+      'user',
+      'token',
+      'https://custom.api.org',
+      core
+    )
+
+    expect(core.debug).toHaveBeenCalled()
   })
 })

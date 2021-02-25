@@ -94,15 +94,18 @@ export const describeApp = (
   }
 }
 
-const determineApiUrl = (input: string) => {
-  return new URL(input)
+const determineApiUrl = (input?: string) => {
+  if (input != null && !isEmpty(input)) {
+    return new URL(input)
+  }
+  return new URL('https://api.resolve.sh')
 }
 
 export const writeResolveRc = (
   file: string,
-  api: string,
   user: string,
   token: string,
+  api?: string,
   core?: {
     debug: (message: string) => void
   }
@@ -118,12 +121,12 @@ export const writeResolveRc = (
   }
   const apiUrl = determineApiUrl(api)
 
-  core.debug(`writing ${file}`)
+  core?.debug(`writing ${file}`)
 
   writeFileSync(
     file,
     JSON.stringify({
-      api_url: apiUrl,
+      api_url: apiUrl.href,
       credentials: {
         user,
         refresh_token: token,

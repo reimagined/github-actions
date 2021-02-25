@@ -5,10 +5,6 @@ inputs:
     description: target application directory
     required: true
 
-  cloud_api_url:
-    description: reSolve cloud service API url
-    required: true
-
   cloud_user:
     description: reSolve cloud service user
     required: true
@@ -16,6 +12,10 @@ inputs:
   cloud_token:
     description: reSolve cloud service refresh token
     required: true
+
+  cloud_api_url:
+    description: reSolve cloud service API url
+    required: false
 
   name:
     description: override application name

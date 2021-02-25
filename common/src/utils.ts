@@ -86,7 +86,7 @@ export const writeNpmRc = (
 ): string | null => {
   const { core, createBackup, scopes } = options
 
-  let backupFile = null
+  let backupFile: string | null = null
   if (createBackup && existsSync(file)) {
     backupFile = path.resolve(path.dirname(file), '._build_npmrc_orig_')
     core?.info(`npmrc file exists, backing up to: ${backupFile}`)
