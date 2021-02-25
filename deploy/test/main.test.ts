@@ -142,6 +142,17 @@ test('cloud cli version patched to latest available', async () => {
   )
 })
 
+test('cloud cli version patched to latest available (specific version is empty string)', async () => {
+  actionInput.cli_version = ''
+
+  await main()
+
+  expect(mLatestVersion).toHaveBeenCalledWith('resolve-cloud')
+  expect(getPackageContent()?.devDependencies?.['resolve-cloud']).toEqual(
+    '1.2.3'
+  )
+})
+
 test('cloud cli version patched to specific version', async () => {
   actionInput.cli_version = '5.4.3'
 
@@ -261,6 +272,18 @@ test('randomized app name from input', async () => {
 })
 
 test('app name from package.json', async () => {
+  actionInput.randomize_name = 'false'
+
+  await main()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`--name package`),
+    expect.anything()
+  )
+})
+
+test('app name from package.json (input is empty string)', async () => {
+  actionInput.name = ''
   actionInput.randomize_name = 'false'
 
   await main()

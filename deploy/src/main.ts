@@ -2,6 +2,7 @@ import { URL } from 'url'
 import * as path from 'path'
 import * as core from '@actions/core'
 import setByPath from 'lodash.set'
+import isEmpty from 'lodash.isempty'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import latestVersion from 'latest-version'
@@ -36,8 +37,9 @@ export const main = async (): Promise<void> => {
   }
 
   const specificCliVersion = core.getInput('cli_version')
-  const cliVersion =
-    specificCliVersion ?? (await latestVersion('resolve-cloud'))
+  const cliVersion = isEmpty(specificCliVersion)
+    ? await latestVersion('resolve-cloud')
+    : specificCliVersion
 
   core.debug(`setting cloud CLI version to (${cliVersion})`)
   setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
@@ -77,10 +79,13 @@ export const main = async (): Promise<void> => {
     : (val) => val
 
   const inputAppName = core.getInput('name')
-  let targetAppName = randomizer(inputAppName ?? readPackage(pkgFile).name)
+  core.debug(`input app name: ${inputAppName}`)
 
-  core.debug(`target application path: ${appDir}`)
+  const targetAppName = randomizer(
+    isEmpty(inputAppName) ? readPackage(pkgFile).name : inputAppName
+  )
   core.debug(`target application name: ${targetAppName}`)
+  core.debug(`target application path: ${appDir}`)
 
   if (!parseBoolean(core.getInput('local_run'))) {
     writeResolveRc(
