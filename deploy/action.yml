@@ -5,10 +5,6 @@ inputs:
     description: target application directory
     required: true
 
-  cloud_api_url:
-    description: reSolve cloud service API url
-    required: true
-
   cloud_user:
     description: reSolve cloud service user
     required: true
@@ -17,13 +13,17 @@ inputs:
     description: reSolve cloud service refresh token
     required: true
 
+  cloud_api_url:
+    description: reSolve cloud service API url
+    required: false
+
   name:
     description: override application name
     required: false
     default: ''
 
-  generate_app_name:
-    description: automatically generate uniquie app name
+  randomize_name:
+    description: add random salt to application name postfix
     required: false
     default: 'false'
 
@@ -31,15 +31,15 @@ inputs:
     description: reSolve framework version override
     required: false
 
-  registry:
+  package_registry:
     description: packages registry override
     required: false
 
-  token:
+  package_registry_token:
     description: packages registry authentication token
     required: false
 
-  scopes:
+  package_registry_scopes:
     description: a list of comma separated scopes to map to custom NPM registry
     required: false
 
@@ -48,15 +48,14 @@ inputs:
     required: false
     default: ''
 
-  local_mode:
-    description: action running on developer machine
-    required: false
-    default: 'false'
-
   cli_version:
     description: use specific cloud CLI version
     required: false
-    default: 'latest'
+
+  local_run:
+    description: action running on developer machine
+    required: false
+    default: 'false'
 
 outputs:
   id:
@@ -72,5 +71,5 @@ outputs:
 
 runs:
   using: 'node12'
-  main: 'dist/main/index.js'
-  post: 'dist/main/index.js'
+  main: 'dist/main.js'
+  post: 'dist/post.js'

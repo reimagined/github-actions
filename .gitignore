@@ -6,3 +6,4 @@ dist
 coverage
 .npmrc
 yarn-error.log
+tsconfig.tsbuildinfo

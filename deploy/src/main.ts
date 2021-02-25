@@ -1,35 +1,51 @@
 import { URL } from 'url'
 import * as path from 'path'
 import * as core from '@actions/core'
+import setByPath from 'lodash.set'
+import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
+import latestVersion from 'latest-version'
+import { Package } from '../../common/src/types'
 import {
   bumpDependencies,
+  parseBoolean,
   parseScopes,
   writeNpmRc,
 } from '../../common/src/utils'
+import { describeApp, getCLI, writeResolveRc } from '../../common/src/cli'
 
-const readString = (file: string): string => {
-  return readFileSync(file).toString('utf-8')
-}
+const readPackage = (file: string): Package =>
+  JSON.parse(readFileSync(file).toString('utf-8'))
+
+const randomize = (str: string): string =>
+  `${str}-${Math.floor(Math.random() * 1000000)}`
 
 export const main = async (): Promise<void> => {
-  const appDir = path.resolve(process.cwd(), core.getInput('source'))
+  const appDir = path.resolve(
+    process.cwd(),
+    core.getInput('source', { required: true })
+  )
   core.debug(`application directory: ${appDir}`)
+  const pkgFile = path.resolve(appDir, './package.json')
+  let pkg = readPackage(pkgFile)
 
   const frameworkVersion = core.getInput('framework_version')
   if (frameworkVersion != null && frameworkVersion.trim().length) {
     core.debug(`patching framework version to ${frameworkVersion}`)
-    const pkgFile = path.resolve(appDir, './package.json')
-    const pkg = bumpDependencies(
-      JSON.parse(readString(pkgFile)),
-      '@reimagined/.*$',
-      frameworkVersion
-    )
-    writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
-    core.debug(`framework version set`)
+    pkg = bumpDependencies(pkg, '@reimagined/.*$', frameworkVersion)
   }
 
-  const registry = core.getInput('registry')
+  const specificCliVersion = core.getInput('cli_version')
+  const cliVersion =
+    specificCliVersion ?? (await latestVersion('resolve-cloud'))
+
+  core.debug(`setting cloud CLI version to (${cliVersion})`)
+  setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+
+  core.debug(`writing patched: ${pkgFile}`)
+  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
+
+  const registry = core.getInput('package_registry')
   if (registry != null) {
     let registryURL: URL
     try {
@@ -41,79 +57,69 @@ export const main = async (): Promise<void> => {
     writeNpmRc(
       path.resolve(appDir, '.npmrc'),
       registryURL,
-      core.getInput('token'),
+      core.getInput('package_registry_token'),
       {
-        scopes: parseScopes(core.getInput('scopes')),
+        scopes: parseScopes(core.getInput('package_registry_scopes')),
         core,
       }
     )
   }
 
-  /*
-  const npmRegistry = ensureHttp(core.getInput('npm_registry'))
-  if (npmRegistry) {
-    writeNpmRc(appDir, npmRegistry)
-  }
-
-  console.log(`installing packages within ${appDir}`)
+  core.info(`installing application dependencies`)
 
   execSync('yarn install --frozen-lockfile', {
     cwd: appDir,
     stdio: 'inherit',
   })
 
-  const inputAppName = core.getInput('app_name')
-  const generateName = isTrue(core.getInput('generate_app_name'))
+  const randomizer = parseBoolean(core.getInput('randomize_name'))
+    ? randomize
+    : (val) => val
 
-  let targetAppName = ''
-  if (generateName) {
-    const source = inputAppName !== '' ? inputAppName : readAppPackage().name
-    targetAppName = randomize(source)
-  } else if (inputAppName !== '') {
-    targetAppName = inputAppName
-  }
+  const inputAppName = core.getInput('name')
+  let targetAppName = randomizer(inputAppName ?? readPackage(pkgFile).name)
 
-  console.debug(`target application path: ${appDir}`)
-  console.debug(`target application name: ${targetAppName}`)
+  core.debug(`target application path: ${appDir}`)
+  core.debug(`target application name: ${targetAppName}`)
 
-  const localMode = isTrue(core.getInput('local_mode'))
-
-  if (!localMode) {
-    makeResolveRC(
-      appDir,
-      core.getInput('resolve_api_url'),
-      core.getInput('resolve_user'),
-      core.getInput('resolve_token')
+  if (!parseBoolean(core.getInput('local_run'))) {
+    writeResolveRc(
+      path.resolve(appDir, '.resolverc'),
+      core.getInput('cloud_user', { required: true }),
+      core.getInput('cloud_token', { required: true }),
+      core.getInput('cloud_api_url'),
+      core
     )
   }
 
   const customArgs = core.getInput('deploy_args')
 
-  console.debug(`deploying application to the cloud`)
+  core.debug(`deploying the application to the cloud`)
 
-  let baseArgs = ''
-  baseArgs += targetAppName ? ` --name ${targetAppName}` : ''
-  baseArgs += npmRegistry ? ` --npm-registry ${npmRegistry}` : ''
+  const baseArgs = `--name ${targetAppName}`
+  const cli = getCLI(appDir)
 
   try {
-    resolveCloud(`deploy ${baseArgs} ${customArgs}`, 'inherit')
-    console.debug('the application deployed successfully')
+    cli(`deploy ${baseArgs} ${customArgs}`, 'inherit')
+    core.debug('the application deployed successfully')
   } finally {
-    console.debug(`retrieving deployed application metadata`)
+    core.debug(`retrieving deployed application metadata`)
 
-    const { deploymentId, appName, appRuntime, appUrl } = describeApp(
-      targetAppName,
-      resolveCloud
-    )
+    const deployment = describeApp(targetAppName, cli)
 
-    core.setOutput('deployment_id', deploymentId)
-    core.setOutput('app_name', appName)
-    core.setOutput('app_runtime', appRuntime)
-    core.setOutput('app_url', appUrl)
+    if (deployment != null) {
+      const { id, name, runtime, url, eventStore } = deployment
 
-    core.saveState(`deployment_id`, deploymentId)
-    core.saveState(`app_dir`, appDir)
+      core.setOutput('id', id)
+      core.setOutput('name', name)
+      core.setOutput('runtime', runtime)
+      core.setOutput('url', url)
+      core.setOutput('event_store_id', eventStore)
+
+      core.saveState(`app_id`, id)
+      core.saveState(`app_dir`, appDir)
+    } else {
+      core.error(`could not find cloud deployment for the app`)
+    }
   }
-   */
-  return Promise.resolve()
 }

@@ -8,6 +8,7 @@ import {
   writeNpmRc,
   parseScopes,
   WorkspaceProcessor,
+  parseBoolean,
 } from '../src/utils'
 
 jest.mock('child_process')
@@ -404,5 +405,25 @@ describe('parseScopes', () => {
     expect(parseScopes(',@scope-a')).toEqual(['@scope-a'])
     expect(parseScopes(undefined)).toEqual([])
     expect(parseScopes(null)).toEqual([])
+  })
+})
+
+describe('parseBoolean', () => {
+  test('true', () => {
+    expect(parseBoolean('yes')).toBeTruthy()
+    expect(parseBoolean('YES')).toBeTruthy()
+    expect(parseBoolean('yEs')).toBeTruthy()
+    expect(parseBoolean('true')).toBeTruthy()
+    expect(parseBoolean('TruE')).toBeTruthy()
+    expect(parseBoolean('1')).toBeTruthy()
+  })
+
+  test('false', () => {
+    expect(parseBoolean('no')).toBeFalsy()
+    expect(parseBoolean('No')).toBeFalsy()
+    expect(parseBoolean('false')).toBeFalsy()
+    expect(parseBoolean('False')).toBeFalsy()
+    expect(parseBoolean('0')).toBeFalsy()
+    expect(parseBoolean('bla-bla')).toBeFalsy()
   })
 })
