@@ -28,6 +28,13 @@ const determineOwner = (pkg: Package): string => {
   return owner
 }
 
+const limitLength = (src?: string): string | undefined => {
+  if (src != null && src.length > 6) {
+    return src.substr(0, 6)
+  }
+  return src
+}
+
 const determineRegistry = (): URL => {
   const registry = core.getInput('registry')
 
@@ -53,7 +60,8 @@ const determineVersion = (): string => {
   if (version.toLowerCase() === 'auto') {
     const pkg = readPackage()
     const build =
-      core.getInput('build') ?? new Date().toISOString().replace(/[:.]/gi, '-')
+      limitLength(core.getInput('build')) ??
+      new Date().toISOString().replace(/[:.]/gi, '-')
     return `${pkg.version}-${build}`
   }
 
