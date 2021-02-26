@@ -33,7 +33,7 @@ afterEach(() => {
   process.env = originalEnv
 })
 
-describe('getCLI', () => {
+describe('getCLI (package)', () => {
   let cli: CLI
 
   beforeEach(() => {
@@ -57,6 +57,43 @@ describe('getCLI', () => {
     cli('test', 'inherit')
 
     expect(mExec).toHaveBeenCalledWith('yarn --silent resolve-cloud test', {
+      cwd: '/app/dir',
+      stdio: 'inherit',
+      env: {
+        process: 'env',
+      },
+    })
+  })
+
+  test('execution result returned as string', () => {
+    expect(cli('test')).toEqual('execution-result')
+  })
+})
+
+describe('getCLI (sources)', () => {
+  let cli: CLI
+
+  beforeEach(() => {
+    cli = getCLI('/app/dir', '/cli/sources')
+    mExec.mockReturnValue(Buffer.from('execution-result'))
+  })
+
+  test('executed cloud cli with default stdio options', () => {
+    cli('test')
+
+    expect(mExec).toHaveBeenCalledWith('node /cli/sources/lib/index.js test', {
+      cwd: '/app/dir',
+      stdio: 'pipe',
+      env: {
+        process: 'env',
+      },
+    })
+  })
+
+  test('cloud cli executed with specified stdio options', () => {
+    cli('test', 'inherit')
+
+    expect(mExec).toHaveBeenCalledWith('node /cli/sources/lib/index.js test', {
       cwd: '/app/dir',
       stdio: 'inherit',
       env: {

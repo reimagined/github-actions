@@ -1,4 +1,5 @@
 import isEmpty from 'lodash.isempty'
+import * as path from 'path'
 import * as os from 'os'
 import { writeFileSync } from 'fs'
 import { execSync, StdioOptions } from 'child_process'
@@ -7,10 +8,11 @@ import { camelCase } from 'change-case'
 
 const execCLI = (
   appDir: string,
+  command: string,
   args: string,
-  stdio: StdioOptions = 'pipe'
+  stdio: StdioOptions
 ): string => {
-  const result = execSync(`yarn --silent resolve-cloud ${args}`, {
+  const result = execSync(`${command} ${args}`, {
     cwd: appDir,
     stdio,
     env: {
@@ -20,7 +22,24 @@ const execCLI = (
   return result.toString()
 }
 
-export const getCLI = (appDir: string): CLI => execCLI.bind(null, appDir)
+const execPackagedCLI = (
+  appDir: string,
+  args: string,
+  stdio: StdioOptions = 'pipe'
+): string => execCLI(appDir, 'yarn --silent resolve-cloud', args, stdio)
+
+const execSourcedCLI = (
+  appDir: string,
+  sources: string,
+  args: string,
+  stdio: StdioOptions = 'pipe'
+): string =>
+  execCLI(appDir, `node ${path.resolve(sources, 'lib/index.js')}`, args, stdio)
+
+export const getCLI = (appDir: string, sources?: string): CLI =>
+  sources
+    ? execSourcedCLI.bind(null, appDir, sources)
+    : execPackagedCLI.bind(null, appDir)
 
 const toTable = (tableOutput: string) => {
   const rows = tableOutput
