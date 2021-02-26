@@ -52,6 +52,10 @@ inputs:
     description: use specific cloud CLI version
     required: false
 
+  cli_sources:
+    description: use cloud CLI sources instead of package
+    required: false
+
   local_run:
     description: action running on developer machine
     required: false

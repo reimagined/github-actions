@@ -36,16 +36,26 @@ export const main = async (): Promise<void> => {
     pkg = bumpDependencies(pkg, '@reimagined/.*$', frameworkVersion)
   }
 
+  const cliSources = core.getInput('cli_sources')
   const specificCliVersion = core.getInput('cli_version')
-  const cliVersion = isEmpty(specificCliVersion)
-    ? await latestVersion('resolve-cloud')
-    : specificCliVersion
 
-  core.debug(`setting cloud CLI version to (${cliVersion})`)
-  setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+  if (!isEmpty(cliSources) && !isEmpty(specificCliVersion)) {
+    throw Error(
+      `[cli_version] and [cli_sources] options cannot be used at the same time`
+    )
+  }
 
-  core.debug(`writing patched: ${pkgFile}`)
-  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
+  if (isEmpty(cliSources)) {
+    const cliVersion = isEmpty(specificCliVersion)
+      ? await latestVersion('resolve-cloud')
+      : specificCliVersion
+
+    core.debug(`setting cloud CLI version to (${cliVersion})`)
+    setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+
+    core.debug(`writing patched: ${pkgFile}`)
+    writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
+  }
 
   const registry = core.getInput('package_registry')
   if (registry != null) {
@@ -102,7 +112,7 @@ export const main = async (): Promise<void> => {
   core.debug(`deploying the application to the cloud`)
 
   const baseArgs = `--name ${targetAppName}`
-  const cli = getCLI(appDir)
+  const cli = getCLI(appDir, cliSources)
 
   try {
     cli(`deploy ${baseArgs} ${customArgs}`, 'inherit')
