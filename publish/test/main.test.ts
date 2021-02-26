@@ -428,6 +428,15 @@ test('determine version: auto with build', async () => {
   expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4-build`)
 })
 
+test('determine version: auto with build - limit build length (cloud issues)', async () => {
+  actionInput.version = 'auto'
+  actionInput.build = '123456-long-build-specifier'
+
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4-123456`)
+})
+
 test('determine version: invalid semver', async () => {
   actionInput.version = '2'
 
