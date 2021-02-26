@@ -164,6 +164,24 @@ test('cloud cli version patched to specific version', async () => {
   )
 })
 
+test('ambiguous options: cli_package and cli_sources options both set', async () => {
+  actionInput.cli_version = '5.4.3'
+  actionInput.cli_sources = '/path/to/cli'
+
+  await expect(main()).rejects.toThrow()
+})
+
+test('cloud cli version does not patched if sources was set', async () => {
+  actionInput.cli_sources = '/path/to/cli'
+
+  await main()
+
+  expect(mLatestVersion).not.toHaveBeenCalledWith('resolve-cloud')
+  expect(
+    getPackageContent()?.devDependencies?.['resolve-cloud']
+  ).toBeUndefined()
+})
+
 test('write npmrc for custom registry', async () => {
   actionInput.package_registry = 'https://packages.org'
 
@@ -238,7 +256,15 @@ test('app dependencies installation', async () => {
 test('cloud CLI requested', async () => {
   await main()
 
-  expect(mGetCLI).toHaveBeenCalledWith('/source/dir')
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', undefined)
+})
+
+test('cloud CLI requested for specific sources', async () => {
+  actionInput.cli_sources = '/cli/sources'
+
+  await main()
+
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '/cli/sources')
 })
 
 test('app name from input', async () => {
