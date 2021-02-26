@@ -77,9 +77,9 @@ describe('describeApp', () => {
 
   beforeEach(() => {
     lsOutput =
-      'ID NAME  VERSION  USERID EVENTSTORE UPDATE' +
+      'APPLICATION-NAME    DEPLOYMENT-ID    DOMAIN    VERSION    EVENT-STORE-ID    TAG' +
       os.EOL +
-      'deployment-id my-app  3.1.0   user@mail.com  event-store-id up-to-date'
+      'my-app deployment-id  resolve.sh 3.1.0  event-store-id app-tag'
 
     describeOutput =
       'id                   deployment-id' +

@@ -3,6 +3,7 @@ import * as os from 'os'
 import { writeFileSync } from 'fs'
 import { execSync, StdioOptions } from 'child_process'
 import { CLI, CloudDeployment } from './types'
+import { camelCase } from 'change-case'
 
 const execCLI = (
   appDir: string,
@@ -31,7 +32,7 @@ const toTable = (tableOutput: string) => {
         .map((val) => val.trim())
         .filter((val) => val)
     )
-  const definitions = rows.shift()?.map((name) => name.toLowerCase())
+  const definitions = rows.shift()?.map((name) => camelCase(name.toLowerCase()))
   if (!definitions) {
     return []
   }
@@ -66,7 +67,9 @@ export const describeApp = (
     debug: (message: string) => void
   }
 ): CloudDeployment | null => {
-  const deployment = toTable(cli('ls')).find((entry) => entry.name === appName)
+  const deployment = toTable(cli('ls')).find(
+    (entry) => entry.applicationName === appName
+  )
   if (!deployment) {
     core?.error(
       `deployment with name (${appName}) not found with resolve-cloud ls`
@@ -83,11 +86,11 @@ export const describeApp = (
     return null
   }
 
-  const { id, version } = deployment
+  const { deploymentId, version } = deployment
   const { applicationUrl, eventStore } = description
 
   return {
-    id,
+    id: deploymentId,
     url: applicationUrl,
     runtime: version,
     name: appName,
