@@ -52,10 +52,10 @@ export const main = async (): Promise<void> => {
 
     core.debug(`setting cloud CLI version to (${cliVersion})`)
     setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
-
-    core.debug(`writing patched: ${pkgFile}`)
-    writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
   }
+
+  core.debug(`writing patched: ${pkgFile}`)
+  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
 
   const registry = core.getInput('package_registry')
   if (registry != null) {
