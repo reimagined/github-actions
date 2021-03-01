@@ -404,7 +404,7 @@ test('deployed application info retrieved and set to output', async () => {
 
   await main()
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
   expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
   expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')
@@ -425,7 +425,7 @@ test('deployed application info retrieved and saved to state', async () => {
 
   await main()
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSaveState).toHaveBeenCalledWith('app_id', 'app-id')
   expect(mCoreSaveState).toHaveBeenCalledWith('app_dir', '/source/dir')
 })
@@ -447,7 +447,7 @@ test('deployed application info retrieved on failed deploy operation', async () 
     await main()
   } catch {}
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
   expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
   expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')
