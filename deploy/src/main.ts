@@ -79,7 +79,7 @@ export const main = async (): Promise<void> => {
 
   core.info(`installing application dependencies`)
 
-  execSync('yarn install --frozen-lockfile', {
+  execSync('yarn install', {
     cwd: appDir,
     stdio: 'inherit',
   })

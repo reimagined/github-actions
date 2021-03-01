@@ -247,7 +247,7 @@ test('throw error in registry is invalid URL', async () => {
 test('app dependencies installation', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith('yarn install --frozen-lockfile', {
+  expect(mExec).toHaveBeenCalledWith('yarn install', {
     cwd: '/source/dir',
     stdio: 'inherit',
   })
