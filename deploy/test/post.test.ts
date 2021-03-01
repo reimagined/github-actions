@@ -13,7 +13,7 @@ let jobState: { [key: string]: string }
 
 beforeEach(() => {
   jobState = {
-    deployment_id: 'deployment-id',
+    app_id: 'deployment-id',
   }
 
   mCoreGetState.mockImplementation((name) => jobState[name])

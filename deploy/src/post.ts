@@ -2,11 +2,11 @@ import * as core from '@actions/core'
 import { execSync } from 'child_process'
 
 export const post = async (): Promise<void> => {
-  const deploymentId = core.getState('deployment_id')
+  const id = core.getState('app_id')
 
   try {
-    core.info(`removing cloud application ${deploymentId}`)
-    execSync(`yarn --silent resolve-cloud remove ${deploymentId} --no-wait`, {
+    core.info(`removing cloud application ${id}`)
+    execSync(`yarn --silent resolve-cloud remove ${id} --no-wait`, {
       stdio: 'inherit',
     })
   } catch (error) {
