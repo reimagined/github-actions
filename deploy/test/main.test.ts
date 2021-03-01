@@ -115,6 +115,26 @@ test('framework version patched', async () => {
   expect(getPackageContent()?.dependencies?.a).toEqual('7.7.7')
 })
 
+test('framework version patched (cli_sources set)', async () => {
+  actionInput.framework_version = '1.2.3'
+  actionInput.cli_sources = '/path/to/cli'
+
+  mBumpDependencies.mockImplementationOnce((pkg) => ({
+    ...pkg,
+    dependencies: {
+      a: '7.7.7',
+    },
+  }))
+
+  await main()
+
+  expect(mWriteFile).toHaveBeenCalledWith(
+    '/source/dir/package.json',
+    expect.any(String)
+  )
+  expect(getPackageContent()?.dependencies?.a).toEqual('7.7.7')
+})
+
 test('skip package.json patch if no framework version provided', async () => {
   actionInput = omit(actionInput)
 
