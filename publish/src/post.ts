@@ -1,7 +1,11 @@
 import * as core from '@actions/core'
-import { unlinkSync, copyFileSync } from 'fs'
+import { URL } from 'url'
 import { unpublish } from './unpublish'
-import { processWorkspaces } from '../../common/src/utils'
+import {
+  processWorkspaces,
+  restoreNpmRc,
+  writeNpmRc,
+} from '../../common/src/utils'
 
 const isTrue = (value: string) =>
   value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
@@ -13,24 +17,33 @@ export const post = async (): Promise<void> => {
       throw Error(`missing packages version to unpublish`)
     }
 
+    let npmRcBackup
+    let shouldRestoreNpmRc = false
+    const registry = core.getState('registry_url')
+    const npmRc = core.getState('npmrc_path')
+
+    if (registry != null && npmRc != null) {
+      const registryURL = new URL(registry)
+      const registryToken = core.getState('registry_token')
+
+      npmRcBackup = writeNpmRc(npmRc, registryURL, registryToken, {
+        createBackup: true,
+        core,
+      })
+      shouldRestoreNpmRc = true
+    }
+
     core.info('removing published packages from the registry')
 
-    await processWorkspaces(async (w) => {
-      core.debug(`[${w.name}] executing unpublish`)
-      await unpublish(version, w.location)
-    }, core.debug)
-  }
-
-  const npmRc = core.getState('npmrc_file')
-  if (npmRc) {
-    core.info(`removing ${npmRc}`)
-    unlinkSync(npmRc)
-  }
-
-  const npmRcBackup = core.getState('npmrc_backup')
-  if (npmRc && npmRcBackup) {
-    core.info(`restoring npmrc from ${npmRcBackup}`)
-    copyFileSync(npmRcBackup, npmRc)
-    unlinkSync(npmRcBackup)
+    try {
+      await processWorkspaces(async (w) => {
+        core.debug(`[${w.name}] executing unpublish`)
+        await unpublish(version, w.location)
+      }, core.debug)
+    } finally {
+      if (shouldRestoreNpmRc) {
+        restoreNpmRc(npmRc, npmRcBackup, core)
+      }
+    }
   }
 }

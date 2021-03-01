@@ -4,7 +4,11 @@ import * as path from 'path'
 import * as os from 'os'
 import { readFileSync } from 'fs'
 import { publish } from './publish'
-import { processWorkspaces, writeNpmRc } from '../../common/src/utils'
+import {
+  processWorkspaces,
+  writeNpmRc,
+  restoreNpmRc,
+} from '../../common/src/utils'
 import semver from 'semver'
 import { Package } from '../../common/src/types'
 
@@ -89,11 +93,6 @@ export const main = async (): Promise<void> => {
     core,
   })
 
-  core.saveState('npmrc_file', npmRc)
-  if (npmRcBackup != null) {
-    core.saveState('npmrc_backup', npmRcBackup)
-  }
-
   const version = determineVersion()
   core.debug(`determined publish version: ${version}`)
   const tag = core.getInput('tag')
@@ -104,45 +103,52 @@ export const main = async (): Promise<void> => {
   core.saveState('tag', tag)
 
   const isGitHub = isGitHubRegistry(registryURL)
+  core.saveState('registry_url', registryURL.href)
+  core.saveState('registry_token', registryToken)
+  core.saveState('npmrc_path', npmRc)
   core.saveState('is_github_registry', isGitHub)
 
-  await processWorkspaces(async (w) => {
-    const { pkg, location, name } = w
+  try {
+    await processWorkspaces(async (w) => {
+      const { pkg, location, name } = w
 
-    if (pkg.private) {
-      core.debug(`[${name}] the package is private, skipping processing`)
-      return
-    }
-    if (isGitHub) {
-      const targetOwner = registryURL.pathname.slice(1)
-      if (!targetOwner) {
-        core.error(
-          `[${name}] unable to determine target github owner from registry URL, aborting all`
-        )
-        throw Error(`invalid github registry URL`)
-      }
-
-      let packageOwner
-      try {
-        packageOwner = determineOwner(pkg)
-      } catch (error) {
-        core.warning(
-          `[${name}] unable to determine github owner, skipping the package`
-        )
+      if (pkg.private) {
+        core.debug(`[${name}] the package is private, skipping processing`)
         return
       }
+      if (isGitHub) {
+        const targetOwner = registryURL.pathname.slice(1)
+        if (!targetOwner) {
+          core.error(
+            `[${name}] unable to determine target github owner from registry URL, aborting all`
+          )
+          throw Error(`invalid github registry URL`)
+        }
 
-      if (packageOwner !== targetOwner) {
-        core.warning(
-          `[${name}] owner (${packageOwner}) mismatch: target owner (${targetOwner}), skipping the package`
-        )
-        return
+        let packageOwner
+        try {
+          packageOwner = determineOwner(pkg)
+        } catch (error) {
+          core.warning(
+            `[${name}] unable to determine github owner, skipping the package`
+          )
+          return
+        }
+
+        if (packageOwner !== targetOwner) {
+          core.warning(
+            `[${name}] owner (${packageOwner}) mismatch: target owner (${targetOwner}), skipping the package`
+          )
+          return
+        }
       }
-    }
 
-    core.debug(`[${name}] executing publish`)
-    await publish(version, tag, location)
-  }, core.debug)
+      core.debug(`[${name}] executing publish`)
+      await publish(version, tag, location)
+    }, core.debug)
+  } finally {
+    restoreNpmRc(npmRc, npmRcBackup, core)
+  }
 
   core.setOutput('registry_url', registryURL.href)
   core.setOutput('version', version)

@@ -1,10 +1,17 @@
 import { ChildProcess, exec } from 'child_process'
+import omit from 'lodash.omit'
 import { unlinkSync, copyFileSync } from 'fs'
+import { URL } from 'url'
 import * as core from '@actions/core'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
 import { post } from '../src/post'
-import { processWorkspaces, WorkspaceProcessor } from '../../common/src/utils'
+import {
+  processWorkspaces,
+  WorkspaceProcessor,
+  writeNpmRc,
+  restoreNpmRc,
+} from '../../common/src/utils'
 
 jest.mock('../src/unpublish')
 jest.mock('../../common/src/utils')
@@ -20,6 +27,8 @@ const mCoreDebug = mocked(core.debug)
 const mUnlink = mocked(unlinkSync)
 const mCopyFile = mocked(copyFileSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
+const mWriteNpmRc = mocked(writeNpmRc)
+const mRestoreNpmRc = mocked(restoreNpmRc)
 
 let originalArgv = process.argv
 let jobState: { [key: string]: string }
@@ -28,8 +37,9 @@ let actionInput: { [key: string]: string }
 beforeEach(() => {
   jobState = {
     version: '1.2.3',
-    npmrc_file: 'npm-rc-file',
-    npmrc_backup: 'npm-rc-backup',
+    npmrc_path: 'npm-rc-file',
+    registry_url: 'https://registry.com',
+    registry_token: 'registry-token',
   }
   actionInput = {
     unpublish: 'yes',
@@ -136,12 +146,36 @@ test('do not unpublish if "unpublish" input does not set to positive value', asy
   expect(mProcessWorkspaces).not.toHaveBeenCalled()
 })
 
-test('npmrc file removed and restored from backup', async () => {
+test('npmrc file written', async () => {
   await post()
 
-  expect(mUnlink).toHaveBeenCalledWith('npm-rc-file')
-  expect(mCopyFile).toHaveBeenCalledWith(`npm-rc-backup`, `npm-rc-file`)
-  expect(mUnlink).toHaveBeenCalledWith('npm-rc-backup')
+  expect(mWriteNpmRc).toHaveBeenCalledWith(
+    'npm-rc-file',
+    new URL('https://registry.com'),
+    'registry-token',
+    expect.objectContaining({ createBackup: true })
+  )
+})
+
+test('npmrc file removed and restored from backup', async () => {
+  mWriteNpmRc.mockReturnValueOnce('npm-rc-backup')
+
+  await post()
+
+  expect(mRestoreNpmRc).toHaveBeenCalledWith(
+    'npm-rc-file',
+    `npm-rc-backup`,
+    expect.anything()
+  )
+})
+
+test('skip npmrc writing/restoring if no registry within state', async () => {
+  jobState = omit(jobState, 'registry_url')
+
+  await post()
+
+  expect(mWriteNpmRc).not.toHaveBeenCalled()
+  expect(mRestoreNpmRc).not.toHaveBeenCalled()
 })
 
 test('skip restore from backup if no backup file within state', async () => {

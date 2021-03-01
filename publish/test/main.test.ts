@@ -9,6 +9,7 @@ import {
   processWorkspaces,
   WorkspaceProcessor,
   writeNpmRc,
+  restoreNpmRc,
 } from '../../common/src/utils'
 import { main } from '../src/main'
 
@@ -30,6 +31,7 @@ const mExists = mocked(existsSync)
 const mProcessWorkspaces = mocked(processWorkspaces)
 const mOSHomeDir = mocked(os.homedir)
 const mWriteNpmRc = mocked(writeNpmRc)
+const mRestoreNpmRc = mocked(restoreNpmRc)
 
 const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
   process.argv = ['node', 'index.js']
@@ -207,12 +209,26 @@ test('npmrc and output for custom registry', async () => {
   expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
 })
 
-test('npmrc backup registered within state', async () => {
-  mWriteNpmRc.mockReturnValueOnce('backup-file')
+test('npmrc removed after publication (no backup)', async () => {
+  await main()
+
+  expect(mRestoreNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    undefined,
+    expect.anything()
+  )
+})
+
+test('npmrc removed after publication (with backup)', async () => {
+  mWriteNpmRc.mockReturnValueOnce('/backup/file')
 
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_backup', `backup-file`)
+  expect(mRestoreNpmRc).toHaveBeenCalledWith(
+    '/user-home/.npmrc',
+    '/backup/file',
+    expect.anything()
+  )
 })
 
 test('invalid input: bad registry URL', async () => {
@@ -224,12 +240,20 @@ test('invalid input: bad registry URL', async () => {
 })
 
 test('action state saved for post-job hook', async () => {
+  actionInput.registry = 'http://resolve-dev.ml:10080'
+  actionInput.token = 'resolve-token'
+
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_file', `/user-home/.npmrc`)
   expect(mCoreSaveState).toHaveBeenCalledWith('version', '1.2.3')
   expect(mCoreSaveState).toHaveBeenCalledWith('tag', 'publish-tag')
-  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', true)
+  expect(mCoreSaveState).toHaveBeenCalledWith('is_github_registry', false)
+  expect(mCoreSaveState).toHaveBeenCalledWith('registry_token', `resolve-token`)
+  expect(mCoreSaveState).toHaveBeenCalledWith('npmrc_path', `/user-home/.npmrc`)
+  expect(mCoreSaveState).toHaveBeenCalledWith(
+    'registry_url',
+    `http://resolve-dev.ml:10080/`
+  )
 })
 
 test('action output (except registry)', async () => {
