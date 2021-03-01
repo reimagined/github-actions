@@ -103,16 +103,18 @@ export const writeNpmRc = (
           .join('')
       : `registry=${registry.href}\n`
 
-  core?.debug(`writing ${file}`)
-
-  writeFileSync(
-    file,
+  const content =
     token == null
       ? registryBinding
       : `//${registry.host}/:_authToken=${token}\n` +
-          `//${registry.host}/:always-auth=true\n` +
-          registryBinding
-  )
+        `//${registry.host}/:always-auth=true\n` +
+        registryBinding
+
+  core?.debug(`writing ${file}`)
+  core?.debug(content)
+
+  writeFileSync(file, content)
+
   return backupFile
 }
 
