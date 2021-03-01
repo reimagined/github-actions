@@ -105,6 +105,12 @@ describe('getCLI (sources)', () => {
   test('execution result returned as string', () => {
     expect(cli('test')).toEqual('execution-result')
   })
+
+  test('return empty string if execution result is null', () => {
+    const nullResult: any = null
+    mExec.mockReturnValueOnce(nullResult)
+    expect(cli('test')).toEqual('')
+  })
 })
 
 describe('describeApp', () => {
@@ -156,7 +162,7 @@ describe('describeApp', () => {
       url: 'https://deployment-id.resolve.sh',
       runtime: '3.1.0',
       name: 'my-app',
-      eventStore: 'event-store-id',
+      eventStoreId: 'event-store-id',
     })
   })
 

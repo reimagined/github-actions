@@ -399,7 +399,7 @@ test('deployed application info retrieved and set to output', async () => {
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   await main()
@@ -420,7 +420,7 @@ test('deployed application info retrieved and saved to state', async () => {
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   await main()
@@ -436,7 +436,7 @@ test('deployed application info retrieved on failed deploy operation', async () 
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   mCLI.mockImplementationOnce(() => {

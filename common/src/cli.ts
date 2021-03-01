@@ -19,7 +19,10 @@ const execCLI = (
       ...process.env,
     },
   })
-  return result.toString()
+  if (result != null) {
+    return result.toString()
+  }
+  return ''
 }
 
 const execPackagedCLI = (
@@ -89,8 +92,9 @@ export const describeApp = (
   }
 ): CloudDeployment | null => {
   core?.debug(`retrieving a list of deployments`)
-  const deployment = toTable(cli('ls')).find(
-    (entry) => entry.applicationName === appName
+  // FIXME: broken CLI workaround - deploy does not respect --name option strictly
+  const deployment = toTable(cli('ls')).find((entry) =>
+    entry.applicationName.startsWith(appName)
   )
   if (!deployment) {
     core?.error(
@@ -110,7 +114,13 @@ export const describeApp = (
   }
    */
   // FIXME: applicationUrl from describe
-  const { deploymentId, version, eventStoreId, domain } = deployment
+  const {
+    deploymentId,
+    version,
+    eventStoreId,
+    domain,
+    applicationName,
+  } = deployment
   const applicationUrl = `https://${domain}`
 
   //const { applicationUrl, eventStore } = description
@@ -119,8 +129,8 @@ export const describeApp = (
     id: deploymentId,
     url: applicationUrl,
     runtime: version,
-    name: appName,
-    eventStore: eventStoreId,
+    name: applicationName,
+    eventStoreId,
   }
 }
 

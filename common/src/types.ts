@@ -20,7 +20,7 @@ export type CloudDeployment = {
   url: string
   runtime: string
   name: string
-  eventStore: string
+  eventStoreId: string
 }
 
 export type CLI = (args: string, stdio?: StdioOptions) => string
