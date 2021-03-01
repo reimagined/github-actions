@@ -1,43 +1,79 @@
 import { mocked } from 'ts-jest/utils'
-import { execSync } from 'child_process'
 import * as core from '@actions/core'
+import omit from 'lodash.omit'
+import { getCLI } from '../../common/src/cli'
+import { CLI } from '../../common/src/types'
 import { post } from '../src/post'
 
-jest.mock('child_process')
+jest.mock('../../common/src/cli')
 jest.mock('@actions/core')
 
-const mExec = mocked(execSync)
 const mCoreGetState = mocked(core.getState)
+const mCoreGetInput = mocked(core.getInput)
+const mGetCLI = mocked(getCLI)
 
 let jobState: { [key: string]: string }
+let actionInput: { [key: string]: string }
+let mCLI: jest.MockedFunction<CLI>
 
 beforeEach(() => {
   jobState = {
     app_id: 'deployment-id',
-    app_dir: 'app-dir',
+    app_dir: '/source/dir',
   }
+  actionInput = {}
 
   mCoreGetState.mockImplementation((name) => jobState[name])
+  mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mCLI = jest.fn()
+  mGetCLI.mockReturnValue(mCLI)
+})
+
+test('tolerate to script execution errors', async () => {
+  mCLI.mockImplementationOnce(() => {
+    throw Error(`error`)
+  })
+
+  await post()
+})
+
+test('cloud CLI requested', async () => {
+  await post()
+
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', undefined)
+})
+
+test('cloud CLI requested for specific sources', async () => {
+  actionInput.cli_sources = '/cli/sources'
+
+  await post()
+
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '/cli/sources')
 })
 
 test('invoke cloud application deletion', async () => {
   await post()
 
-  expect(mExec).toHaveBeenCalledWith(
-    expect.anything(),
-    expect.objectContaining({
-      cwd: 'app-dir',
-    })
-  )
-  expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"yarn --silent resolve-cloud remove deployment-id --no-wait"`
+  expect(mCLI).toHaveBeenCalledWith(
+    'rm deployment-id --no-wait',
+    expect.anything()
   )
 })
 
-test('tolerate to script execution errors', async () => {
-  mExec.mockImplementationOnce(() => {
-    throw Error('script error')
-  })
+test('do nothing if no app-id stored in state', async () => {
+  jobState = omit(jobState, 'app_id')
 
   await post()
+
+  expect(mGetCLI).not.toHaveBeenCalled()
+  expect(mCLI).not.toHaveBeenCalled()
+})
+
+test('do nothing if no app directory stored in state', async () => {
+  jobState = omit(jobState, 'app_id')
+
+  await post()
+
+  expect(mGetCLI).not.toHaveBeenCalled()
+  expect(mCLI).not.toHaveBeenCalled()
 })
