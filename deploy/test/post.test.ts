@@ -14,6 +14,7 @@ let jobState: { [key: string]: string }
 beforeEach(() => {
   jobState = {
     app_id: 'deployment-id',
+    app_dir: 'app-dir',
   }
 
   mCoreGetState.mockImplementation((name) => jobState[name])
@@ -22,7 +23,12 @@ beforeEach(() => {
 test('invoke cloud application deletion', async () => {
   await post()
 
-  expect(mExec).toHaveBeenCalled()
+  expect(mExec).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      cwd: 'app-dir',
+    })
+  )
   expect(mExec.mock.calls[0][0]).toMatchInlineSnapshot(
     `"yarn --silent resolve-cloud remove deployment-id --no-wait"`
   )
