@@ -1,6 +1,13 @@
 import clone from 'lodash.clonedeep'
+import isEmpty from 'lodash.isempty'
 import { execSync } from 'child_process'
-import { readFileSync, existsSync, writeFileSync, copyFileSync } from 'fs'
+import {
+  readFileSync,
+  existsSync,
+  writeFileSync,
+  copyFileSync,
+  unlinkSync,
+} from 'fs'
 import * as path from 'path'
 import * as process from 'process'
 import { Package, PackageDependencies } from './types'
@@ -116,6 +123,32 @@ export const writeNpmRc = (
   writeFileSync(file, content)
 
   return backupFile
+}
+
+export const restoreNpmRc = (
+  file: string,
+  backup?: string,
+  core?: {
+    debug: (message: string) => void
+    error: (error: Error) => void
+  }
+) => {
+  try {
+    core?.debug(`removing current: ${file}`)
+    unlinkSync(file)
+  } catch (error) {
+    core?.error(error)
+  }
+
+  try {
+    if (backup != null && !isEmpty(backup)) {
+      core?.debug(`restoring from backup: ${backup}`)
+      copyFileSync(backup, file)
+      unlinkSync(backup)
+    }
+  } catch (error) {
+    core?.error(error)
+  }
 }
 
 export const parseScopes = (

@@ -1,11 +1,18 @@
 import { mocked } from 'ts-jest/utils'
 import { execSync } from 'child_process'
-import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs'
+import {
+  readFileSync,
+  writeFileSync,
+  copyFileSync,
+  existsSync,
+  unlinkSync,
+} from 'fs'
 import * as process from 'process'
 import {
   bumpDependencies,
   processWorkspaces,
   writeNpmRc,
+  restoreNpmRc,
   parseScopes,
   WorkspaceProcessor,
   parseBoolean,
@@ -19,6 +26,7 @@ const mReadFile = mocked(readFileSync)
 const mWriteFile = mocked(writeFileSync)
 const mCopyFile = mocked(copyFileSync)
 const mExists = mocked(existsSync)
+const mUnlink = mocked(unlinkSync)
 
 const getNpmRcContent = (): string =>
   mWriteFile.mock.calls.find(
@@ -384,6 +392,52 @@ describe('writeNpmRc', () => {
     @scope-b:registry=https://packages.org
     "
   `)
+  })
+})
+
+describe('restoreNpmRc', () => {
+  test('npmrc file removed and restored from backup', () => {
+    restoreNpmRc('/target', '/backup')
+
+    expect(mUnlink).toHaveBeenCalledWith('/target')
+    expect(mCopyFile).toHaveBeenCalledWith(`/backup`, `/target`)
+    expect(mUnlink).toHaveBeenCalledWith('/backup')
+  })
+
+  test('restored from backup even if target not exist or cannot be removed', () => {
+    mUnlink.mockImplementationOnce(() => {
+      throw Error('i/o error')
+    })
+
+    restoreNpmRc('/target', '/backup')
+
+    expect(mUnlink).toHaveBeenCalledWith('/target')
+    expect(mCopyFile).toHaveBeenCalledWith(`/backup`, `/target`)
+    expect(mUnlink).toHaveBeenCalledWith('/backup')
+  })
+
+  test('skip restoring if no backup file provided', () => {
+    restoreNpmRc('/target')
+
+    expect(mUnlink).toHaveBeenCalledWith('/target')
+    expect(mUnlink).toHaveBeenCalledTimes(1)
+    expect(mCopyFile).not.toHaveBeenCalled()
+  })
+
+  test('skip restoring if empty backup file provided', () => {
+    restoreNpmRc('/target', '')
+
+    expect(mUnlink).toHaveBeenCalledWith('/target')
+    expect(mUnlink).toHaveBeenCalledTimes(1)
+    expect(mCopyFile).not.toHaveBeenCalled()
+  })
+
+  test('tolerate backup error', () => {
+    mCopyFile.mockImplementationOnce(() => {
+      throw Error('i/o error')
+    })
+
+    restoreNpmRc('/target', '/backup')
   })
 })
 
