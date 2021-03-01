@@ -439,6 +439,36 @@ describe('restoreNpmRc', () => {
 
     restoreNpmRc('/target', '/backup')
   })
+
+  test('core logger: npmrc remove failure', () => {
+    const core = {
+      debug: jest.fn(),
+      error: jest.fn(),
+    }
+    mUnlink.mockImplementationOnce(() => {
+      throw Error('i/o error')
+    })
+
+    restoreNpmRc('/target', '/backup', core)
+
+    expect(core.debug).toHaveBeenCalled()
+    expect(core.error).toHaveBeenCalled()
+  })
+
+  test('core logger: backup restore failure', () => {
+    const core = {
+      debug: jest.fn(),
+      error: jest.fn(),
+    }
+    mCopyFile.mockImplementationOnce(() => {
+      throw Error('i/o error')
+    })
+
+    restoreNpmRc('/target', '/backup', core)
+
+    expect(core.debug).toHaveBeenCalled()
+    expect(core.error).toHaveBeenCalled()
+  })
 })
 
 describe('parseScopes', () => {

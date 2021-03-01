@@ -127,7 +127,7 @@ export const writeNpmRc = (
 
 export const restoreNpmRc = (
   file: string,
-  backup?: string,
+  backup?: string | null,
   core?: {
     debug: (message: string) => void
     error: (error: Error) => void
