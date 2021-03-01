@@ -105,6 +105,12 @@ describe('getCLI (sources)', () => {
   test('execution result returned as string', () => {
     expect(cli('test')).toEqual('execution-result')
   })
+
+  test('return empty string if execution result is null', () => {
+    const nullResult: any = null
+    mExec.mockReturnValueOnce(nullResult)
+    expect(cli('test')).toEqual('')
+  })
 })
 
 describe('describeApp', () => {
@@ -114,9 +120,9 @@ describe('describeApp', () => {
 
   beforeEach(() => {
     lsOutput =
-      'ID NAME  VERSION  USERID EVENTSTORE UPDATE' +
+      'APPLICATION-NAME DEPLOYMENT-ID DOMAIN VERSION EVENT-STORE-ID' +
       os.EOL +
-      'deployment-id my-app  3.1.0   user@mail.com  event-store-id up-to-date'
+      'my-app deployment-id deployment-id.resolve.sh 3.1.0 event-store-id'
 
     describeOutput =
       'id                   deployment-id' +
@@ -156,7 +162,7 @@ describe('describeApp', () => {
       url: 'https://deployment-id.resolve.sh',
       runtime: '3.1.0',
       name: 'my-app',
-      eventStore: 'event-store-id',
+      eventStoreId: 'event-store-id',
     })
   })
 
@@ -176,7 +182,7 @@ describe('describeApp', () => {
     expect(describeApp('my-app', cli)).toEqual(null)
   })
 
-  test('null returned if no "describe" data', () => {
+  test.skip('null returned if no "describe" data', () => {
     describeOutput = ''
     expect(describeApp('my-app', cli)).toEqual(null)
   })
@@ -205,7 +211,7 @@ describe('describeApp', () => {
     expect(core.error).toHaveBeenCalled()
   })
 
-  test('using core error logging: no "describe" info', () => {
+  test.skip('using core error logging: no "describe" info', () => {
     const core = {
       error: jest.fn(),
       debug: jest.fn(),

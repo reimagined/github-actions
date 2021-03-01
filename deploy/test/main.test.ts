@@ -267,7 +267,7 @@ test('throw error in registry is invalid URL', async () => {
 test('app dependencies installation', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith('yarn install --frozen-lockfile', {
+  expect(mExec).toHaveBeenCalledWith('yarn install', {
     cwd: '/source/dir',
     stdio: 'inherit',
   })
@@ -399,12 +399,12 @@ test('deployed application info retrieved and set to output', async () => {
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   await main()
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
   expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
   expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')
@@ -420,12 +420,12 @@ test('deployed application info retrieved and saved to state', async () => {
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   await main()
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSaveState).toHaveBeenCalledWith('app_id', 'app-id')
   expect(mCoreSaveState).toHaveBeenCalledWith('app_dir', '/source/dir')
 })
@@ -436,7 +436,7 @@ test('deployed application info retrieved on failed deploy operation', async () 
     runtime: 'app-runtime',
     url: 'https://app-url.com',
     id: 'app-id',
-    eventStore: 'event-store-id',
+    eventStoreId: 'event-store-id',
   })
 
   mCLI.mockImplementationOnce(() => {
@@ -447,7 +447,7 @@ test('deployed application info retrieved on failed deploy operation', async () 
     await main()
   } catch {}
 
-  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI)
+  expect(mDescribeApp).toHaveBeenCalledWith('package', mCLI, core)
   expect(mCoreSetOutput).toHaveBeenCalledWith('id', 'app-id')
   expect(mCoreSetOutput).toHaveBeenCalledWith('name', 'app-name')
   expect(mCoreSetOutput).toHaveBeenCalledWith('runtime', 'app-runtime')

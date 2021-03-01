@@ -79,7 +79,7 @@ export const main = async (): Promise<void> => {
 
   core.info(`installing application dependencies`)
 
-  execSync('yarn install --frozen-lockfile', {
+  execSync('yarn install', {
     cwd: appDir,
     stdio: 'inherit',
   })
@@ -107,7 +107,7 @@ export const main = async (): Promise<void> => {
     )
   }
 
-  const customArgs = core.getInput('deploy_args')
+  const customArgs = core.getInput('deploy_args') || ''
 
   core.debug(`deploying the application to the cloud`)
 
@@ -120,16 +120,16 @@ export const main = async (): Promise<void> => {
   } finally {
     core.debug(`retrieving deployed application metadata`)
 
-    const deployment = describeApp(targetAppName, cli)
+    const deployment = describeApp(targetAppName, cli, core)
 
     if (deployment != null) {
-      const { id, name, runtime, url, eventStore } = deployment
+      const { id, name, runtime, url, eventStoreId } = deployment
 
       core.setOutput('id', id)
       core.setOutput('name', name)
       core.setOutput('runtime', runtime)
       core.setOutput('url', url)
-      core.setOutput('event_store_id', eventStore)
+      core.setOutput('event_store_id', eventStoreId)
 
       core.saveState(`app_id`, id)
       core.saveState(`app_dir`, appDir)

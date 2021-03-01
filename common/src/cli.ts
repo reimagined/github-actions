@@ -4,6 +4,7 @@ import * as os from 'os'
 import { writeFileSync } from 'fs'
 import { execSync, StdioOptions } from 'child_process'
 import { CLI, CloudDeployment } from './types'
+import { camelCase } from 'change-case'
 
 const execCLI = (
   appDir: string,
@@ -18,7 +19,10 @@ const execCLI = (
       ...process.env,
     },
   })
-  return result.toString()
+  if (result != null) {
+    return result.toString()
+  }
+  return ''
 }
 
 const execPackagedCLI = (
@@ -50,7 +54,7 @@ const toTable = (tableOutput: string) => {
         .map((val) => val.trim())
         .filter((val) => val)
     )
-  const definitions = rows.shift()?.map((name) => name.toLowerCase())
+  const definitions = rows.shift()?.map((name) => camelCase(name.toLowerCase()))
   if (!definitions) {
     return []
   }
@@ -61,6 +65,7 @@ const toTable = (tableOutput: string) => {
     }, {})
   )
 }
+/*
 const toObject = (tableOutput: string) => {
   const rows = tableOutput
     .split(os.EOL)
@@ -76,6 +81,7 @@ const toObject = (tableOutput: string) => {
     return result
   }, {})
 }
+*/
 
 export const describeApp = (
   appName: string,
@@ -85,7 +91,11 @@ export const describeApp = (
     debug: (message: string) => void
   }
 ): CloudDeployment | null => {
-  const deployment = toTable(cli('ls')).find((entry) => entry.name === appName)
+  core?.debug(`retrieving a list of deployments`)
+  // FIXME: broken CLI workaround - deploy does not respect --name option strictly
+  const deployment = toTable(cli('ls')).find((entry) =>
+    entry.applicationName.startsWith(appName)
+  )
   if (!deployment) {
     core?.error(
       `deployment with name (${appName}) not found with resolve-cloud ls`
@@ -93,6 +103,7 @@ export const describeApp = (
     return null
   }
 
+  /*
   core?.debug(`deployment list arrived, retrieving description`)
   const description = toObject(cli(`describe ${deployment.id}`).toString())
   if (!description || isEmpty(description)) {
@@ -101,16 +112,25 @@ export const describeApp = (
     )
     return null
   }
+   */
+  // FIXME: applicationUrl from describe
+  const {
+    deploymentId,
+    version,
+    eventStoreId,
+    domain,
+    applicationName,
+  } = deployment
+  const applicationUrl = `https://${domain}`
 
-  const { id, version } = deployment
-  const { applicationUrl, eventStore } = description
+  //const { applicationUrl, eventStore } = description
 
   return {
-    id,
+    id: deploymentId,
     url: applicationUrl,
     runtime: version,
-    name: appName,
-    eventStore,
+    name: applicationName,
+    eventStoreId,
   }
 }
 
