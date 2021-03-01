@@ -79,13 +79,10 @@ export const main = async (): Promise<void> => {
 
   core.info(`installing application dependencies`)
 
-  execSync(
-    `yarn install --frozen-lockfile${core.isDebug() ? ' --verbose' : ''}`,
-    {
-      cwd: appDir,
-      stdio: 'inherit',
-    }
-  )
+  execSync(`yarn install --frozen-lockfile`, {
+    cwd: appDir,
+    stdio: 'inherit',
+  })
 
   const randomizer = parseBoolean(core.getInput('randomize_name'))
     ? randomize

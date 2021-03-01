@@ -36,7 +36,6 @@ const mLatestVersion = mocked(latestVersion)
 const mGetCLI = mocked(getCLI)
 const mWriteResolveRc = mocked(writeResolveRc)
 const mDescribeApp = mocked(describeApp)
-const mCoreIsDebug = mocked(core.isDebug)
 
 const getPackageContent = (): Package | undefined => {
   const data = mWriteFile.mock.calls.find(
@@ -265,27 +264,13 @@ test('throw error in registry is invalid URL', async () => {
   await expect(main()).rejects.toBeInstanceOf(Error)
 })
 
-test('app dependencies installation (debug: off)', async () => {
+test('app dependencies installation', async () => {
   await main()
 
   expect(mExec).toHaveBeenCalledWith('yarn install --frozen-lockfile', {
     cwd: '/source/dir',
     stdio: 'inherit',
   })
-})
-
-test('app dependencies installation (debug: on)', async () => {
-  mCoreIsDebug.mockReturnValueOnce(true)
-
-  await main()
-
-  expect(mExec).toHaveBeenCalledWith(
-    'yarn install --frozen-lockfile --verbose',
-    {
-      cwd: '/source/dir',
-      stdio: 'inherit',
-    }
-  )
 })
 
 test('cloud CLI requested', async () => {
