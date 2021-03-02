@@ -8,7 +8,7 @@ export const post = async (): Promise<void> => {
     try {
       core.startGroup(`removing cloud deployment: ${id}`)
       const cli = getCLI(dir, core.getInput('cli_sources'))
-      cli(`rm ${id} --no-wait`, 'inherit')
+      cli(`rm ${id} --with-event-store`, 'inherit')
       core.endGroup()
     } catch (error) {
       core.warning(error)

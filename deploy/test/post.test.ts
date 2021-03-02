@@ -55,7 +55,7 @@ test('invoke cloud application deletion', async () => {
   await post()
 
   expect(mCLI).toHaveBeenCalledWith(
-    'rm deployment-id --no-wait',
+    'rm deployment-id --with-event-store',
     expect.anything()
   )
 })

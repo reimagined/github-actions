@@ -102,7 +102,9 @@ export const describeApp = (
   }
 
   core?.debug(`deployment list arrived, retrieving description`)
-  const description = toObject(cli(`describe ${deployment.id}`).toString())
+  const description = toObject(
+    cli(`describe ${deployment.deploymentId}`).toString()
+  )
   if (!description || isEmpty(description)) {
     core?.error(
       `deployment ${deployment.id} not found with resolve-cloud describe`
