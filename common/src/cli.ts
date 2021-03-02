@@ -65,7 +65,7 @@ const toTable = (tableOutput: string) => {
     }, {})
   )
 }
-/*
+
 const toObject = (tableOutput: string) => {
   const rows = tableOutput
     .split(os.EOL)
@@ -81,7 +81,6 @@ const toObject = (tableOutput: string) => {
     return result
   }, {})
 }
-*/
 
 export const describeApp = (
   appName: string,
@@ -103,7 +102,6 @@ export const describeApp = (
     return null
   }
 
-  /*
   core?.debug(`deployment list arrived, retrieving description`)
   const description = toObject(cli(`describe ${deployment.id}`).toString())
   if (!description || isEmpty(description)) {
@@ -112,18 +110,14 @@ export const describeApp = (
     )
     return null
   }
-   */
-  // FIXME: applicationUrl from describe
+
   const {
+    applicationUrl,
+    eventStoreId,
+    applicationName,
     deploymentId,
     version,
-    eventStoreId,
-    domain,
-    applicationName,
-  } = deployment
-  const applicationUrl = `https://${domain}`
-
-  //const { applicationUrl, eventStore } = description
+  } = description
 
   return {
     id: deploymentId,
