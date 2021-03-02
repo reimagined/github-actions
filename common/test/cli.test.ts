@@ -125,17 +125,17 @@ describe('describeApp', () => {
       'my-app deployment-id deployment-id.resolve.sh 3.1.0 event-store-id'
 
     describeOutput =
-      'application-name     app-585524' +
+      'application-name     app-name' +
       os.EOL +
-      'deployment-id        dag8vw' +
+      'deployment-id        dep-id' +
       os.EOL +
-      'application-url       https://dag8vw.dev.resolve.fit' +
+      'application-url       https://app.url.sh' +
       os.EOL +
-      'domain               dag8vw.dev.resolve.fit' +
+      'domain               app.domain.com' +
       os.EOL +
-      'version              0.27.15' +
+      'version              1.2.3' +
       os.EOL +
-      'event-store-id       uxhtpv' +
+      'event-store-id       event-store-id' +
       os.EOL
 
     cli = jest.fn()
@@ -151,10 +151,10 @@ describe('describeApp', () => {
 
   test('complete deployment info returned', () => {
     expect(describeApp('my-app', cli)).toEqual({
-      id: 'deployment-id',
-      url: 'https://deployment-id.resolve.sh',
-      runtime: '3.1.0',
-      name: 'my-app',
+      id: 'dep-id',
+      url: 'https://app.url.sh',
+      runtime: '1.2.3',
+      name: 'app-name',
       eventStoreId: 'event-store-id',
     })
   })
