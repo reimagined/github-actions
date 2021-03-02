@@ -65,7 +65,7 @@ const toTable = (tableOutput: string) => {
     }, {})
   )
 }
-/*
+
 const toObject = (tableOutput: string) => {
   const rows = tableOutput
     .split(os.EOL)
@@ -77,11 +77,10 @@ const toObject = (tableOutput: string) => {
         .filter((val) => val)
     )
   return rows.reduce<{ [key: string]: string }>((result, row) => {
-    result[row[0]] = row[1]
+    result[camelCase(row[0])] = row[1]
     return result
   }, {})
 }
-*/
 
 export const describeApp = (
   appName: string,
@@ -92,9 +91,8 @@ export const describeApp = (
   }
 ): CloudDeployment | null => {
   core?.debug(`retrieving a list of deployments`)
-  // FIXME: broken CLI workaround - deploy does not respect --name option strictly
-  const deployment = toTable(cli('ls')).find((entry) =>
-    entry.applicationName.startsWith(appName)
+  const deployment = toTable(cli('ls')).find(
+    (entry) => entry.applicationName === appName
   )
   if (!deployment) {
     core?.error(
@@ -103,7 +101,6 @@ export const describeApp = (
     return null
   }
 
-  /*
   core?.debug(`deployment list arrived, retrieving description`)
   const description = toObject(cli(`describe ${deployment.id}`).toString())
   if (!description || isEmpty(description)) {
@@ -112,18 +109,14 @@ export const describeApp = (
     )
     return null
   }
-   */
-  // FIXME: applicationUrl from describe
+
   const {
+    applicationUrl,
+    eventStoreId,
+    applicationName,
     deploymentId,
     version,
-    eventStoreId,
-    domain,
-    applicationName,
-  } = deployment
-  const applicationUrl = `https://${domain}`
-
-  //const { applicationUrl, eventStore } = description
+  } = description
 
   return {
     id: deploymentId,

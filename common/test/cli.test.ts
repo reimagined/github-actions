@@ -125,25 +125,18 @@ describe('describeApp', () => {
       'my-app deployment-id deployment-id.resolve.sh 3.1.0 event-store-id'
 
     describeOutput =
-      'id                   deployment-id' +
+      'application-name     app-name' +
       os.EOL +
-      'name                 my-app' +
+      'deployment-id        dep-id' +
       os.EOL +
-      'applicationUrl       https://deployment-id.resolve.sh ' +
+      'application-url       https://app.url.sh' +
       os.EOL +
-      'staticUrl            https://static.resolve.sh/deployment-id' +
+      'domain               app.domain.com' +
       os.EOL +
-      'lastUpdatedAt        1614185948216 ' +
+      'version              1.2.3' +
       os.EOL +
-      'status               in_progress' +
-      os.EOL +
-      'error                N\\A ' +
-      os.EOL +
-      'version              3.1.0 ' +
-      os.EOL +
-      'eventStore           event-store-id ' +
-      os.EOL +
-      'update               up-to-date'
+      'event-store-id       event-store-id' +
+      os.EOL
 
     cli = jest.fn()
     cli.mockImplementation((args: string) => {
@@ -158,10 +151,10 @@ describe('describeApp', () => {
 
   test('complete deployment info returned', () => {
     expect(describeApp('my-app', cli)).toEqual({
-      id: 'deployment-id',
-      url: 'https://deployment-id.resolve.sh',
-      runtime: '3.1.0',
-      name: 'my-app',
+      id: 'dep-id',
+      url: 'https://app.url.sh',
+      runtime: '1.2.3',
+      name: 'app-name',
       eventStoreId: 'event-store-id',
     })
   })
@@ -182,7 +175,7 @@ describe('describeApp', () => {
     expect(describeApp('my-app', cli)).toEqual(null)
   })
 
-  test.skip('null returned if no "describe" data', () => {
+  test('null returned if no "describe" data', () => {
     describeOutput = ''
     expect(describeApp('my-app', cli)).toEqual(null)
   })
@@ -211,7 +204,7 @@ describe('describeApp', () => {
     expect(core.error).toHaveBeenCalled()
   })
 
-  test.skip('using core error logging: no "describe" info', () => {
+  test('using core error logging: no "describe" info', () => {
     const core = {
       error: jest.fn(),
       debug: jest.fn(),
