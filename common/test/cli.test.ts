@@ -175,6 +175,18 @@ describe('describeApp', () => {
     expect(describeApp('my-app', cli)).toEqual(null)
   })
 
+  test('cli "ls" invoked', () => {
+    describeApp('my-app', cli)
+
+    expect(cli).toHaveBeenCalledWith('ls')
+  })
+
+  test('cli "describe" invoked with valid deployment id', () => {
+    describeApp('my-app', cli)
+
+    expect(cli).toHaveBeenCalledWith('describe deployment-id')
+  })
+
   test('null returned if no "describe" data', () => {
     describeOutput = ''
     expect(describeApp('my-app', cli)).toEqual(null)
