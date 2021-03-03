@@ -1,0 +1,11 @@
+name: release-pr-bot
+description: release PR bot action
+inputs:
+  event:
+    description: occred PR event
+    required: true
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'
+
