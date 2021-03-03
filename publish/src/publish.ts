@@ -16,13 +16,19 @@ const exec = (command: string, cwd?: string) => {
 
 export const publish = async (
   version: string,
-  tag?: string,
-  location?: string
+  options?: {
+    tag?: string
+    location?: string
+    repository?: string
+  }
 ): Promise<void> => {
   const publishVersion = semver.parse(version)
   if (!publishVersion) {
     throw Error(`invalid publish version: ${version}`)
   }
+
+  const { tag, location, repository } = options ?? {}
+
   const packageLocation = location || '.'
 
   const fileContents = readString(`${packageLocation}/package.json`)
@@ -53,6 +59,9 @@ export const publish = async (
 
   pkg.version = publishVersion.version
   pkg = bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version)
+  if (repository != null) {
+    pkg.repository = repository
+  }
 
   writeFileSync(`${packageLocation}/package.json`, JSON.stringify(pkg, null, 2))
 
