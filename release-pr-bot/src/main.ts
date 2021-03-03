@@ -68,21 +68,19 @@ const determineReleaseVersion = async (title: string): Promise<SemVer> => {
   return releaseVersion
 }
 
-const checkVersionConflicts = async (version: SemVer) => {
-  core.debug(`pulling all tags from remote`)
-  execSync(`git pull --tags`, {
-    stdio: 'pipe',
+const checkVersionConflicts = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  version: SemVer
+) => {
+  const { data } = await octokit.repos.listTags({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    per_page: 100000,
   })
 
-  core.debug(`enumerating all tags`)
-  const releases = execSync(`git tag --list`, {
-    stdio: 'pipe',
-  })
-    .toString()
-    .split(os.EOL)
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length)
-    .map((tag) => semver.coerce(tag))
+  const releases = data
+    .map((entry) => semver.coerce(entry.name))
     .filter(notEmpty)
     .sort(semver.compare)
 
@@ -100,7 +98,7 @@ const checks = async (
   event: PullRequestEvent
 ): Promise<void> => {
   const version = await determineReleaseVersion(event.pull_request.title)
-  await checkVersionConflicts(version)
+  await checkVersionConflicts(octokit, event, version)
 }
 
 export const onOpened = async (
