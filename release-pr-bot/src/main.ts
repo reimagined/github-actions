@@ -123,11 +123,14 @@ export const main = async (): Promise<void> => {
   try {
     switch (event.action) {
       case action_edited:
-        return await onEdited(octokit, event)
+        await onEdited(octokit, event)
+        break
       case action_opened:
-        return await onOpened(octokit, event)
+        await onOpened(octokit, event)
+        break
       case action_reopened:
-        return await onReopened(octokit, event)
+        await onReopened(octokit, event)
+        break
     }
   } catch (error) {
     if (error instanceof CheckFailedError) {
