@@ -34,13 +34,14 @@ const addComment = async (
 const determineReleaseVersion = async (
   title: string,
   comment: (message: string) => Promise<void>
-): Promise<string> => {
+): Promise<string | null> => {
   core.debug(`determineReleaseVersion > title: ${title}`)
   const versions = findVersions(title)
   if (versions.length === 0) {
     await comment(
       `Unable to determine release version from the PR title. Version should be semver compliant. Valid titles are *Release v1.2.3*, *Hotfix v3.2.1*.`
     )
+    return null
   }
   if (versions.length > 1) {
     await comment(
@@ -48,6 +49,7 @@ const determineReleaseVersion = async (
         ','
       )}).`
     )
+    return null
   }
 
   const releaseVersion = versions[0]
