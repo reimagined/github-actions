@@ -4,6 +4,9 @@ inputs:
   event:
     description: occred PR event
     required: true
+  token:
+    description: GitHub personal access token to access API
+    required: true
 
 runs:
   using: 'node12'
