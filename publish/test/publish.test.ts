@@ -14,7 +14,7 @@ const mWriteFile = mocked(writeFileSync)
 const mExec = mocked(execSync)
 const mBumpDependencies = mocked(bumpDependencies)
 
-let pkg: object
+let pkg: any
 let fileContents: string
 
 beforeEach(() => {
@@ -30,19 +30,21 @@ beforeEach(() => {
 })
 
 test('invalid input: bad release version', async () => {
-  await expect(publish('trash', 'release')).rejects.toBeInstanceOf(Error)
-  await expect(publish('123', 'release')).rejects.toBeInstanceOf(Error)
-  await expect(publish('', 'release')).rejects.toBeInstanceOf(Error)
+  await expect(publish('trash', { tag: 'release' })).rejects.toBeInstanceOf(
+    Error
+  )
+  await expect(publish('123', { tag: 'release' })).rejects.toBeInstanceOf(Error)
+  await expect(publish('', { tag: 'release' })).rejects.toBeInstanceOf(Error)
 })
 
 test('package.json read', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mReadFile).toHaveBeenCalledWith('./package.json')
 })
 
 test('npm view requested', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mExec).toHaveBeenCalledWith(`npm view mock-package@2.0.0`, {
     stdio: 'pipe',
@@ -59,7 +61,7 @@ test('skip private packages', async () => {
     )
   )
 
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mExec).not.toHaveBeenCalled()
   expect(mBumpDependencies).not.toHaveBeenCalled()
@@ -70,7 +72,7 @@ test('skip already published packages if npm view info retrieved', async () => {
     Buffer.from('mock-package@2.0.0 | ISC | deps: 1 | versions: 92')
   )
 
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mExec).toHaveBeenCalledTimes(1)
   expect(mBumpDependencies).not.toHaveBeenCalled()
@@ -81,21 +83,49 @@ test('throw error on unexpected npm view failure', async () => {
     throw Error('failure')
   })
 
-  await expect(publish('2.0.0', 'latest')).rejects.toEqual(Error('failure'))
+  await expect(publish('2.0.0', { tag: 'latest' })).rejects.toEqual(
+    Error('failure')
+  )
 })
 
 test('bumping framework dependencies', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest', frameworkScope: '@scope' })
 
   expect(mBumpDependencies).toHaveBeenCalledWith(
     { ...pkg, version: '2.0.0' },
-    '@reimagined/.*$',
+    '@scope/.*$',
     '2.0.0'
   )
 })
 
+test('do not bump framework dependencies if no framework scope passed', async () => {
+  await publish('2.0.0', { tag: 'latest' })
+
+  expect(mBumpDependencies).not.toHaveBeenCalled()
+})
+
+test('adding repository entry', async () => {
+  await publish('1.0.0', { repository: 'https://repo.com' })
+
+  expect(mWriteFile).toHaveBeenCalledWith(
+    './package.json',
+    JSON.stringify({ ...pkg, repository: 'https://repo.com' }, null, 2)
+  )
+})
+
+test('patching repository entry', async () => {
+  pkg.repository = 'https://original.repo.com'
+
+  await publish('1.0.0', { repository: 'https://repo.com' })
+
+  expect(mWriteFile).toHaveBeenCalledWith(
+    './package.json',
+    JSON.stringify({ ...pkg, repository: 'https://repo.com' }, null, 2)
+  )
+})
+
 test('patched package.json written', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mWriteFile).toHaveBeenCalledWith(
     './package.json',
@@ -104,7 +134,7 @@ test('patched package.json written', async () => {
 })
 
 test('npm publish invoked', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(
     mExec
@@ -115,7 +145,7 @@ test('npm publish invoked', async () => {
 })
 
 test('npm publish invoked with location', async () => {
-  await publish('2.0.0', 'latest', '/path/to/package')
+  await publish('2.0.0', { tag: 'latest', location: '/path/to/package' })
 
   expect(
     mExec
@@ -141,7 +171,7 @@ test('npm publish invoked if npm view returns 404', async () => {
     throw Error('noise ERR! 404 Not Found noise')
   })
 
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mExec).toHaveBeenCalledWith(
     expect.stringContaining(`npm publish`),
@@ -150,7 +180,7 @@ test('npm publish invoked if npm view returns 404', async () => {
 })
 
 test('original package.json restored', async () => {
-  await publish('2.0.0', 'latest')
+  await publish('2.0.0', { tag: 'latest' })
 
   expect(mWriteFile).toHaveBeenCalledWith('./package.json', fileContents)
 })
@@ -161,7 +191,7 @@ test('original package.json restored on error', async () => {
     throw Error('publish error simulation')
   })
 
-  await expect(publish('2.0.0', 'latest')).rejects.toEqual(
+  await expect(publish('2.0.0', { tag: 'latest' })).rejects.toEqual(
     Error('publish error simulation')
   )
 

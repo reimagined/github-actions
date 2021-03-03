@@ -159,6 +159,7 @@ test('cloud API url retrieved and assigned to output', async () => {
 
 test('workspace processor should patch package.json', async () => {
   actionInput.version = '1.2.3'
+  actionInput.framework_scope = '@scope'
 
   const processor = await getWorkspaceProcessor()
 
@@ -182,7 +183,7 @@ test('workspace processor should patch package.json', async () => {
       name: 'package-name',
       version: '3.3.3',
     },
-    '@reimagined/.*$',
+    '@scope/.*$',
     '1.2.3'
   )
 })

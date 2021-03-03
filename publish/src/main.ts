@@ -116,7 +116,9 @@ export const main = async (): Promise<void> => {
         core.debug(`[${name}] the package is private, skipping processing`)
         return
       }
+      let repository: string | undefined
       if (isGitHub) {
+        repository = core.getInput('github_target_repository')
         const targetOwner = registryURL.pathname.slice(1)
         if (!targetOwner) {
           core.error(
@@ -141,10 +143,28 @@ export const main = async (): Promise<void> => {
           )
           return
         }
+
+        if (repository != null) {
+          const targetRepoOwner = repository.split('/')[0].trim()
+          if (targetRepoOwner !== targetOwner) {
+            core.warning(
+              `[${name}] target repository (${repository}) owner mismatch: target owner (${targetOwner}), skipping the package`
+            )
+            return
+          }
+          repository = `https://github.com/${repository}${
+            repository.endsWith('.git') ? '' : '.git'
+          }`
+        }
       }
 
       core.debug(`[${name}] executing publish`)
-      await publish(version, tag, location)
+      await publish(version, {
+        tag,
+        location,
+        repository,
+        frameworkScope: core.getInput('framework_scope'),
+      })
     }, core.debug)
   } finally {
     restoreNpmRc(npmRc, npmRcBackup, core)

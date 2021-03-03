@@ -33,6 +33,11 @@ inputs:
     description: a list of comma separated scopes to map to custom NPM registry
     required: false
 
+  framework_scope:
+    description: reSolve framework scope for packages detection
+    required: false
+    default: @resolve-js
+
 outputs:
   api_url:
     description: cloud service API url

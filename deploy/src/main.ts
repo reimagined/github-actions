@@ -33,7 +33,11 @@ export const main = async (): Promise<void> => {
   const frameworkVersion = core.getInput('framework_version')
   if (frameworkVersion != null && frameworkVersion.trim().length) {
     core.debug(`patching framework version to ${frameworkVersion}`)
-    pkg = bumpDependencies(pkg, '@reimagined/.*$', frameworkVersion)
+    pkg = bumpDependencies(
+      pkg,
+      `${core.getInput('framework_scope')}/.*$`,
+      frameworkVersion
+    )
   }
 
   const cliSources = core.getInput('cli_sources')

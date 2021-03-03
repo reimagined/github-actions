@@ -23,6 +23,13 @@ inputs:
   owner:
     description: when registry was set to 'github' this field contains github organization or user
     required: false
+  github_target_repository:
+    description: override package.json repository entry to publish to different GitHub repo (e.g. resolve-js/resolve)
+    required: false
+  framework_scope:
+    description: reSolve framework scope for packages detection
+    required: false
+    default: @resolve-js
 
 outputs:
   registry_url:

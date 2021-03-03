@@ -47,8 +47,7 @@ const githubClient = (token: string) => {
     if (!result.repository.packages.nodes[0].version) {
       throw Error(`Package version is not found in the registry: ${version}`)
     }
-    const packageVersionId = result.repository.packages.nodes[0].version.id
-    return packageVersionId
+    return result.repository.packages.nodes[0].version.id
   }
 
   const unpublish = async (name: string, version: string) => {
@@ -75,8 +74,8 @@ const unpublishFromGithubRegistry = async (
   packageVersion: string
 ) => {
   const registryToken = core.getInput('token', { required: true })
-  const reimaginedScope = '@reimagined/'
-  const packageName = scopedPackageName.replace(reimaginedScope, '')
+  const frameworkScope = core.getInput('framework_scope')
+  const packageName = scopedPackageName.replace(frameworkScope, '')
   const gh = githubClient(registryToken)
   return await gh.unpublish(packageName, packageVersion)
 }

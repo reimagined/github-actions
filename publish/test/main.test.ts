@@ -51,6 +51,7 @@ beforeEach(() => {
     token: 'github-token',
     version: '1.2.3',
     tag: 'publish-tag',
+    framework_scope: '@scope',
   }
 
   mCoreGetInput.mockImplementation((name) => actionInput[name])
@@ -275,11 +276,12 @@ test('workspace processor', async () => {
     },
   })
   expect(mExec).not.toHaveBeenCalled()
-  expect(mPublish).toHaveBeenCalledWith(
-    '1.2.3',
-    'publish-tag',
-    '/path/to/package'
-  )
+  expect(mPublish).toHaveBeenCalledWith('1.2.3', {
+    tag: 'publish-tag',
+    location: '/path/to/package',
+    repository: undefined,
+    frameworkScope: '@scope',
+  })
 })
 
 test('workspace processor: (no tag)', async () => {
@@ -297,7 +299,12 @@ test('workspace processor: (no tag)', async () => {
   })
 
   expect(mExec).not.toHaveBeenCalled()
-  expect(mPublish).toHaveBeenCalledWith('1.2.3', '', '/path/to/package')
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    expect.objectContaining({
+      tag: '',
+    })
+  )
 })
 
 test('workspace processor: failure', async () => {
@@ -418,7 +425,76 @@ test('workspace processor: bypass github checks for other registries', async () 
     },
   })
 
-  expect(mPublish).toBeCalledWith('1.2.3', 'publish-tag', '/path/to/package')
+  expect(mPublish).toBeCalledWith('1.2.3', {
+    tag: 'publish-tag',
+    location: '/path/to/package',
+    repository: undefined,
+    frameworkScope: '@scope',
+  })
+})
+
+test('workspace processor: pass target repository to publisher', async () => {
+  actionInput.registry = 'github'
+  actionInput.github_target_repository = 'package-owner/target-repo'
+
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@package-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    expect.objectContaining({
+      repository: 'https://github.com/package-owner/target-repo.git',
+    })
+  )
+})
+
+test('workspace processor: skip the package if target repository owner mismatches target owner', async () => {
+  actionInput.registry = 'https://npm.pkg.github.com/package-owner'
+  actionInput.github_target_repository = 'another-owner/target-repo'
+
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@package-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mPublish).not.toHaveBeenCalled()
+})
+
+test('workspace processor: skip .git extension appending', async () => {
+  actionInput.registry = 'github'
+  actionInput.github_target_repository = 'package-owner/target-repo.git'
+
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@package-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    expect.objectContaining({
+      repository: 'https://github.com/package-owner/target-repo.git',
+    })
+  )
 })
 
 test('determine version: valid semver specified', async () => {

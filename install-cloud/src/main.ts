@@ -62,7 +62,11 @@ export const main = async (): Promise<void> => {
         writeFileSync(
           path.resolve(location, './package.json'),
           JSON.stringify(
-            bumpDependencies(pkg, '@reimagined/.*$', determinedVersion),
+            bumpDependencies(
+              pkg,
+              `${core.getInput('framework_scope')}/.*$`,
+              determinedVersion
+            ),
             null,
             2
           )
