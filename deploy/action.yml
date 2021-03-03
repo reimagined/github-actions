@@ -64,7 +64,7 @@ inputs:
   framework_scope:
     description: reSolve framework scope for packages detection
     required: false
-    default: @resolve-js
+    default: '@resolve-js'
 
 outputs:
   id:
