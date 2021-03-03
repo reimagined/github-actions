@@ -88,10 +88,11 @@ test('github unpublish invoked', async () => {
   }
   actionInput = {
     token: 'github-token',
+    framework_scope: '@scope',
   }
 
   mGraphql.mockReturnValueOnce({
-    repository: {
+    organization: {
       packages: {
         nodes: [{ version: { id: 'github-package-version-id' } }],
       },
@@ -103,6 +104,7 @@ test('github unpublish invoked', async () => {
   expect(mExec).not.toHaveBeenCalled()
   expect(mGetOctokit).toHaveBeenCalledWith('github-token')
   expect(mGraphql.mock.calls[0][1]).toEqual({
+    organization: 'scope',
     packageName: 'mock-package',
     version: '2.0.0',
     headers: {
