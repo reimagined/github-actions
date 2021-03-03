@@ -124,7 +124,7 @@ export const main = async (): Promise<void> => {
           core.error(
             `[${name}] unable to determine target github owner from registry URL, aborting all`
           )
-          throw Error(`invalid github registry URL`)
+          throw Error(`invalid GitHub registry URL`)
         }
 
         let packageOwner
