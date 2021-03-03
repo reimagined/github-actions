@@ -18,6 +18,11 @@ const addComment = async (
   event: PullRequestEvent,
   comment: string
 ): Promise<void> => {
+  core.debug(`addComment > comment: ${comment}`)
+  core.debug(`addComment > issue_number: ${event.number}`)
+  core.debug(`addComment > owner: ${event.repository.owner.login}`)
+  core.debug(`addComment > repo: ${event.repository.name}`)
+
   await octokit.issues.createComment({
     body: comment,
     issue_number: event.number,
@@ -30,6 +35,7 @@ const determineReleaseVersion = async (
   title: string,
   comment: (message: string) => Promise<void>
 ): Promise<string> => {
+  core.debug(`determineReleaseVersion > title: ${title}`)
   const versions = findVersions(title)
   if (versions.length === 0) {
     await comment(
@@ -45,6 +51,8 @@ const determineReleaseVersion = async (
   }
 
   const releaseVersion = versions[0]
+
+  core.debug(`determineReleaseVersion > releaseVersion: ${releaseVersion}`)
 
   await comment(`Ready to start release version ${releaseVersion}.`)
 
