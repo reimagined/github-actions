@@ -474,6 +474,24 @@ test('workspace processor: skip the package if target repository owner mismatche
   expect(mPublish).not.toHaveBeenCalled()
 })
 
+test('workspace processor: ignore empty target repository', async () => {
+  actionInput.registry = 'https://npm.pkg.github.com/package-owner'
+  actionInput.github_target_repository = ''
+
+  const processor = await getWorkspaceProcessor()
+
+  await processor({
+    name: '@package-owner/mock-package',
+    location: '/path/to/package',
+    pkg: {
+      name: '@package-owner/mock-package',
+      version: '1.0.0',
+    },
+  })
+
+  expect(mPublish).toHaveBeenCalled()
+})
+
 test('workspace processor: skip .git extension appending', async () => {
   actionInput.registry = 'github'
   actionInput.github_target_repository = 'package-owner/target-repo.git'

@@ -13,12 +13,14 @@
     "@actions/core": "1.2.5",
     "@actions/github": "^4.0.0",
     "lodash.clonedeep": "4.5.0",
+    "lodash.isempty": "4.4.0",
     "minimist": "1.2.5",
     "semver": "7.3.4"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "4.5.6",
     "@types/lodash.omit": "4.5.6",
+    "@types/lodash.isempty": "4.4.6",
     "@types/minimist": "1.2.1",
     "@types/semver": "7.3.4",
     "lodash.omit": "4.5.0",

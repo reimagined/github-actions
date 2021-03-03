@@ -1,4 +1,5 @@
 import { URL } from 'url'
+import isEmpty from 'lodash.isempty'
 import * as core from '@actions/core'
 import * as path from 'path'
 import * as os from 'os'
@@ -144,7 +145,7 @@ export const main = async (): Promise<void> => {
           return
         }
 
-        if (repository != null) {
+        if (!isEmpty(repository)) {
           const targetRepoOwner = repository.split('/')[0].trim()
           if (targetRepoOwner !== targetOwner) {
             core.warning(
