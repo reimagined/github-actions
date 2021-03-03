@@ -18,10 +18,14 @@ const exec = (command: string) => {
 const githubClient = (token: string) => {
   const oktokit = getOctokit(token)
 
-  const getPackageVersionId = async (packageName: string, version: string) => {
+  const getPackageVersionId = async (
+    scope: string,
+    packageName: string,
+    version: string
+  ) => {
     const query = `
-    query getVersions($packageName: String!, $version: String!) {
-      repository(owner:\"reimagined\",name:\"resolve\") {
+    query getVersions($organization: String!, $packageName: String!, $version: String!) {
+      organization(login:$organization) {
         packages(first:1, names: [$packageName]) {
           nodes {
             name,
@@ -35,23 +39,24 @@ const githubClient = (token: string) => {
       }
     }`
     const result: any = await oktokit.graphql(query, {
+      organization: scope.replace('@', ''),
       packageName,
       version,
       headers: {
         Accept: 'application/vnd.github.packages-preview+json',
       },
     })
-    if (result.repository.packages.nodes.length === 0) {
+    if (result.organization.packages.nodes.length === 0) {
       throw Error(`Package is not found in the registry: ${packageName}`)
     }
-    if (!result.repository.packages.nodes[0].version) {
+    if (!result.organization.packages.nodes[0].version) {
       throw Error(`Package version is not found in the registry: ${version}`)
     }
-    return result.repository.packages.nodes[0].version.id
+    return result.organization.packages.nodes[0].version.id
   }
 
-  const unpublish = async (name: string, version: string) => {
-    const packageVersionId = await getPackageVersionId(name, version)
+  const unpublish = async (scope: string, name: string, version: string) => {
+    const packageVersionId = await getPackageVersionId(scope, name, version)
 
     const mutation = `
   mutation deletePackageVersion($packageVersionId: String!) {
@@ -77,7 +82,7 @@ const unpublishFromGithubRegistry = async (
   const frameworkScope = core.getInput('framework_scope')
   const packageName = scopedPackageName.replace(frameworkScope, '')
   const gh = githubClient(registryToken)
-  return await gh.unpublish(packageName, packageVersion)
+  return await gh.unpublish(frameworkScope, packageName, packageVersion)
 }
 
 const unpublishPackage = async (
