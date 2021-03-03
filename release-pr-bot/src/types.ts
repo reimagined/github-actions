@@ -21,9 +21,10 @@ type PullRequestState = 'open' | 'closed'
 
 type EventData = {
   number: number
-  pull_request: any
-  title: string
-  state: PullRequestState
+  pull_request: {
+    title: string
+    state: PullRequestState
+  },
   repository: {
     name: string
     owner: {

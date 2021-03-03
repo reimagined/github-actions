@@ -64,7 +64,7 @@ export const onOpened = async (
   event: OpenedEvent
 ): Promise<void> => {
   await determineReleaseVersion(
-    event.title,
+    event.pull_request.title,
     partial(addComment, octokit, event)
   )
 }
@@ -74,7 +74,7 @@ export const onEdited = async (
   event: EditedEvent
 ): Promise<void> => {
   await determineReleaseVersion(
-    event.title,
+    event.pull_request.title,
     partial(addComment, octokit, event)
   )
 }
@@ -84,7 +84,7 @@ export const onReopened = async (
   event: ReopenedEvent
 ): Promise<void> => {
   await determineReleaseVersion(
-    event.title,
+    event.pull_request.title,
     partial(addComment, octokit, event)
   )
 }
