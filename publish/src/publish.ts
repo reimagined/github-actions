@@ -20,6 +20,7 @@ export const publish = async (
     tag?: string
     location?: string
     repository?: string
+    frameworkScope?: string
   }
 ): Promise<void> => {
   const publishVersion = semver.parse(version)
@@ -27,7 +28,7 @@ export const publish = async (
     throw Error(`invalid publish version: ${version}`)
   }
 
-  const { tag, location, repository } = options ?? {}
+  const { tag, location, repository, frameworkScope } = options ?? {}
 
   const packageLocation = location || '.'
 
@@ -58,7 +59,9 @@ export const publish = async (
   }
 
   pkg.version = publishVersion.version
-  pkg = bumpDependencies(pkg, '@reimagined/.*$', publishVersion.version)
+  if (frameworkScope != null) {
+    pkg = bumpDependencies(pkg, `${frameworkScope}/.*$`, publishVersion.version)
+  }
   if (repository != null) {
     pkg.repository = repository
   }

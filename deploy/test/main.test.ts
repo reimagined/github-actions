@@ -92,6 +92,7 @@ test('input read', async () => {
 
 test('framework version patched', async () => {
   actionInput.framework_version = '1.2.3'
+  actionInput.framework_scope = '@scope'
 
   mBumpDependencies.mockImplementationOnce((pkg) => ({
     ...pkg,
@@ -105,7 +106,7 @@ test('framework version patched', async () => {
   expect(mReadFile).toHaveBeenCalledWith('/source/dir/package.json')
   expect(mBumpDependencies).toHaveBeenCalledWith(
     { name: 'package', dependencies: { a: '1.2.3' } },
-    '@reimagined/.*$',
+    '@scope/.*$',
     '1.2.3'
   )
   expect(mWriteFile).toHaveBeenCalledWith(

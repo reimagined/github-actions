@@ -163,6 +163,7 @@ export const main = async (): Promise<void> => {
         tag,
         location,
         repository,
+        frameworkScope: core.getInput('framework_scope'),
       })
     }, core.debug)
   } finally {

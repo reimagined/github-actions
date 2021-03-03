@@ -51,6 +51,7 @@ beforeEach(() => {
     token: 'github-token',
     version: '1.2.3',
     tag: 'publish-tag',
+    framework_scope: '@scope',
   }
 
   mCoreGetInput.mockImplementation((name) => actionInput[name])
@@ -279,6 +280,7 @@ test('workspace processor', async () => {
     tag: 'publish-tag',
     location: '/path/to/package',
     repository: undefined,
+    frameworkScope: '@scope',
   })
 })
 
@@ -297,11 +299,12 @@ test('workspace processor: (no tag)', async () => {
   })
 
   expect(mExec).not.toHaveBeenCalled()
-  expect(mPublish).toHaveBeenCalledWith('1.2.3', {
-    tag: '',
-    location: '/path/to/package',
-    repository: undefined,
-  })
+  expect(mPublish).toHaveBeenCalledWith(
+    '1.2.3',
+    expect.objectContaining({
+      tag: '',
+    })
+  )
 })
 
 test('workspace processor: failure', async () => {
@@ -425,6 +428,8 @@ test('workspace processor: bypass github checks for other registries', async () 
   expect(mPublish).toBeCalledWith('1.2.3', {
     tag: 'publish-tag',
     location: '/path/to/package',
+    repository: undefined,
+    frameworkScope: '@scope',
   })
 })
 

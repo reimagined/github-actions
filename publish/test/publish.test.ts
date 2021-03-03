@@ -89,13 +89,19 @@ test('throw error on unexpected npm view failure', async () => {
 })
 
 test('bumping framework dependencies', async () => {
-  await publish('2.0.0', { tag: 'latest' })
+  await publish('2.0.0', { tag: 'latest', frameworkScope: '@scope' })
 
   expect(mBumpDependencies).toHaveBeenCalledWith(
     { ...pkg, version: '2.0.0' },
-    '@reimagined/.*$',
+    '@scope/.*$',
     '2.0.0'
   )
+})
+
+test('do not bump framework dependencies if no framework scope passed', async () => {
+  await publish('2.0.0', { tag: 'latest' })
+
+  expect(mBumpDependencies).not.toHaveBeenCalled()
 })
 
 test('adding repository entry', async () => {

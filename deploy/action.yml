@@ -61,6 +61,11 @@ inputs:
     required: false
     default: 'false'
 
+  framework_scope:
+    description: reSolve framework scope for packages detection
+    required: false
+    default: @resolve-js
+
 outputs:
   id:
     description: deployed application id
