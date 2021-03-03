@@ -4,7 +4,6 @@ const configBase = require('../webpack.config-base')
 module.exports = merge(configBase, {
   entry: {
     main: './src/main-entry.ts',
-    post: './src/post-entry.ts',
   },
   output: {
     path: __dirname + '/dist',
