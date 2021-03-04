@@ -4,6 +4,7 @@ import findVersions from 'find-versions'
 import { getGit } from '../../common/src/git'
 import { exportEnvVar } from '../../common/src/utils'
 import { PushEvent } from './types'
+import { execSync } from 'child_process'
 
 const determineReleaseVersion = (event: PushEvent): string => {
   const versions = findVersions(event.head_commit.message)
@@ -20,6 +21,7 @@ const tagName = (version: string) => `V${version.trim()}`
 
 export const pre = async (): Promise<void> => {
   core.debug(`working dir is: ${path.resolve('./')}`)
+  core.debug(`content: ${execSync(`ls -la`, { stdio: 'pipe' })}`)
   core.debug(`parsing push event`)
   const event: PushEvent = JSON.parse(
     core.getInput(`push_event`, { required: true })
