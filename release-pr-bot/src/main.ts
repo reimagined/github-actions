@@ -2,8 +2,6 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import findVersions from 'find-versions'
 import semver, { SemVer } from 'semver/preload'
-import * as os from 'os'
-import { execSync } from 'child_process'
 import {
   action_edited,
   action_opened,
@@ -15,7 +13,12 @@ import {
   ReopenedEvent,
 } from './types'
 
-class CheckFailedError extends Error {}
+class CheckFailedError extends Error {
+  constructor(props) {
+    super(props)
+    Object.setPrototypeOf(this, CheckFailedError.prototype);
+  }
+}
 
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined
@@ -123,14 +126,11 @@ export const main = async (): Promise<void> => {
   try {
     switch (event.action) {
       case action_edited:
-        await onEdited(octokit, event)
-        break
+        return await onEdited(octokit, event)
       case action_opened:
-        await onOpened(octokit, event)
-        break
+        return await onOpened(octokit, event)
       case action_reopened:
-        await onReopened(octokit, event)
-        break
+        return await onReopened(octokit, event)
     }
   } catch (error) {
     core.debug(error)
