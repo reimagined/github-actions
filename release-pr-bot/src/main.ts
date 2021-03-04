@@ -6,11 +6,8 @@ import {
   action_edited,
   action_opened,
   action_reopened,
-  EditedEvent,
   Octokit,
-  OpenedEvent,
   PullRequestEvent,
-  ReopenedEvent,
 } from './types'
 
 class CheckFailedError extends Error {
@@ -122,7 +119,41 @@ const dismiss = async (
   }
 }
 
-const approve = async (
+const checkApprovals = async (octokit: Octokit, event: PullRequestEvent) => {
+  const requiredApprovalsCount = Number(core.getInput('required_reviews')) || 1
+
+  const { data } = await octokit.pulls.listReviews({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    pull_number: event.number,
+  })
+  const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
+  if (!approvedReviews.some((entry) => entry.user?.login === 'resolve-bot')) {
+    throw new CheckFailedError(`Waiting for resolve-bot approval`)
+  }
+  if (approvedReviews.length < requiredApprovalsCount) {
+    throw new CheckFailedError(
+      `Waiting for ${
+        requiredApprovalsCount - approvedReviews.length
+      } more pull request approvals`
+    )
+  }
+}
+
+const mergePullRequest = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  version: SemVer
+) => {
+  await octokit.pulls.merge({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    pull_number: event.number,
+    commit_title: `Release ${version.version}`,
+  })
+}
+
+const processPullRequestEvent = async (
   octokit: Octokit,
   event: PullRequestEvent
 ): Promise<void> => {
@@ -134,22 +165,9 @@ const approve = async (
     pull_number: event.number,
     event: 'APPROVE',
   })
+  await checkApprovals(octokit, event)
+  await mergePullRequest(octokit, event, version)
 }
-
-export const onOpened = async (
-  octokit: Octokit,
-  event: OpenedEvent
-): Promise<void> => approve(octokit, event)
-
-export const onEdited = async (
-  octokit: Octokit,
-  event: EditedEvent
-): Promise<void> => approve(octokit, event)
-
-export const onReopened = async (
-  octokit: Octokit,
-  event: ReopenedEvent
-): Promise<void> => approve(octokit, event)
 
 export const main = async (): Promise<void> => {
   const event: PullRequestEvent = JSON.parse(core.getInput('event'))
@@ -158,11 +176,9 @@ export const main = async (): Promise<void> => {
   try {
     switch (event.action) {
       case action_edited:
-        return await onEdited(octokit, event)
       case action_opened:
-        return await onOpened(octokit, event)
       case action_reopened:
-        return await onReopened(octokit, event)
+        return await processPullRequestEvent(octokit, event)
     }
   } catch (error) {
     core.debug(error)
