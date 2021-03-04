@@ -12,11 +12,11 @@ import * as path from 'path'
 import * as process from 'process'
 import { Package, PackageDependencies } from './types'
 
-export const bumpDependencies = (
-  pkg: PackageDependencies,
+export function bumpDependencies<T extends PackageDependencies>(
+  pkg: T,
   pattern: string,
   version: string
-): any => {
+): T {
   const regExp = new RegExp('^' + pattern)
 
   const sections: Array<keyof PackageDependencies> = [
@@ -172,10 +172,7 @@ export function notEmpty<T>(value: T | undefined | null): value is T {
 }
 
 // FIXME: unit test
-export const exportEnvVar = (
-  name: string,
-  value: string
-): string =>
+export const exportEnvVar = (name: string, value: string): string =>
   execSync(`echo "${name}=${value}" >> $GITHUB_ENV`, {
     stdio: 'pipe',
   }).toString()

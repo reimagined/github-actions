@@ -1,10 +1,16 @@
 import * as core from '@actions/core'
 import * as path from 'path'
+import sortPackageJson from 'sort-package-json'
 import findVersions from 'find-versions'
+import { readFileSync, writeFileSync } from 'fs'
 import { getGit } from '../../common/src/git'
-import { exportEnvVar } from '../../common/src/utils'
+import {
+  bumpDependencies,
+  exportEnvVar,
+  processWorkspaces,
+} from '../../common/src/utils'
+import { Package } from '../../common/src/types'
 import { PushEvent } from './types'
-import { execSync } from 'child_process'
 
 const determineReleaseVersion = (event: PushEvent): string => {
   const versions = findVersions(event.head_commit.message)
@@ -18,6 +24,22 @@ const determineReleaseVersion = (event: PushEvent): string => {
 }
 
 const tagName = (version: string) => `V${version.trim()}`
+
+const packagePatcher = async (
+  version: string,
+  pkg: Package,
+  location: string
+) => {
+  core.info(`* ${version} => [${pkg.name}] at ${location}`)
+  const patchedPackage = sortPackageJson(
+    bumpDependencies(pkg, `${core.getInput('framework_scope')}/.*$`, version)
+  )
+  patchedPackage.version = version
+  writeFileSync(
+    path.resolve(location, 'package.json'),
+    JSON.stringify(patchedPackage, null, 2)
+  )
+}
 
 export const pre = async (): Promise<void> => {
   core.debug(`parsing push event`)
@@ -57,5 +79,24 @@ export const pre = async (): Promise<void> => {
   const versionBranch = tagName(version)
   core.debug(`making version branch ${versionBranch}`)
   git(`checkout -b ${versionBranch} --track`)
+  core.endGroup()
+
+  core.startGroup(`bumping packages version to ${version}`)
+  const root = path.resolve('./')
+  await packagePatcher(
+    version,
+    JSON.parse(readFileSync(path.resolve(root, 'package.json')).toString()),
+    root
+  )
+  await processWorkspaces(
+    ({ pkg, location }) => packagePatcher(version, pkg, location),
+    core.debug
+  )
+  core.endGroup()
+
+  core.startGroup(`committing and pushing changes`)
+  git(`add -u`)
+  git(`commit -m "Bump framework version to ${version}"`)
+  git(`push`)
   core.endGroup()
 }
