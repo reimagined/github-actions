@@ -76,7 +76,6 @@ const checkVersionConflicts = async (
   const { data } = await octokit.repos.listTags({
     owner: event.repository.owner.login,
     repo: event.repository.name,
-    per_page: 100000,
   })
 
   const releases = data
@@ -102,10 +101,17 @@ const dismiss = async (
     owner: event.repository.owner.login,
     repo: event.repository.name,
     pull_number: event.number,
-    per_page: 100000,
   })
 
   const botName = core.getInput('bot_name')
+
+  core.debug(`dismiss > listReviews:`)
+  data.forEach((entry) =>
+    core.debug(
+      `[${entry.user?.login}@${entry.id}, ${entry.state}]: ${entry.body}`
+    )
+  )
+
   const botReview = data.find(
     (review) => review?.user?.login === botName && review?.state === 'APPROVED'
   )
@@ -132,12 +138,14 @@ const checkApprovals = async (octokit: Octokit, event: PullRequestEvent) => {
     pull_number: event.number,
   })
 
-  const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
-
-  core.debug(`checkApprovals > approvedReviews:`)
-  approvedReviews.forEach((entry) =>
-    core.debug(`user: ${entry.user?.login}, id: ${entry.id}`)
+  core.debug(`checkApprovals > listReviews:`)
+  data.forEach((entry) =>
+    core.debug(
+      `[${entry.user?.login}@${entry.id}, ${entry.state}]: ${entry.body}`
+    )
   )
+
+  const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
 
   const botName = core.getInput('bot_name')
   if (!approvedReviews.some((entry) => entry.user?.login === botName)) {
