@@ -47,7 +47,7 @@ export const main = async (): Promise<void> => {
 
   core.startGroup('clone repo')
   core.debug(`cloning repo ${event.repository.ssh_url}`)
-  git(`clone ${event.repository.ssh_url}`, 'inherit')
+  git(`clone ${event.repository.ssh_url} ./`, 'inherit')
   git(`branch`, 'inherit')
   core.endGroup()
 
