@@ -105,8 +105,10 @@ const dismiss = async (
     per_page: 100000,
   })
 
-  // FIXME: take bot login or id from action input
-  const botReview = data.find((review) => review?.user?.login === 'resolve-bot')
+  const botName = core.getInput('bot_name')
+  const botReview = data.find(
+    (review) => review?.user?.login === botName && review?.state === 'APPROVED'
+  )
 
   if (botReview != null) {
     await octokit.pulls.dismissReview({
@@ -128,7 +130,8 @@ const checkApprovals = async (octokit: Octokit, event: PullRequestEvent) => {
     pull_number: event.number,
   })
   const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
-  if (!approvedReviews.some((entry) => entry.user?.login === 'resolve-bot')) {
+  const botName = core.getInput('bot_name')
+  if (!approvedReviews.some((entry) => entry.user?.login === botName)) {
     throw new CheckFailedError(`Waiting for resolve-bot approval`)
   }
   if (approvedReviews.length < requiredApprovalsCount) {

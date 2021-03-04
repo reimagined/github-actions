@@ -7,6 +7,10 @@ inputs:
   token:
     description: GitHub personal access token to access API
     required: true
+  bot_name:
+    description: bot name
+    required: true
+    default: 'resolve-bot'
   required_reviews:
     description: required reviews count
     required: false
