@@ -560,3 +560,11 @@ test('determine version: invalid semver', async () => {
 
   await expect(main()).rejects.toBeInstanceOf(Error)
 })
+
+test('determine version: source', async () => {
+  actionInput.version = 'source'
+
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4`)
+})
