@@ -110,6 +110,8 @@ const dismiss = async (
     (review) => review?.user?.login === botName && review?.state === 'APPROVED'
   )
 
+  core.debug(`dismissng bot review: ${botReview?.id}`)
+
   if (botReview != null) {
     await octokit.pulls.dismissReview({
       owner: event.repository.owner.login,
@@ -129,10 +131,17 @@ const checkApprovals = async (octokit: Octokit, event: PullRequestEvent) => {
     repo: event.repository.name,
     pull_number: event.number,
   })
+
   const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
+
+  core.debug(`checkApprovals > approvedReviews:`)
+  approvedReviews.forEach((entry) =>
+    core.debug(`user: ${entry.user?.login}, id: ${entry.id}`)
+  )
+
   const botName = core.getInput('bot_name')
   if (!approvedReviews.some((entry) => entry.user?.login === botName)) {
-    throw new CheckFailedError(`Waiting for resolve-bot approval`)
+    throw new CheckFailedError(`Waiting for ${botName} approval`)
   }
   if (approvedReviews.length < requiredApprovalsCount) {
     throw new CheckFailedError(
@@ -148,6 +157,8 @@ const mergePullRequest = async (
   event: PullRequestEvent,
   version: SemVer
 ) => {
+  core.debug(`mergePullRequest > version: ${version.version}`)
+
   await octokit.pulls.merge({
     owner: event.repository.owner.login,
     repo: event.repository.name,
