@@ -13,7 +13,15 @@ inputs:
   commit:
     description: commit SHA that triggers workflow (used for compatibility with actions commit selection)
     required: true
-  delete_branch:
+  release_branch:
+    description: release branch name
+    required: false
+    default: master
+  development_branch:
+    description: development branch name
+    required: false
+    default: dev
+  delete_version_branch:
     description: delete version branch on Post hook
     required: false
     default: 'true'

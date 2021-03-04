@@ -1,17 +1,41 @@
 import * as path from 'path'
+import partial from 'lodash.partial'
 import { nanoid } from 'nanoid'
-import { writeFileSync, existsSync, readFileSync } from 'fs'
+import { writeFileSync, existsSync } from 'fs'
 import { notEmpty } from './utils'
-import { execSync } from 'child_process'
+import { execSync, StdioOptions } from 'child_process'
+import { Git } from './types'
+
+const execGit = (
+  directory: string,
+  env: NodeJS.ProcessEnv,
+  args: string,
+  stdio: StdioOptions = 'pipe'
+): string => {
+  const result = execSync(`git ${args}`, {
+    cwd: directory,
+    stdio,
+    env,
+  })
+  if (result != null) {
+    return result.toString()
+  }
+  return ''
+}
 
 // FIXME: add unit test
 export const getGit = (
   sshKeyBase64: string,
+  directory: string,
   core?: {
     debug: (message: string) => void
+    startGroup: (name: string) => void
+    endGroup: () => void
   }
-): string => {
+): Git => {
   const debug = (message: string) => core?.debug(`getGIT: ${message}`)
+
+  core?.startGroup('getGIT')
 
   if (!notEmpty(sshKeyBase64)) {
     throw Error(`empty SSH key content`)
@@ -79,5 +103,7 @@ export const getGit = (
   }
 
   debug(`SSH key added: ${keyFile}`)
-  return keyFile
+  core?.endGroup()
+
+  return partial(execGit, directory, gitEnv)
 }

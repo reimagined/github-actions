@@ -1,4 +1,5 @@
 import isEmpty from 'lodash.isempty'
+import partial from 'lodash.partial'
 import * as path from 'path'
 import * as os from 'os'
 import { writeFileSync } from 'fs'
@@ -41,8 +42,8 @@ const execSourcedCLI = (
 
 export const getCLI = (appDir: string, sources?: string): CLI =>
   sources
-    ? execSourcedCLI.bind(null, appDir, sources)
-    : execPackagedCLI.bind(null, appDir)
+    ? partial(execSourcedCLI, appDir, sources)
+    : partial(execPackagedCLI, appDir)
 
 const toTable = (tableOutput: string) => {
   const rows = tableOutput

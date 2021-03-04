@@ -24,3 +24,4 @@ export type CloudDeployment = {
 }
 
 export type CLI = (args: string, stdio?: StdioOptions) => string
+export type Git = (args: string, stdio?: StdioOptions) => string
