@@ -1,6 +1,7 @@
 import * as path from 'path'
 import partial from 'lodash.partial'
 import { nanoid } from 'nanoid'
+import { tmpdir } from 'os'
 import { writeFileSync, existsSync } from 'fs'
 import { notEmpty } from './utils'
 import { execSync, StdioOptions } from 'child_process'
@@ -42,7 +43,7 @@ export const getGit = (
   }
 
   const sshKey = Buffer.from(sshKeyBase64, 'base64').toString()
-  const keyFile = path.resolve('./', `ssh-key-${nanoid(5)}`)
+  const keyFile = path.resolve(tmpdir(), `ssh-key-${nanoid(5)}`)
   debug(`targetFile=${keyFile}`)
 
   if (existsSync(keyFile)) {
