@@ -16,7 +16,7 @@ import {
 class CheckFailedError extends Error {
   constructor(props) {
     super(props)
-    Object.setPrototypeOf(this, CheckFailedError.prototype);
+    Object.setPrototypeOf(this, CheckFailedError.prototype)
   }
 }
 
@@ -96,28 +96,60 @@ const checkVersionConflicts = async (
   }
 }
 
-const checks = async (
+const dismiss = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  message: string
+): Promise<void> => {
+  const { data } = await octokit.pulls.listReviews({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    pull_number: event.number,
+    per_page: 100000,
+  })
+
+  // FIXME: take bot login or id from action input
+  const botReview = data.find((review) => review?.user?.login === 'resolve-bot')
+
+  if (botReview != null) {
+    await octokit.pulls.dismissReview({
+      owner: event.repository.owner.login,
+      repo: event.repository.name,
+      pull_number: event.number,
+      review_id: botReview.id,
+      message,
+    })
+  }
+}
+
+const approve = async (
   octokit: Octokit,
   event: PullRequestEvent
 ): Promise<void> => {
   const version = await determineReleaseVersion(event.pull_request.title)
   await checkVersionConflicts(octokit, event, version)
+  await octokit.pulls.createReview({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    pull_number: event.number,
+    event: 'APPROVE',
+  })
 }
 
 export const onOpened = async (
   octokit: Octokit,
   event: OpenedEvent
-): Promise<void> => checks(octokit, event)
+): Promise<void> => approve(octokit, event)
 
 export const onEdited = async (
   octokit: Octokit,
   event: EditedEvent
-): Promise<void> => checks(octokit, event)
+): Promise<void> => approve(octokit, event)
 
 export const onReopened = async (
   octokit: Octokit,
   event: ReopenedEvent
-): Promise<void> => checks(octokit, event)
+): Promise<void> => approve(octokit, event)
 
 export const main = async (): Promise<void> => {
   const event: PullRequestEvent = JSON.parse(core.getInput('event'))
@@ -136,6 +168,7 @@ export const main = async (): Promise<void> => {
     core.debug(error)
     if (error instanceof CheckFailedError) {
       await addComment(octokit, event, error.message)
+      await dismiss(octokit, event, error.message)
       throw Error('One or more release checks failed')
     }
     throw error
