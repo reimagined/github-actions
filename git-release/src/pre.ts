@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { getOctokit } from '@actions/github'
+import isEmpty from 'lodash.isempty'
 import * as path from 'path'
 import sortPackageJson from 'sort-package-json'
 import findVersions from 'find-versions'
@@ -64,13 +65,20 @@ export const pre = async (): Promise<void> => {
   core.startGroup('configure git')
   core.debug(`requesting PAT user info`)
   const octokit = getOctokit(core.getInput('token', { required: true }))
-  const result = await octokit.users.getAuthenticated()
-  core.debug(JSON.stringify(result, null, 2))
-  //core.info(`user.email: ${email}`)
-  //git(`config --global user.email ${email}`)
+  const {
+    data: { login: name, email },
+  } = await octokit.users.getAuthenticated()
+  if (isEmpty(email)) {
+    throw Error(
+      `cannot retrieve user ${name} email with provided PAT, check GitHub account email privacy settings`
+    )
+  }
 
-  //core.info(`user.name: ${name}`)
-  //git(`config --global user.name ${name}`)
+  core.info(`user.email: ${email}`)
+  git(`config --global user.email ${email}`)
+
+  core.info(`user.name: ${name}`)
+  git(`config --global user.name ${name}`)
   core.endGroup()
 
   core.startGroup('preparing repository')
