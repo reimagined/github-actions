@@ -64,14 +64,13 @@ export const pre = async (): Promise<void> => {
   core.startGroup('configure git')
   core.debug(`requesting PAT user info`)
   const octokit = getOctokit(core.getInput('token', { required: true }))
-  const {
-    data: { name, email },
-  } = await octokit.users.getAuthenticated()
-  core.debug(`user.email: ${email}`)
-  git(`config --global user.email ${email}`)
+  const result = await octokit.users.getAuthenticated()
+  core.debug(JSON.stringify(result, null, 2))
+  //core.info(`user.email: ${email}`)
+  //git(`config --global user.email ${email}`)
 
-  core.debug(`user.name: ${name}`)
-  git(`config --global user.name ${name}`)
+  //core.info(`user.name: ${name}`)
+  //git(`config --global user.name ${name}`)
   core.endGroup()
 
   core.startGroup('preparing repository')
