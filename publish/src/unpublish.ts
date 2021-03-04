@@ -35,6 +35,17 @@ const unpublishFromGithubRegistry = async (
     package_type: 'npm',
   })
 
+  if (versions.length === 1) {
+    core.debug(`this is last version, removing package itself`)
+    await octokit.packages.deletePackageForOrg({
+      org: organization,
+      package_type: 'npm',
+      package_name: packageName,
+    })
+    core.debug(`GitHub package removed`)
+    return
+  }
+
   const version = versions.find((v) => v.name === packageVersion)
   if (version == null) {
     throw Error(

@@ -5,6 +5,8 @@ import { execSync } from 'child_process'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
 
+type Octokit = ReturnType<typeof github.getOctokit>
+
 jest.mock('@actions/core')
 jest.mock('@actions/github')
 jest.mock('fs')
@@ -15,7 +17,6 @@ const mExec = mocked(execSync)
 const mCoreGetState = mocked(core.getState)
 const mCoreGetInput = mocked(core.getInput)
 const mGetOctokit = mocked(github.getOctokit)
-const mGraphql = jest.fn()
 
 let pkg: object
 let actionInput: { [key: string]: string }
@@ -34,9 +35,6 @@ beforeEach(() => {
 
   mCoreGetState.mockImplementation((name) => jobState[name])
   mCoreGetInput.mockImplementation((name) => actionInput[name])
-  mGetOctokit.mockImplementation((): any => ({
-    graphql: mGraphql,
-  }))
 })
 
 test('invalid input: bad package version', async () => {
@@ -91,30 +89,8 @@ test('github unpublish invoked', async () => {
     framework_scope: '@scope',
   }
 
-  mGraphql.mockReturnValueOnce({
-    organization: {
-      packages: {
-        nodes: [{ version: { id: 'github-package-version-id' } }],
-      },
-    },
-  })
-
   await unpublish('2.0.0')
 
   expect(mExec).not.toHaveBeenCalled()
   expect(mGetOctokit).toHaveBeenCalledWith('github-token')
-  expect(mGraphql.mock.calls[0][1]).toEqual({
-    organization: 'scope',
-    packageName: 'mock-package',
-    version: '2.0.0',
-    headers: {
-      Accept: 'application/vnd.github.packages-preview+json',
-    },
-  })
-  expect(mGraphql.mock.calls[1][1]).toEqual({
-    packageVersionId: 'github-package-version-id',
-    headers: {
-      Accept: 'application/vnd.github.package-deletes-preview+json',
-    },
-  })
 })
