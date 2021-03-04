@@ -166,6 +166,16 @@ export const parseScopes = (
 export const parseBoolean = (value: string) =>
   value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
 
+// FIXME: unit test
 export function notEmpty<T>(value: T | undefined | null): value is T {
   return !isEmpty(value)
 }
+
+// FIXME: unit test
+export const exportEnvVar = (
+  name: string,
+  value: string
+): string =>
+  execSync(`echo "${name}=${value}" >> $GITHUB_ENV`, {
+    stdio: 'pipe',
+  }).toString()

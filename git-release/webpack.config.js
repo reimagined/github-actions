@@ -5,6 +5,7 @@ module.exports = merge(configBase, {
   entry: {
     main: './src/main-entry.ts',
     post: './src/post-entry.ts',
+    pre: './src/pre-entry.ts',
   },
   output: {
     path: __dirname + '/dist',

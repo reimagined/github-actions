@@ -22,7 +22,7 @@ inputs:
     required: false
     default: dev
   delete_version_branch:
-    description: delete version branch on Post hook
+    description: delete version branch
     required: false
     default: 'true'
 
@@ -36,3 +36,4 @@ runs:
   using: 'node12'
   main: 'dist/main.js'
   post: 'dist/post.js'
+  pre: 'dist/pre.js'
