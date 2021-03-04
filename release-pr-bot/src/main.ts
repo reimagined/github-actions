@@ -133,6 +133,7 @@ export const main = async (): Promise<void> => {
         break
     }
   } catch (error) {
+    core.debug(error)
     if (error instanceof CheckFailedError) {
       await addComment(octokit, event, error.message)
       throw Error('One or more release checks failed')
