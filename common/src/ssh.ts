@@ -58,6 +58,13 @@ export const registerPrivateKey = (
   }
   */
 
+  debug(`launching SSH agent`)
+  try {
+    execSync(`ssh-agent > /dev/null`)
+  } catch (error) {
+    throw Error(`unable to start SSH agent: ${error.message}`)
+  }
+
   debug(`adding key to SSH agent (system dependent)`)
   let keyInstall = ''
   try {
