@@ -98,10 +98,11 @@ export const pre = async (): Promise<void> => {
   git(`reset --hard ${event.head_commit.id}`)
 
   const versionBranch = tagName(version)
+  const versionTag = tagName(version)
   core.debug(`making version branch ${versionBranch}`)
   git(`checkout -b ${versionBranch}`)
   core.saveState('version_branch', versionBranch)
-  core.saveState('version_tag', versionBranch)
+  core.saveState('version_tag', versionTag)
   core.endGroup()
 
   core.startGroup(`bumping packages version to ${version}`)
@@ -121,7 +122,7 @@ export const pre = async (): Promise<void> => {
 
   core.startGroup(`committing and pushing changes`)
   git(`add -u`)
-  git(`commit -m "Bump framework version to ${version}"`)
+  git(`commit -m "${versionTag}"`)
   git(`push --set-upstream origin ${versionBranch}`)
   core.endGroup()
 
