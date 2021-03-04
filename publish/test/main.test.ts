@@ -33,7 +33,7 @@ const mOSHomeDir = mocked(os.homedir)
 const mWriteNpmRc = mocked(writeNpmRc)
 const mRestoreNpmRc = mocked(restoreNpmRc)
 
-const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
+const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor<unknown>> => {
   process.argv = ['node', 'index.js']
 
   await main()
