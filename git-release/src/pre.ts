@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import * as path from 'path'
 import findVersions from 'find-versions'
 import { getGit } from '../../common/src/git'
 import { exportEnvVar } from '../../common/src/utils'
@@ -18,6 +19,7 @@ const determineReleaseVersion = (event: PushEvent): string => {
 const tagName = (version: string) => `V${version.trim()}`
 
 export const pre = async (): Promise<void> => {
+  core.debug(`working dir is: ${path.resolve('./')}`)
   core.debug(`parsing push event`)
   const event: PushEvent = JSON.parse(
     core.getInput(`push_event`, { required: true })
