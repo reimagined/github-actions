@@ -29,7 +29,7 @@ export const post = async (): Promise<void> => {
     git(`branch --delete ${versionBranch}`)
 
     core.debug(`deleting remote ${versionBranch}`)
-    git(`push --delete ${versionBranch}`)
+    git(`push origin --delete ${versionBranch}`)
 
     core.debug(`tagging with annotated tag ${versionTag}`)
     git(`tag --annotate ${versionTag} --message ${versionTag}`)
