@@ -20,8 +20,6 @@ const determineReleaseVersion = (event: PushEvent): string => {
 const tagName = (version: string) => `V${version.trim()}`
 
 export const pre = async (): Promise<void> => {
-  core.debug(`working dir is: ${path.resolve('./')}`)
-  core.debug(`content: ${execSync(`ls -la`, { stdio: 'pipe' })}`)
   core.debug(`parsing push event`)
   const event: PushEvent = JSON.parse(
     core.getInput(`push_event`, { required: true })
