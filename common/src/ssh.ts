@@ -30,7 +30,7 @@ export const registerPrivateKey = (
 
   debug(`writing SSH key to disk`)
   writeFileSync(targetFile, content, {
-    encoding: 'utf-8',
+    encoding: 'ascii',
     mode: 0o600,
   })
 
