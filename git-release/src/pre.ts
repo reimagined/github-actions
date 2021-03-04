@@ -57,8 +57,8 @@ export const pre = async (): Promise<void> => {
 
   core.debug(`acquiring Git CLI`)
   const git = getGit(
-    core.getInput('ssh_private_key', { required: true }),
     path.resolve('./'),
+    core.getInput('ssh_private_key', { required: true }),
     core
   )
 
@@ -100,6 +100,8 @@ export const pre = async (): Promise<void> => {
   const versionBranch = tagName(version)
   core.debug(`making version branch ${versionBranch}`)
   git(`checkout -b ${versionBranch}`)
+  core.saveState('version_branch', versionBranch)
+  core.saveState('version_tag', versionBranch)
   core.endGroup()
 
   core.startGroup(`bumping packages version to ${version}`)
