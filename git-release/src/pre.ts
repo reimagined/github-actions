@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import findVersions from 'find-versions'
-import { mkdtempSync } from 'fs'
 import { getGit } from '../../common/src/git'
 import { exportEnvVar } from '../../common/src/utils'
 import { PushEvent } from './types'
@@ -30,15 +29,10 @@ export const pre = async (): Promise<void> => {
   core.saveState(`version`, version)
   exportEnvVar('git_release_version', version)
 
-  core.debug(`making working directory`)
-  const workingDirectory = mkdtempSync('release-')
-  core.debug(`working directory: ${workingDirectory}`)
-  core.saveState(`directory`, workingDirectory)
-
   core.debug(`acquiring Git CLI`)
   const git = getGit(
     core.getInput('ssh_private_key', { required: true }),
-    workingDirectory,
+    './',
     core
   )
 
