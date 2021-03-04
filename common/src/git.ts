@@ -54,16 +54,14 @@ export const getGit = (
   */
 
   const gitEnv = {
+    ...process.env,
     SSH_AUTH_SOCK: '/tmp/ssh_agent.sock',
   }
 
   debug(`launching SSH agent`)
   try {
     execSync(`ssh-agent -a $SSH_AUTH_SOCK > /dev/null`, {
-      env: {
-        ...process.env,
-        ...gitEnv,
-      },
+      env: gitEnv,
     })
   } catch (error) {
     throw Error(`unable to start SSH agent: ${error.message}`)
@@ -72,7 +70,10 @@ export const getGit = (
   debug(`adding key to SSH agent (system dependent)`)
   let keyInstall = ''
   try {
-    keyInstall = execSync(`ssh-add ${keyFile}`, { stdio: 'pipe' }).toString()
+    keyInstall = execSync(`ssh-add ${keyFile}`, {
+      stdio: 'pipe',
+      env: gitEnv,
+    }).toString()
   } catch (error) {
     throw Error(`unable to add SSH key: ${error.message}`)
   }
