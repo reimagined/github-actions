@@ -3,7 +3,6 @@ import { nanoid } from 'nanoid'
 import { writeFileSync, existsSync, readFileSync } from 'fs'
 import { notEmpty } from './utils'
 import { execSync } from 'child_process'
-import * as eol from 'eol'
 
 // FIXME: add unit test
 export const registerPrivateKey = (
@@ -30,7 +29,7 @@ export const registerPrivateKey = (
   }
 
   debug(`writing SSH key to disk`)
-  writeFileSync(targetFile, eol.lf(content), {
+  writeFileSync(targetFile, content, {
     encoding: 'ascii',
     mode: 0o600,
   })
@@ -40,6 +39,7 @@ export const registerPrivateKey = (
 
   debug(`checking key passphrase encryption`)
 
+  /*
   let checkProtection = ''
   try {
     checkProtection = execSync(`ssh-keygen -y -P "" -f ${targetFile}`, {
@@ -56,6 +56,7 @@ export const registerPrivateKey = (
   ) {
     throw Error(`SSH key seem to be password protected and cannot be used`)
   }
+  */
 
   debug(`adding key to SSH agent (system dependent)`)
   let keyInstall = ''
