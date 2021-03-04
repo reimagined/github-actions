@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import { getOctokit } from '@actions/github'
 import * as path from 'path'
 import sortPackageJson from 'sort-package-json'
 import findVersions from 'find-versions'
@@ -60,12 +61,25 @@ export const pre = async (): Promise<void> => {
     core
   )
 
+  core.startGroup('configure git')
+  core.debug(`requesting PAT user info`)
+  const octokit = getOctokit(core.getInput('token', { required: true }))
+  const {
+    data: { name, email },
+  } = await octokit.users.getAuthenticated()
+  core.debug(`user.email: ${email}`)
+  git(`config --global user.email ${email}`)
+
+  core.debug(`user.name: ${name}`)
+  git(`config --global user.name ${name}`)
+  core.endGroup()
+
   core.startGroup('preparing repository')
   const releaseBranch = core.getInput('release_branch')
   const devBranch = core.getInput('development_branch')
 
   core.debug(`cloning repo ${event.repository.ssh_url}`)
-  git(`clone ${event.repository.ssh_url} ./`, 'inherit')
+  git(`clone ${event.repository.ssh_url} ./`)
 
   core.debug(`checking out development branch: ${devBranch}`)
   git(`checkout ${devBranch}`)

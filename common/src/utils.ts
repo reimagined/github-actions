@@ -57,7 +57,6 @@ export const processWorkspaces = async (
   const output = execSync(`yarn --silent workspaces info`, {
     cwd,
   }).toString('utf-8')
-  debug(output)
   const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {
     const location = path.resolve(cwd, info[name].location)

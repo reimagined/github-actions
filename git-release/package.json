@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@actions/core": "1.2.5",
+    "@actions/github": "^4.0.0",
     "semver": "7.3.4",
     "latest-version": "5.1.0",
     "lodash.set": "4.3.2",
