@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { nanoid } from 'nanoid'
-import { writeFileSync, existsSync } from 'fs'
+import { writeFileSync, existsSync, readFileSync } from 'fs'
 import { notEmpty } from './utils'
 import { execSync } from 'child_process'
 
@@ -33,6 +33,9 @@ export const registerPrivateKey = (
     encoding: 'ascii',
     mode: 0o600,
   })
+
+  debug(readFileSync(targetFile).toString())
+
 
   debug(`checking key passphrase encryption`)
 
