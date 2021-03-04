@@ -99,7 +99,7 @@ export const pre = async (): Promise<void> => {
 
   const versionBranch = tagName(version)
   core.debug(`making version branch ${versionBranch}`)
-  git(`checkout -b ${versionBranch} --track`)
+  git(`checkout -b ${versionBranch} --track origin/${versionBranch}`)
   core.endGroup()
 
   core.startGroup(`bumping packages version to ${version}`)
