@@ -6,17 +6,18 @@ import { execSync } from 'child_process'
 
 // FIXME: add unit test
 export const getGit = (
-  sshKey: string,
+  sshKeyBase64: string,
   core?: {
     debug: (message: string) => void
   }
 ): string => {
-  if (!notEmpty(sshKey)) {
+  const debug = (message: string) => core?.debug(`getGIT: ${message}`)
+
+  if (!notEmpty(sshKeyBase64)) {
     throw Error(`empty SSH key content`)
   }
 
-  const debug = (message: string) => core?.debug(`getGIT: ${message}`)
-
+  const sshKey = Buffer.from(sshKeyBase64, 'base64').toString()
   const keyFile = path.resolve('./', `ssh-key-${nanoid(5)}`)
   debug(`targetFile=${keyFile}`)
 
@@ -30,14 +31,10 @@ export const getGit = (
     mode: 0o600,
   })
 
-  debug(readFileSync(keyFile).toString())
-
   debug(`checking key passphrase encryption`)
-
-  /*
   let checkProtection = ''
   try {
-    checkProtection = execSync(`ssh-keygen -y -P "" -f ${targetFile}`, {
+    checkProtection = execSync(`ssh-keygen -y -P "" -f ${keyFile}`, {
       stdio: 'pipe',
     }).toString()
   } catch (error) {
@@ -51,7 +48,6 @@ export const getGit = (
   ) {
     throw Error(`SSH key seem to be password protected and cannot be used`)
   }
-  */
 
   const gitEnv = {
     ...process.env,
