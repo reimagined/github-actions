@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { writeFileSync, existsSync, readFileSync } from 'fs'
 import { notEmpty } from './utils'
 import { execSync } from 'child_process'
+import * as eol from 'eol'
 
 // FIXME: add unit test
 export const registerPrivateKey = (
@@ -29,7 +30,7 @@ export const registerPrivateKey = (
   }
 
   debug(`writing SSH key to disk`)
-  writeFileSync(targetFile, content, {
+  writeFileSync(targetFile, eol.lf(content), {
     encoding: 'ascii',
     mode: 0o600,
   })
