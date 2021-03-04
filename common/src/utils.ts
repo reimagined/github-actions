@@ -14,10 +14,16 @@ import { Package, PackageDependencies } from './types'
 
 export function bumpDependencies<T extends PackageDependencies>(
   pkg: T,
-  pattern: string,
+  patternOrEntries: string | string[],
   version: string
 ): T {
-  const regExp = new RegExp('^' + pattern)
+  let matcher: (name: string) => boolean
+  if (Array.isArray(patternOrEntries)) {
+    matcher = (name) => patternOrEntries.includes(name)
+  } else {
+    const regExp = new RegExp('^' + patternOrEntries)
+    matcher = (name) => regExp.test(name)
+  }
 
   const sections: Array<keyof PackageDependencies> = [
     'dependencies',
@@ -32,7 +38,7 @@ export function bumpDependencies<T extends PackageDependencies>(
     if (section == null) {
     } else {
       Object.keys(section).forEach((lib) => {
-        if (regExp.test(lib)) {
+        if (matcher(lib)) {
           section[lib] = version
         }
       })
@@ -47,20 +53,20 @@ type Workspace = {
   location: string
   pkg: Package
 }
-export type WorkspaceProcessor = (w: Workspace) => Promise<void>
+export type WorkspaceProcessor<T> = (w: Workspace) => Promise<T>
 
-export const processWorkspaces = async (
-  processor: WorkspaceProcessor,
-  debug: Function,
+export async function processWorkspaces<T>(
+  processor: WorkspaceProcessor<T>,
+  debug?: Function,
   cwd: string = process.cwd()
-): Promise<void> => {
+): Promise<T[]> {
   const output = execSync(`yarn --silent workspaces info`, {
     cwd,
   }).toString('utf-8')
   const info = JSON.parse(output)
   const workspaces = Object.keys(info).map((name) => {
     const location = path.resolve(cwd, info[name].location)
-    debug(`[${name}] enqueue processing at ${location}`)
+    debug?.(`[${name}] enqueue processing at ${location}`)
     return {
       name,
       location,
@@ -70,7 +76,7 @@ export const processWorkspaces = async (
     }
   })
 
-  await Promise.all(workspaces.map((w) => processor(w)))
+  return await Promise.all(workspaces.map((w) => processor(w)))
 }
 
 type WriteNpmRcOptions = {

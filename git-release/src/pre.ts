@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import { getOctokit } from '@actions/github'
 import isEmpty from 'lodash.isempty'
+import partial from 'lodash.partial'
 import * as path from 'path'
 import sortPackageJson from 'sort-package-json'
 import findVersions from 'find-versions'
@@ -29,12 +30,13 @@ const tagName = (version: string) => `V${version.trim()}`
 
 const packagePatcher = async (
   version: string,
+  names: string[],
   pkg: Package,
   location: string
 ) => {
   core.info(`* ${version} => [${pkg.name}] at ${location}`)
   const patchedPackage = sortPackageJson(
-    bumpDependencies(pkg, `${core.getInput('framework_scope')}/.*$`, version)
+    bumpDependencies(pkg, names, version)
   )
   patchedPackage.version = version
   writeFileSync(
@@ -103,14 +105,16 @@ export const pre = async (): Promise<void> => {
   core.endGroup()
 
   core.startGroup(`bumping packages version to ${version}`)
+  const framework = await processWorkspaces((w) => Promise.resolve(w.name))
+  const patcher = partial(packagePatcher, version, framework)
+
   const root = path.resolve('./')
-  await packagePatcher(
-    version,
+  await patcher(
     JSON.parse(readFileSync(path.resolve(root, 'package.json')).toString()),
     root
   )
   await processWorkspaces(
-    ({ pkg, location }) => packagePatcher(version, pkg, location),
+    ({ pkg, location }) => patcher(pkg, location),
     core.debug
   )
   core.endGroup()

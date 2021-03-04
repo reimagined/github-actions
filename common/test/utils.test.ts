@@ -121,11 +121,33 @@ describe('bumpDependencies', () => {
       },
     })
   })
+
+  test('bump with entries', () => {
+    const result = bumpDependencies(
+      {
+        dependencies: {
+          '@scope/tools': '0.0.0',
+          '@scope/debug': '0.0.0',
+          jest: '4.3.2',
+        },
+      },
+      ['@scope/tools'],
+      '1.2.3'
+    )
+
+    expect(result).toEqual({
+      dependencies: {
+        '@scope/tools': '1.2.3',
+        '@scope/debug': '0.0.0',
+        jest: '4.3.2',
+      },
+    })
+  })
 })
 
 describe('processWorkspaces', () => {
   let output: string
-  let processor: jest.MockedFunction<WorkspaceProcessor>
+  let processor: jest.MockedFunction<WorkspaceProcessor<void>>
 
   beforeEach(() => {
     output = JSON.stringify({

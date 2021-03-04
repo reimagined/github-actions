@@ -25,10 +25,6 @@ inputs:
     description: delete version branch
     required: false
     default: 'true'
-  framework_scope:
-    description: reSolve framework scope for packages detection
-    required: false
-    default: '@resolve-js'
 
 outputs:
   version:
