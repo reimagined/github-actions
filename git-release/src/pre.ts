@@ -36,7 +36,7 @@ export const pre = async (): Promise<void> => {
   core.debug(`acquiring Git CLI`)
   const git = getGit(
     core.getInput('ssh_private_key', { required: true }),
-    './',
+    path.resolve('./'),
     core
   )
 
