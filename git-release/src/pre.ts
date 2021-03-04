@@ -118,7 +118,7 @@ export const pre = async (): Promise<void> => {
   core.startGroup(`committing and pushing changes`)
   git(`add -u`)
   git(`commit -m "Bump framework version to ${version}"`)
-  git(`push`)
+  git(`push --set-upstream origin ${versionBranch}`)
   core.endGroup()
 
   core.info(`working directory content now prepared for release`)
