@@ -34,6 +34,8 @@
     "common",
     "publish",
     "install-cloud",
-    "deploy"
+    "deploy",
+    "git-release",
+    "relese-pr-bot"
   ]
 }

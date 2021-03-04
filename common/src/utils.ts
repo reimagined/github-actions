@@ -165,3 +165,7 @@ export const parseScopes = (
 
 export const parseBoolean = (value: string) =>
   value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
+
+export function notEmpty<T>(value: T | undefined | null): value is T {
+  return !isEmpty(value)
+}
