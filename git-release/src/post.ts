@@ -50,20 +50,14 @@ export const post = async (): Promise<void> => {
       core.warning(`failed release, cleanup git mess`)
 
       core.startGroup('cleanup')
+
       core.debug(`checking out ${releaseBranch}`)
       git(`checkout ${releaseBranch}`)
-
-      core.debug(`deleting local ${versionBranch}`)
-      git(`branch --delete ${versionBranch}`)
-
-      core.debug(`deleting remote ${versionBranch}`)
-      git(`push --delete ${versionBranch}`)
-      core.endGroup()
 
       core.error(`${versionBranch} release failed!`)
     }
   } finally {
     core.debug(`anyway deleting remote ${versionBranch}`)
-    git(`push origin --delete ${versionBranch}`)
+    git(`push origin --delete refs/heads/${versionBranch}`)
   }
 }
