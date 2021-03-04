@@ -19,7 +19,7 @@ const unpublishFromGithubRegistry = async (
 ) => {
   const registryToken = core.getInput('token', { required: true })
   const frameworkScope = core.getInput('framework_scope')
-  const packageName = scopedPackageName.replace(frameworkScope, '')
+  const packageName = scopedPackageName.replace(`${frameworkScope}/`, '')
   const organization = frameworkScope.substr(1)
 
   core.debug(
@@ -83,5 +83,7 @@ export const unpublish = async (
 
   try {
     await unpublishPackage(name, publishedVersion.version)
-  } catch (error) {}
+  } catch (error) {
+    core.warning(`Unpublish error: ${error.message}`)
+  }
 }
