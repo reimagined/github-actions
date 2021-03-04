@@ -35,9 +35,7 @@ const packagePatcher = async (
   location: string
 ) => {
   core.info(`* ${version} => [${pkg.name}] at ${location}`)
-  const patchedPackage = sortPackageJson(
-    bumpDependencies(pkg, names, version)
-  )
+  const patchedPackage = sortPackageJson(bumpDependencies(pkg, names, version))
   patchedPackage.version = version
   writeFileSync(
     path.resolve(location, 'package.json'),

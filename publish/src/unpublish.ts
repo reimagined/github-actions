@@ -3,9 +3,7 @@ import * as core from '@actions/core'
 import { execSync } from 'child_process'
 import semver from 'semver'
 import { getOctokit } from '@actions/github'
-
-const isTrue = (value: string) =>
-  value != null && ['yes', 'true', '1'].includes(value.toLowerCase())
+import { parseBoolean } from '../../common/src/utils'
 
 const readString = (file: string): string => {
   return readFileSync(file).toString('utf-8')
@@ -15,65 +13,6 @@ const exec = (command: string) => {
   return execSync(command).toString('utf-8')
 }
 
-const githubClient = (token: string) => {
-  const oktokit = getOctokit(token)
-
-  const getPackageVersionId = async (
-    scope: string,
-    packageName: string,
-    version: string
-  ) => {
-    const query = `
-    query getVersions($organization: String!, $packageName: String!, $version: String!) {
-      organization(login:$organization) {
-        packages(first:1, names: [$packageName]) {
-          nodes {
-            name,
-            id,
-            version(version:$version) {
-              id,
-              version
-            }
-          }
-        }
-      }
-    }`
-    const result: any = await oktokit.graphql(query, {
-      organization: scope.replace('@', ''),
-      packageName,
-      version,
-      headers: {
-        Accept: 'application/vnd.github.packages-preview+json',
-      },
-    })
-    if (result.organization.packages.nodes.length === 0) {
-      throw Error(`Package is not found in the registry: ${packageName}`)
-    }
-    if (!result.organization.packages.nodes[0].version) {
-      throw Error(`Package version is not found in the registry: ${version}`)
-    }
-    return result.organization.packages.nodes[0].version.id
-  }
-
-  const unpublish = async (scope: string, name: string, version: string) => {
-    const packageVersionId = await getPackageVersionId(scope, name, version)
-
-    const mutation = `
-  mutation deletePackageVersion($packageVersionId: String!) {
-      deletePackageVersion(input: {packageVersionId: $packageVersionId}) {
-          success
-      }
-  }`
-    return await oktokit.graphql(mutation, {
-      packageVersionId,
-      headers: {
-        Accept: 'application/vnd.github.package-deletes-preview+json',
-      },
-    })
-  }
-  return { unpublish }
-}
-
 const unpublishFromGithubRegistry = async (
   scopedPackageName: string,
   packageVersion: string
@@ -81,15 +20,45 @@ const unpublishFromGithubRegistry = async (
   const registryToken = core.getInput('token', { required: true })
   const frameworkScope = core.getInput('framework_scope')
   const packageName = scopedPackageName.replace(frameworkScope, '')
-  const gh = githubClient(registryToken)
-  return await gh.unpublish(frameworkScope, packageName, packageVersion)
+  const organization = frameworkScope.substr(1)
+
+  core.debug(
+    `removing GitHub package ${packageName} version ${packageVersion} from organization ${organization}`
+  )
+  const octokit = getOctokit(registryToken)
+
+  const {
+    data: versions,
+  } = await octokit.packages.getAllPackageVersionsForAPackageOwnedByAnOrg({
+    org: organization,
+    package_name: packageName,
+    package_type: 'npm',
+  })
+
+  const version = versions.find((v) => v.name === packageVersion)
+  if (version == null) {
+    throw Error(
+      `unable to get package ${packageName} version ${packageVersion} identifier`
+    )
+  }
+
+  const { id } = version
+  core.debug(`retrieved version identifier: ${id}`)
+
+  await octokit.packages.deletePackageVersionForOrg({
+    org: organization,
+    package_type: 'npm',
+    package_name: packageName,
+    package_version_id: id,
+  })
+  core.debug(`GitHub package version removed`)
 }
 
 const unpublishPackage = async (
   packageName: string,
   packageVersion: string
 ) => {
-  const isGithubRegistry = isTrue(core.getState('is_github_registry'))
+  const isGithubRegistry = parseBoolean(core.getState('is_github_registry'))
   isGithubRegistry
     ? await unpublishFromGithubRegistry(packageName, packageVersion)
     : exec(`npm unpublish --force ${packageName}@${packageVersion}`)
