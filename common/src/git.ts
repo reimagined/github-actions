@@ -5,37 +5,32 @@ import { notEmpty } from './utils'
 import { execSync } from 'child_process'
 
 // FIXME: add unit test
-export const registerPrivateKey = (
-  content: string,
-  file?: string,
+export const getGit = (
+  sshKey: string,
   core?: {
     debug: (message: string) => void
   }
 ): string => {
-  if (!notEmpty(content)) {
+  if (!notEmpty(sshKey)) {
     throw Error(`empty SSH key content`)
   }
 
-  const debug = (message: string) =>
-    core?.debug(`registerPrivateKey: ${message}`)
+  const debug = (message: string) => core?.debug(`getGIT: ${message}`)
 
-  const targetFile = notEmpty(file)
-    ? file
-    : path.resolve('./', `ssh-key-${nanoid(5)}`)
-  debug(`targetFile=${targetFile}`)
+  const keyFile = path.resolve('./', `ssh-key-${nanoid(5)}`)
+  debug(`targetFile=${keyFile}`)
 
-  if (existsSync(targetFile)) {
-    throw Error(`SSH key target file ${targetFile} already exists`)
+  if (existsSync(keyFile)) {
+    throw Error(`SSH key target file ${keyFile} already exists`)
   }
 
   debug(`writing SSH key to disk`)
-  writeFileSync(targetFile, content, {
+  writeFileSync(keyFile, sshKey, {
     encoding: 'ascii',
     mode: 0o600,
   })
 
-  debug(readFileSync(targetFile).toString())
-
+  debug(readFileSync(keyFile).toString())
 
   debug(`checking key passphrase encryption`)
 
@@ -58,9 +53,18 @@ export const registerPrivateKey = (
   }
   */
 
+  const gitEnv = {
+    SSH_AUTH_SOCK: '/tmp/ssh_agent.sock',
+  }
+
   debug(`launching SSH agent`)
   try {
-    execSync(`ssh-agent > /dev/null`)
+    execSync(`ssh-agent -a $SSH_AUTH_SOCK > /dev/null`, {
+      env: {
+        ...process.env,
+        ...gitEnv,
+      },
+    })
   } catch (error) {
     throw Error(`unable to start SSH agent: ${error.message}`)
   }
@@ -68,7 +72,7 @@ export const registerPrivateKey = (
   debug(`adding key to SSH agent (system dependent)`)
   let keyInstall = ''
   try {
-    keyInstall = execSync(`ssh-add ${targetFile}`, { stdio: 'pipe' }).toString()
+    keyInstall = execSync(`ssh-add ${keyFile}`, { stdio: 'pipe' }).toString()
   } catch (error) {
     throw Error(`unable to add SSH key: ${error.message}`)
   }
@@ -77,6 +81,6 @@ export const registerPrivateKey = (
     throw Error(`unexpected ssh-add output: ${keyInstall}`)
   }
 
-  debug(`SSH key added: ${targetFile}`)
-  return targetFile
+  debug(`SSH key added: ${keyFile}`)
+  return keyFile
 }

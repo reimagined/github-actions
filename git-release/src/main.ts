@@ -1,13 +1,8 @@
 import * as core from '@actions/core'
-import * as path from 'path'
-import { registerPrivateKey } from '../../common/src/ssh'
+import { getGit } from '../../common/src/git'
 
 export const main = async (): Promise<void> => {
-  registerPrivateKey(
-    core.getInput('ssh_private_key', { required: true }),
-    path.resolve('bot-github-rsa'),
-    core
-  )
+  const git = getGit(core.getInput('ssh_private_key', { required: true }), core)
 
   return
 }
