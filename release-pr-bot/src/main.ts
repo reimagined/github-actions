@@ -11,7 +11,8 @@ import {
   PullRequestEvent,
   review_action_dismissed,
   review_action_edited,
-  review_action_submitted, ReviewEventData
+  review_action_submitted,
+  ReviewEventData,
 } from './types'
 
 class CheckFailedError extends Error {
@@ -88,6 +89,8 @@ const checkVersionConflicts = async (
     .sort(semver.compare)
 
   const latestRelease = releases.length ? releases[releases.length - 1] : null
+
+  core.debug(`latest release determined by tags: ${latestRelease}`)
 
   if (latestRelease != null && semver.gte(latestRelease, version)) {
     throw new CheckFailedError(
