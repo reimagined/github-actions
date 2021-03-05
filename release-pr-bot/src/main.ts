@@ -168,11 +168,6 @@ const checkApprovals = async (
   bot: Bot
 ): Promise<boolean> => {
   const botReviewId = await getBotApproval(octokit, event, bot)
-  if (botReviewId == null) {
-    throw new CheckFailedError(
-      `Its strange, but i can\'t find my approval of this pull request.`
-    )
-  }
 
   const requiredApprovalsCount = Number(core.getInput('required_reviews')) || 0
   if (requiredApprovalsCount > 0) {
@@ -208,7 +203,11 @@ const checkApprovals = async (
       `Required approved reviews count is zero. Only the bot approves the pull request.`
     )
   }
-  await addComment(octokit, event, `Reviews quorum reached, merging the PR`)
+  await addComment(
+    octokit,
+    event,
+    `Reviews quorum reached! Approving and merging the PR.`
+  )
   return true
 }
 
@@ -234,8 +233,8 @@ const processPullRequestEvent = async (
 ): Promise<void> => {
   const version = await determineReleaseVersion(event.pull_request.title)
   await checkVersionConflicts(octokit, event, version)
-  await approve(octokit, event, bot)
   if (await checkApprovals(octokit, event, bot)) {
+    await approve(octokit, event, bot)
     await mergePullRequest(octokit, event, version)
   }
 }
