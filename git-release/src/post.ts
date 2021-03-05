@@ -12,6 +12,7 @@ const getRepo = (event: PushEvent) => ({
   owner: event.repository.owner.name,
 })
 
+/*
 const createAndApproveVersionPR = async (
   octokit: Octokit,
   event: PushEvent,
@@ -43,26 +44,59 @@ const createAndApproveVersionPR = async (
     pull_number: number,
   })
 }
+*/
+
+const disableBranchProtection = async (
+  octokit: Octokit,
+  event: PushEvent,
+  branch: string
+): Promise<any> => {
+  const { data: protection } = await octokit.repos.getBranchProtection({
+    ...getRepo(event),
+    branch,
+  })
+  return protection
+}
+
+const restoreBranchProtection = async (
+  octokit: Octokit,
+  event: PushEvent,
+  branch: string,
+  protection: any
+): Promise<void> => {
+  await octokit.repos.updateBranchProtection({
+    ...getRepo(event),
+    branch,
+    ...protection,
+  })
+}
 
 export const post = async (): Promise<void> => {
   const success = parseBoolean(core.getState('success'))
   const git = getGit(path.resolve('./'), undefined, core)
+  const octokit = getOctokit(core.getInput('token', { required: true }))
+  const event: PushEvent = JSON.parse(
+    core.getInput(`push_event`, { required: true })
+  )
 
   const versionBranch = core.getState('version_branch')
   const releaseBranch = core.getInput('release_branch')
+  let releaseBranchProtection = null
 
   try {
     if (success) {
       core.info(`successful release, performing tagging and back-merging`)
       const devBranch = core.getInput('development_branch')
       const versionTag = core.getState('version_tag')
-      const octokit = getOctokit(core.getInput('token', { required: true }))
-      const event: PushEvent = JSON.parse(
-        core.getInput(`push_event`, { required: true })
+
+      core.debug(`disabling branch ${releaseBranch} protection`)
+      releaseBranchProtection = await disableBranchProtection(
+        octokit,
+        event,
+        releaseBranch
       )
 
       core.startGroup(`commit release`)
-      /*
       core.debug(`checking out ${releaseBranch}`)
       git(`checkout ${releaseBranch}`)
 
@@ -71,16 +105,7 @@ export const post = async (): Promise<void> => {
 
       core.debug(`pushing ${releaseBranch} to remote`)
       git(`push`)
-      */
-      await createAndApproveVersionPR(
-        octokit,
-        event,
-        releaseBranch,
-        versionBranch,
-        versionTag
-      )
 
-      /*
       core.debug(`checking out ${devBranch}`)
       git(`checkout ${devBranch}`)
 
@@ -92,14 +117,6 @@ export const post = async (): Promise<void> => {
 
       core.debug(`pushing ${devBranch} to remote`)
       git(`push`)
-      */
-      await createAndApproveVersionPR(
-        octokit,
-        event,
-        devBranch,
-        versionBranch,
-        versionTag
-      )
 
       core.debug(`tagging with annotated tag ${versionTag}`)
       git(`tag --annotate ${versionTag} --message ${versionTag}`)
@@ -120,6 +137,15 @@ export const post = async (): Promise<void> => {
       core.error(`${versionBranch} release failed!`)
     }
   } finally {
+    if (releaseBranchProtection != null) {
+      core.debug(`restoring branch ${releaseBranch} protection`)
+      await restoreBranchProtection(
+        octokit,
+        event,
+        releaseBranch,
+        releaseBranchProtection
+      )
+    }
     core.debug(`anyway deleting remote ${versionBranch}`)
     git(`push origin --delete refs/heads/${versionBranch}`)
   }
