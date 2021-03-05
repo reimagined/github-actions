@@ -1,19 +1,19 @@
 import * as core from '@actions/core'
-import { getOctokit } from '@actions/github'
-import omitDeep from 'omit-deep'
+//import { getOctokit } from '@actions/github'
+//import omitDeep from 'omit-deep'
 import * as path from 'path'
 import { parseBoolean } from '../../common/src/utils'
 import { getGit } from '../../common/src/git'
-import { Octokit, PushEvent } from './types'
+//import { Octokit, PushEvent } from './types'
 
 const mergeCommitMessage = `<auto> merge version branch`
 
+/*
 const getRepo = (event: PushEvent) => ({
   repo: event.repository.name,
   owner: event.repository.owner.name,
 })
 
-/*
 const createAndApproveVersionPR = async (
   octokit: Octokit,
   event: PushEvent,
@@ -47,6 +47,7 @@ const createAndApproveVersionPR = async (
 }
 */
 
+/*
 const disableBranchProtection = async (
   octokit: Octokit,
   event: PushEvent,
@@ -74,20 +75,22 @@ const restoreBranchProtection = async (
     ...getRepo(event),
     branch,
     ...protection,
+    restrictions: {},
   })
 }
+*/
 
 export const post = async (): Promise<void> => {
   const success = parseBoolean(core.getState('success'))
   const git = getGit(path.resolve('./'), undefined, core)
-  const octokit = getOctokit(core.getInput('token', { required: true }))
-  const event: PushEvent = JSON.parse(
-    core.getInput(`push_event`, { required: true })
-  )
+  //const octokit = getOctokit(core.getInput('token', { required: true }))
+  //const event: PushEvent = JSON.parse(
+  //core.getInput(`push_event`, { required: true })
+  //)
 
   const versionBranch = core.getState('version_branch')
   const releaseBranch = core.getInput('release_branch')
-  let releaseBranchProtection = null
+  //let releaseBranchProtection = null
 
   try {
     if (success) {
@@ -95,12 +98,14 @@ export const post = async (): Promise<void> => {
       const devBranch = core.getInput('development_branch')
       const versionTag = core.getState('version_tag')
 
+      /*
       core.debug(`disabling branch ${releaseBranch} protection`)
       releaseBranchProtection = await disableBranchProtection(
         octokit,
         event,
         releaseBranch
       )
+      */
 
       core.startGroup(`commit release`)
       core.debug(`checking out ${releaseBranch}`)
@@ -143,6 +148,7 @@ export const post = async (): Promise<void> => {
       core.error(`${versionBranch} release failed!`)
     }
   } finally {
+    /*
     if (releaseBranchProtection != null) {
       core.debug(`restoring branch ${releaseBranch} protection`)
       await restoreBranchProtection(
@@ -152,6 +158,7 @@ export const post = async (): Promise<void> => {
         releaseBranchProtection
       )
     }
+    */
     core.debug(`anyway deleting remote ${versionBranch}`)
     git(`push origin --delete refs/heads/${versionBranch}`)
   }
