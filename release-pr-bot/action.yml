@@ -2,10 +2,20 @@ name: release-pr-bot
 description: release PR bot action
 inputs:
   event:
-    description: occred PR event
+    description: occured PR event
     required: true
+  token:
+    description: GitHub personal access token to access API
+    required: true
+  bot_name:
+    description: bot name
+    required: true
+    default: 'resolve-bot'
+  required_reviews:
+    description: required reviews count
+    required: false
+    default: '1'
 
 runs:
   using: 'node12'
   main: 'dist/main.js'
-
