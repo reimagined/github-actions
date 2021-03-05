@@ -24,7 +24,7 @@ type EventData = {
   pull_request: {
     title: string
     state: PullRequestState
-  },
+  }
   repository: {
     name: string
     owner: {
@@ -50,3 +50,8 @@ export type PullRequestEvent =
   | SynchronizeEvent
   | OpenedEvent
   | ReopenedEvent
+
+export type Bot = {
+  name: string
+  email: string
+}

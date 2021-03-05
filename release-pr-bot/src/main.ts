@@ -6,6 +6,7 @@ import {
   action_edited,
   action_opened,
   action_reopened,
+  Bot,
   Octokit,
   PullRequestEvent,
 } from './types'
@@ -92,18 +93,16 @@ const checkVersionConflicts = async (
   }
 }
 
-const dismiss = async (
+const getBotApproval = async (
   octokit: Octokit,
   event: PullRequestEvent,
-  message: string
-): Promise<void> => {
+  bot: Bot
+): Promise<number | null> => {
   const { data } = await octokit.pulls.listReviews({
     owner: event.repository.owner.login,
     repo: event.repository.name,
     pull_number: event.number,
   })
-
-  const botName = core.getInput('bot_name')
 
   core.debug(`dismiss > listReviews:`)
   data.forEach((entry) =>
@@ -113,49 +112,94 @@ const dismiss = async (
   )
 
   const botReview = data.find(
-    (review) => review?.user?.login === botName && review?.state === 'APPROVED'
+    (review) => review?.user?.login === bot.name && review?.state === 'APPROVED'
   )
 
-  core.debug(`dismissng bot review: ${botReview?.id}`)
-
   if (botReview != null) {
+    return botReview.id
+  }
+  return null
+}
+
+const dismiss = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  bot: Bot,
+  message: string
+): Promise<void> => {
+  const reviewId = await getBotApproval(octokit, event, bot)
+
+  if (reviewId != null) {
+    core.debug(`dismissing bot review: ${reviewId}`)
     await octokit.pulls.dismissReview({
       owner: event.repository.owner.login,
       repo: event.repository.name,
       pull_number: event.number,
-      review_id: botReview.id,
+      review_id: reviewId,
       message,
     })
   }
 }
 
-const checkApprovals = async (octokit: Octokit, event: PullRequestEvent) => {
-  const requiredApprovalsCount = Number(core.getInput('required_reviews')) || 1
+const approve = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  bot: Bot
+): Promise<void> => {
+  const reviewId = await getBotApproval(octokit, event, bot)
 
-  const { data } = await octokit.pulls.listReviews({
-    owner: event.repository.owner.login,
-    repo: event.repository.name,
-    pull_number: event.number,
-  })
-
-  core.debug(`checkApprovals > listReviews:`)
-  data.forEach((entry) =>
-    core.debug(
-      `[${entry.user?.login}@${entry.id}, ${entry.state}]: ${entry.body}`
-    )
-  )
-
-  const approvedReviews = data.filter((entry) => entry.state === 'APPROVED')
-
-  const botName = core.getInput('bot_name')
-  if (!approvedReviews.some((entry) => entry.user?.login === botName)) {
-    throw new CheckFailedError(`Waiting for ${botName} approval`)
+  if (reviewId != null) {
+    core.debug(`approving pull request`)
+    await octokit.pulls.createReview({
+      owner: event.repository.owner.login,
+      repo: event.repository.name,
+      pull_number: event.number,
+      event: 'APPROVE',
+    })
   }
-  if (approvedReviews.length < requiredApprovalsCount) {
+}
+
+const checkApprovals = async (
+  octokit: Octokit,
+  event: PullRequestEvent,
+  bot: Bot
+) => {
+  const botReviewId = await getBotApproval(octokit, event, bot)
+  if (botReviewId == null) {
     throw new CheckFailedError(
-      `Waiting for ${
-        requiredApprovalsCount - approvedReviews.length
-      } more pull request approvals`
+      `Its strange, but i can\'t find my approval of this pull request.`
+    )
+  }
+
+  const requiredApprovalsCount = Number(core.getInput('required_reviews')) || 0
+  if (requiredApprovalsCount > 0) {
+    const { data } = await octokit.pulls.listReviews({
+      owner: event.repository.owner.login,
+      repo: event.repository.name,
+      pull_number: event.number,
+    })
+
+    core.debug(`checkApprovals > listReviews:`)
+    data.forEach((entry) =>
+      core.debug(
+        `[${entry.user?.login}@${entry.id}, ${entry.state}]: ${entry.body}`
+      )
+    )
+
+    const approvedReviews = data.filter(
+      (entry) => entry.state === 'APPROVED' && entry.id !== botReviewId
+    )
+
+    if (approvedReviews.length < requiredApprovalsCount) {
+      throw new CheckFailedError(
+        `Need ${
+          requiredApprovalsCount - approvedReviews.length
+        } more the pull request approvals`
+      )
+    }
+  } else {
+    core.warning(
+      `Required approved reviews count is zero. Only the bot approves the pull request.`
     )
   }
 }
@@ -177,17 +221,13 @@ const mergePullRequest = async (
 
 const processPullRequestEvent = async (
   octokit: Octokit,
-  event: PullRequestEvent
+  event: PullRequestEvent,
+  bot: Bot
 ): Promise<void> => {
   const version = await determineReleaseVersion(event.pull_request.title)
   await checkVersionConflicts(octokit, event, version)
-  await octokit.pulls.createReview({
-    owner: event.repository.owner.login,
-    repo: event.repository.name,
-    pull_number: event.number,
-    event: 'APPROVE',
-  })
-  await checkApprovals(octokit, event)
+  await approve(octokit, event, bot)
+  await checkApprovals(octokit, event, bot)
   await mergePullRequest(octokit, event, version)
 }
 
@@ -195,18 +235,28 @@ export const main = async (): Promise<void> => {
   const event: PullRequestEvent = JSON.parse(core.getInput('event'))
   const octokit = github.getOctokit(core.getInput('token'))
 
+  const {
+    data: { login: name, email },
+  } = await octokit.users.getAuthenticated()
+
+  if (!name || !email) {
+    throw Error(`Invalid or limited GitHub user PAT`)
+  }
+
+  const bot = { name, email }
+
   try {
     switch (event.action) {
       case action_edited:
       case action_opened:
       case action_reopened:
-        return await processPullRequestEvent(octokit, event)
+        return await processPullRequestEvent(octokit, event, bot)
     }
   } catch (error) {
     core.debug(error)
     if (error instanceof CheckFailedError) {
       await addComment(octokit, event, error.message)
-      await dismiss(octokit, event, error.message)
+      await dismiss(octokit, event, bot, error.message)
       throw Error('One or more release checks failed')
     }
     throw error
