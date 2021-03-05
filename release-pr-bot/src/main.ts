@@ -81,6 +81,7 @@ const checkVersionConflicts = async (
   const { data } = await octokit.repos.listTags({
     owner: event.repository.owner.login,
     repo: event.repository.name,
+    per_page: Number.MAX_SAFE_INTEGER,
   })
 
   const releases = data
