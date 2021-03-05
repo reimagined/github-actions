@@ -148,7 +148,7 @@ const approve = async (
 ): Promise<void> => {
   const reviewId = await getBotApproval(octokit, event, bot)
 
-  if (reviewId != null) {
+  if (reviewId == null) {
     core.debug(`approving pull request`)
     await octokit.pulls.createReview({
       owner: event.repository.owner.login,
