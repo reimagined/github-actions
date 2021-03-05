@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { getOctokit } from '@actions/github'
+import omitDeep from 'omit-deep'
 import * as path from 'path'
 import { parseBoolean } from '../../common/src/utils'
 import { getGit } from '../../common/src/git'
@@ -51,10 +52,13 @@ const disableBranchProtection = async (
   event: PushEvent,
   branch: string
 ): Promise<any> => {
-  const { data: protection } = await octokit.repos.getBranchProtection({
+  const { data } = await octokit.repos.getBranchProtection({
     ...getRepo(event),
     branch,
   })
+
+  const protection = omitDeep(data, 'url')
+
   core.debug(`current protection rules:`)
   core.debug(JSON.stringify(protection, null, 2))
   return protection
