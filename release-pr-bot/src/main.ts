@@ -192,9 +192,9 @@ const checkApprovals = async (
 
     if (approvedReviews.length < requiredApprovalsCount) {
       throw new CheckFailedError(
-        `Need ${
+        `Need **${
           requiredApprovalsCount - approvedReviews.length
-        } more the pull request approvals`
+        }** approved review to proceed`
       )
     }
   } else {
