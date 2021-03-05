@@ -11,7 +11,7 @@ import {
   PullRequestEvent,
   review_action_dismissed,
   review_action_edited,
-  review_action_submitted,
+  review_action_submitted, ReviewEventData
 } from './types'
 
 class CheckFailedError extends Error {
@@ -258,9 +258,16 @@ export const main = async (): Promise<void> => {
       case action_edited:
       case action_opened:
       case action_reopened:
+        return await processPullRequestEvent(octokit, event, bot)
+
       case review_action_dismissed:
       case review_action_submitted:
       case review_action_edited:
+        const { review } = event as ReviewEventData
+        if (review.user.login === bot.name) {
+          core.debug(`skip bot review manipulations`)
+          return
+        }
         return await processPullRequestEvent(octokit, event, bot)
     }
   } catch (error) {

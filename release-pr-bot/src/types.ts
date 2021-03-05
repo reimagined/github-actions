@@ -36,7 +36,7 @@ type EventData = {
     }
   }
 }
-type ReviewEventData = {
+export type ReviewEventData = {
   review: {
     id: number
     state: string
