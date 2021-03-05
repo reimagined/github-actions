@@ -55,6 +55,8 @@ const disableBranchProtection = async (
     ...getRepo(event),
     branch,
   })
+  core.debug(`current protection rules:`)
+  core.debug(JSON.stringify(protection, null, 2))
   return protection
 }
 
