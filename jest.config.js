@@ -4,6 +4,7 @@ module.exports = {
   rootDir: process.cwd(),
   testMatch: ['**/test/**/*.test.[jt]s?(x)'],
   collectCoverageFrom: ['src/**/*.ts'],
+  /*
   coverageThreshold: {
     global: {
       branches: 80,
@@ -12,6 +13,7 @@ module.exports = {
       statements: -10,
     },
   },
+  */
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },

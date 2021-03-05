@@ -17,7 +17,6 @@
     "semver": "7.3.4",
     "find-versions": "4.0.0",
     "lodash.partial": "4.2.1"
-
   },
   "devDependencies": {
     "@types/semver": "7.3.4",

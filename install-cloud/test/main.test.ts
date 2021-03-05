@@ -37,7 +37,9 @@ const expectedEnv = () => ({
   AWS_SECRET_ACCESS_KEY: actionInput.aws_secret_access_key,
 })
 
-const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
+const getWorkspaceProcessor = async (): Promise<
+  WorkspaceProcessor<unknown>
+> => {
   await main()
 
   expect(mProcessWorkspaces).toHaveBeenCalled()
@@ -67,7 +69,7 @@ beforeEach(() => {
       })
     )
   )
-  mBumpDependencies.mockReturnValue({ name: 'bumped-package' })
+  mBumpDependencies.mockReturnValue({})
   mParseScopes.mockReturnValue([])
   process.env = {
     THIS_PROCESS_ENV: 'yes',
@@ -176,7 +178,7 @@ test('workspace processor should patch package.json', async () => {
 
   expect(mWriteFile).toHaveBeenCalledWith(
     '/location/package.json',
-    JSON.stringify({ name: 'bumped-package' }, null, 2)
+    JSON.stringify({}, null, 2)
   )
   expect(mBumpDependencies).toHaveBeenCalledWith(
     {
