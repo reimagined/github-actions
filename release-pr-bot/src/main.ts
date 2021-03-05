@@ -208,6 +208,7 @@ const checkApprovals = async (
       `Required approved reviews count is zero. Only the bot approves the pull request.`
     )
   }
+  await addComment(octokit, event, `Reviews quorum reached, merging the PR`)
   return true
 }
 
