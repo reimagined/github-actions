@@ -3,6 +3,8 @@ import * as path from 'path'
 import { parseBoolean } from '../../common/src/utils'
 import { getGit } from '../../common/src/git'
 
+const mergeCommitMessage = `<auto> merge release version branch`
+
 export const post = async (): Promise<void> => {
   const success = parseBoolean(core.getState('success'))
   const git = getGit(path.resolve('./'), undefined, core)
@@ -21,7 +23,7 @@ export const post = async (): Promise<void> => {
       git(`checkout ${releaseBranch}`)
 
       core.debug(`merging ${versionBranch} to ${releaseBranch}`)
-      git(`merge -m "merge release version branch" ${versionBranch}`)
+      git(`merge -m "${mergeCommitMessage}" ${versionBranch}`)
 
       core.debug(`pushing ${releaseBranch} to remote`)
       git(`push`)
@@ -39,7 +41,7 @@ export const post = async (): Promise<void> => {
       git(`pull`)
 
       core.debug(`merging ${releaseBranch} to ${devBranch}`)
-      git(`merge -m "merge release version branch" ${releaseBranch}`)
+      git(`merge -m "${mergeCommitMessage}" ${releaseBranch}`)
 
       core.debug(`pushing ${devBranch} to remote`)
       git(`push`)
