@@ -3,6 +3,7 @@ import { getOctokit } from '@actions/github'
 import isEmpty from 'lodash.isempty'
 import partial from 'lodash.partial'
 import * as path from 'path'
+import * as os from 'os'
 import sortPackageJson from 'sort-package-json'
 import findVersions from 'find-versions'
 import { readFileSync, writeFileSync } from 'fs'
@@ -39,7 +40,7 @@ const packagePatcher = async (
   patchedPackage.version = version
   writeFileSync(
     path.resolve(location, 'package.json'),
-    JSON.stringify(patchedPackage, null, 2)
+    JSON.stringify(patchedPackage, null, 2) + os.EOL
   )
 }
 
