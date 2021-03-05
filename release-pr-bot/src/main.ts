@@ -9,6 +9,9 @@ import {
   Bot,
   Octokit,
   PullRequestEvent,
+  review_action_dismissed,
+  review_action_edited,
+  review_action_submitted,
 } from './types'
 
 class CheckFailedError extends Error {
@@ -28,13 +31,13 @@ const addComment = async (
   comment: string
 ): Promise<void> => {
   core.debug(`addComment > comment: ${comment}`)
-  core.debug(`addComment > issue_number: ${event.number}`)
+  core.debug(`addComment > issue_number: ${event.pull_request.number}`)
   core.debug(`addComment > owner: ${event.repository.owner.login}`)
   core.debug(`addComment > repo: ${event.repository.name}`)
 
   await octokit.issues.createComment({
     body: comment,
-    issue_number: event.number,
+    issue_number: event.pull_request.number,
     owner: event.repository.owner.login,
     repo: event.repository.name,
   })
@@ -101,7 +104,7 @@ const getBotApproval = async (
   const { data } = await octokit.pulls.listReviews({
     owner: event.repository.owner.login,
     repo: event.repository.name,
-    pull_number: event.number,
+    pull_number: event.pull_request.number,
   })
 
   core.debug(`dismiss > listReviews:`)
@@ -134,7 +137,7 @@ const dismiss = async (
     await octokit.pulls.dismissReview({
       owner: event.repository.owner.login,
       repo: event.repository.name,
-      pull_number: event.number,
+      pull_number: event.pull_request.number,
       review_id: reviewId,
       message,
     })
@@ -153,7 +156,7 @@ const approve = async (
     await octokit.pulls.createReview({
       owner: event.repository.owner.login,
       repo: event.repository.name,
-      pull_number: event.number,
+      pull_number: event.pull_request.number,
       event: 'APPROVE',
     })
   }
@@ -176,7 +179,7 @@ const checkApprovals = async (
     const { data } = await octokit.pulls.listReviews({
       owner: event.repository.owner.login,
       repo: event.repository.name,
-      pull_number: event.number,
+      pull_number: event.pull_request.number,
     })
 
     core.debug(`checkApprovals > listReviews:`)
@@ -218,7 +221,7 @@ const mergePullRequest = async (
   await octokit.pulls.merge({
     owner: event.repository.owner.login,
     repo: event.repository.name,
-    pull_number: event.number,
+    pull_number: event.pull_request.number,
     commit_title: `Release ${version.version}`,
   })
 }
@@ -255,6 +258,9 @@ export const main = async (): Promise<void> => {
       case action_edited:
       case action_opened:
       case action_reopened:
+      case review_action_dismissed:
+      case review_action_submitted:
+      case review_action_edited:
         return await processPullRequestEvent(octokit, event, bot)
     }
   } catch (error) {

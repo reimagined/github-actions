@@ -16,20 +16,32 @@ export const action_synchronize = 'synchronize'
 //const action_unlocked = 'unlocked'
 //const action_review_requested = 'review_requested'
 //const action_review_request_removed = 'review_request_removed'
+export const review_action_submitted = 'submitted'
+export const review_action_dismissed = 'dismissed'
+export const review_action_edited = 'edited'
 
 type PullRequestState = 'open' | 'closed'
 
 type EventData = {
-  number: number
   pull_request: {
     title: string
     state: PullRequestState
+    number: number
   }
   repository: {
     name: string
     owner: {
       login: string
       type: string
+    }
+  }
+}
+type ReviewEventData = {
+  review: {
+    id: number
+    state: string
+    user: {
+      login: string
     }
   }
 }
@@ -45,11 +57,27 @@ export type OpenedEvent = {
 export type ReopenedEvent = {
   action: typeof action_reopened
 } & EventData
+export type ReviewEventSubmitted = {
+  action: typeof review_action_submitted
+} & EventData &
+  ReviewEventData
+export type ReviewEventDismissed = {
+  action: typeof review_action_dismissed
+} & EventData &
+  ReviewEventData
+export type ReviewEventEdited = {
+  action: typeof review_action_edited
+} & EventData &
+  ReviewEventData
+
 export type PullRequestEvent =
   | EditedEvent
   | SynchronizeEvent
   | OpenedEvent
   | ReopenedEvent
+  | ReviewEventSubmitted
+  | ReviewEventDismissed
+  | ReviewEventEdited
 
 export type Bot = {
   name: string
