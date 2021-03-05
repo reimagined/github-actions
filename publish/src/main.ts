@@ -62,19 +62,23 @@ const determineRegistry = (): URL => {
 
 const determineVersion = (): string => {
   const version = core.getInput('version', { required: true })
-  if (version.toLowerCase() === 'auto') {
-    const pkg = readPackage()
-    const build =
-      limitLength(core.getInput('build')) ??
-      new Date().toISOString().replace(/[:.]/gi, '-')
-    return `${pkg.version}-${build}`
-  }
+  switch (version.toLowerCase()) {
+    case 'auto':
+      const pkg = readPackage()
+      const build =
+        limitLength(core.getInput('build')) ??
+        new Date().toISOString().replace(/[:.]/gi, '-')
+      return `${pkg.version}-${build}`
 
-  if (!semver.parse(version)) {
-    throw Error(`invalid version: ${version}`)
-  }
+    case 'source':
+      return readPackage().version
 
-  return version
+    default:
+      if (!semver.parse(version)) {
+        throw Error(`invalid version: ${version}`)
+      }
+      return version
+  }
 }
 
 export const main = async (): Promise<void> => {

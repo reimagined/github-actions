@@ -77,7 +77,8 @@ test('workspace processor', async () => {
   await post()
 
   expect(mProcessWorkspaces).toHaveBeenCalled()
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+  const processor: WorkspaceProcessor<unknown> =
+    mProcessWorkspaces.mock.calls[0][0]
 
   await processor({
     name: 'mock-package',
@@ -96,7 +97,8 @@ test('workspace processor failure', async () => {
   await post()
 
   expect(mProcessWorkspaces).toHaveBeenCalled()
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+  const processor: WorkspaceProcessor<unknown> =
+    mProcessWorkspaces.mock.calls[0][0]
 
   mUnpublish.mockImplementationOnce(() => {
     throw Error('failure')
@@ -117,7 +119,8 @@ test('workspace processor failure', async () => {
 test('workspace processor skip debug output of stdout if its empty', async () => {
   await post()
 
-  const processor: WorkspaceProcessor = mProcessWorkspaces.mock.calls[0][0]
+  const processor: WorkspaceProcessor<unknown> =
+    mProcessWorkspaces.mock.calls[0][0]
 
   mExec.mockImplementationOnce((command, options, callback) => {
     callback?.(null, '', '')

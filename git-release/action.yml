@@ -1,0 +1,39 @@
+name: git-release
+description: perform framework git release
+inputs:
+  push_event:
+    description: GitHub push event that triggers workflow in JSON format
+    required: true
+  token:
+    description: GitHub user PAT with required permissions
+    required: true
+  ssh_private_key:
+    description: GitHub user's private SSH key part to access to repository
+    required: true
+  commit:
+    description: commit SHA that triggers workflow (used for compatibility with actions commit selection)
+    required: true
+  release_branch:
+    description: release branch name
+    required: false
+    default: master
+  development_branch:
+    description: development branch name
+    required: false
+    default: dev
+  delete_version_branch:
+    description: delete version branch
+    required: false
+    default: 'true'
+
+outputs:
+  version:
+    description: semver complaint release version
+  tag:
+    description: created git tag name
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'
+  post: 'dist/post.js'
+  pre: 'dist/pre.js'

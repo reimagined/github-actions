@@ -33,7 +33,9 @@ const mOSHomeDir = mocked(os.homedir)
 const mWriteNpmRc = mocked(writeNpmRc)
 const mRestoreNpmRc = mocked(restoreNpmRc)
 
-const getWorkspaceProcessor = async (): Promise<WorkspaceProcessor> => {
+const getWorkspaceProcessor = async (): Promise<
+  WorkspaceProcessor<unknown>
+> => {
   process.argv = ['node', 'index.js']
 
   await main()
@@ -559,4 +561,12 @@ test('determine version: invalid semver', async () => {
   actionInput.version = '2'
 
   await expect(main()).rejects.toBeInstanceOf(Error)
+})
+
+test('determine version: source', async () => {
+  actionInput.version = 'source'
+
+  await main()
+
+  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4`)
 })
