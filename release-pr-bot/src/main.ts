@@ -163,7 +163,7 @@ const checkApprovals = async (
   octokit: Octokit,
   event: PullRequestEvent,
   bot: Bot
-) => {
+): Promise<boolean> => {
   const botReviewId = await getBotApproval(octokit, event, bot)
   if (botReviewId == null) {
     throw new CheckFailedError(
@@ -191,17 +191,21 @@ const checkApprovals = async (
     )
 
     if (approvedReviews.length < requiredApprovalsCount) {
-      throw new CheckFailedError(
+      await addComment(
+        octokit,
+        event,
         `Need **${
           requiredApprovalsCount - approvedReviews.length
         }** approved review to proceed`
       )
+      return false
     }
   } else {
     core.warning(
       `Required approved reviews count is zero. Only the bot approves the pull request.`
     )
   }
+  return true
 }
 
 const mergePullRequest = async (
@@ -227,8 +231,9 @@ const processPullRequestEvent = async (
   const version = await determineReleaseVersion(event.pull_request.title)
   await checkVersionConflicts(octokit, event, version)
   await approve(octokit, event, bot)
-  await checkApprovals(octokit, event, bot)
-  await mergePullRequest(octokit, event, version)
+  if (await checkApprovals(octokit, event, bot)) {
+    await mergePullRequest(octokit, event, version)
+  }
 }
 
 export const main = async (): Promise<void> => {
