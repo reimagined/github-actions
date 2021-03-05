@@ -36,6 +36,6 @@
     "install-cloud",
     "deploy",
     "git-release",
-    "relese-pr-bot"
+    "release-pr-bot"
   ]
 }
