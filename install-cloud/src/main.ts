@@ -11,7 +11,7 @@ import {
   parseScopes,
 } from '../../common/src/utils'
 
-const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
+export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
   args: string,
   stdio: StdioOptions = 'inherit'
 ): Buffer =>
@@ -106,4 +106,5 @@ export const main = async (): Promise<void> => {
     .trim()
 
   core.setOutput('api_url', apiUrl)
+  core.saveState(`determined_version`, determinedVersion)
 }
