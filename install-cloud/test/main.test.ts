@@ -1,6 +1,5 @@
 import { URL } from 'url'
 import { mocked } from 'ts-jest/utils'
-import { execSync } from 'child_process'
 import { writeFileSync, readFileSync } from 'fs'
 import * as core from '@actions/core'
 import {
@@ -11,13 +10,12 @@ import {
   parseScopes,
 } from '../../common/src/utils'
 import { main } from '../src/main'
+import * as utils from '../../common/src/utils'
 
-jest.mock('child_process')
 jest.mock('@actions/core')
 jest.mock('fs')
 jest.mock('../../common/src/utils')
 
-const mExec = mocked(execSync)
 const mWriteFile = mocked(writeFileSync)
 const mReadFile = mocked(readFileSync)
 const mCoreGetInput = mocked(core.getInput)
@@ -26,16 +24,11 @@ const mProcessWorkspaces = mocked(processWorkspaces)
 const mBumpDependencies = mocked(bumpDependencies)
 const mWriteNpmRc = mocked(writeNpmRc)
 const mParseScopes = mocked(parseScopes)
+const mCreateExecutor = mocked(utils.createExecutor)
 
 let actionInput: { [key: string]: string }
 
 const originalEnv = process.env
-
-const expectedEnv = () => ({
-  THIS_PROCESS_ENV: 'yes',
-  AWS_ACCESS_KEY_ID: actionInput.aws_access_key_id,
-  AWS_SECRET_ACCESS_KEY: actionInput.aws_secret_access_key,
-})
 
 const getWorkspaceProcessor = async (): Promise<
   WorkspaceProcessor<unknown>
@@ -46,6 +39,8 @@ const getWorkspaceProcessor = async (): Promise<
   return mProcessWorkspaces.mock.calls[0][0]
 }
 
+let execSync = jest.fn()
+
 beforeEach(() => {
   actionInput = {
     aws_access_key_id: 'aws-access-key-id',
@@ -54,13 +49,14 @@ beforeEach(() => {
     stage: 'cloud-stage',
   }
   mCoreGetInput.mockImplementation((name) => actionInput[name])
-  mExec.mockImplementation((command) => {
+  execSync.mockImplementation((command) => {
     let result = ''
     if (command.includes('admin-cli get-api-url')) {
       result = 'http://cloud-api-url.com'
     }
     return Buffer.from(result)
   })
+  mCreateExecutor.mockImplementation((command) => execSync)
   mReadFile.mockReturnValue(
     Buffer.from(
       JSON.stringify({
@@ -83,46 +79,28 @@ afterEach(() => {
 test('source dependencies are installed', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith('yarn install', {
-    stdio: 'inherit',
-    cwd: '/source',
-    env: expectedEnv(),
-  })
+  expect(execSync).toHaveBeenCalledWith('yarn install')
 })
 
 test('cloud assets are built', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith('yarn build-assets', {
-    stdio: 'inherit',
-    cwd: '/source',
-    env: expectedEnv(),
-  })
+  expect(execSync).toHaveBeenCalledWith('yarn build-assets')
 })
 
 test('stage resources rollout', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith(
-    'yarn -s admin-cli stage-resources install --stage=cloud-stage',
-    {
-      stdio: 'inherit',
-      cwd: '/source',
-      env: expectedEnv(),
-    }
+  expect(execSync).toHaveBeenCalledWith(
+    'yarn -s admin-cli stage-resources install --stage=cloud-stage'
   )
 })
 
 test('version resources rollout (no version input)', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith(
-    'yarn -s admin-cli version-resources install --stage=cloud-stage --version=6.5.4',
-    {
-      stdio: 'inherit',
-      cwd: '/source',
-      env: expectedEnv(),
-    }
+  expect(execSync).toHaveBeenCalledWith(
+    'yarn -s admin-cli version-resources install --stage=cloud-stage --version=6.5.4'
   )
 })
 
@@ -131,26 +109,17 @@ test('version resources rollout (specified version)', async () => {
 
   await main()
 
-  expect(mExec).toHaveBeenCalledWith(
-    'yarn -s admin-cli version-resources install --stage=cloud-stage --version=1.2.3',
-    {
-      stdio: 'inherit',
-      cwd: '/source',
-      env: expectedEnv(),
-    }
+  expect(execSync).toHaveBeenCalledWith(
+    'yarn -s admin-cli version-resources install --stage=cloud-stage --version=1.2.3'
   )
 })
 
 test('cloud API url retrieved and assigned to output', async () => {
   await main()
 
-  expect(mExec).toHaveBeenCalledWith(
+  expect(execSync).toHaveBeenCalledWith(
     'yarn -s admin-cli get-api-url --stage=cloud-stage',
-    {
-      stdio: 'pipe',
-      cwd: '/source',
-      env: expectedEnv(),
-    }
+    'pipe'
   )
 
   expect(mCoreSetOutput).toHaveBeenCalledWith(

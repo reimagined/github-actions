@@ -1,6 +1,6 @@
 import clone from 'lodash.clonedeep'
 import isEmpty from 'lodash.isempty'
-import { execSync } from 'child_process'
+import { execSync, StdioOptions } from 'child_process'
 import {
   readFileSync,
   existsSync,
@@ -181,3 +181,16 @@ export const exportEnvVar = (name: string, value: string): string =>
   execSync(`echo "${name}=${value}" >> $GITHUB_ENV`, {
     stdio: 'pipe',
   }).toString()
+
+export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
+  args: string,
+  stdio: StdioOptions = 'inherit'
+): Buffer =>
+  execSync(args, {
+    cwd,
+    stdio,
+    env: {
+      ...process.env,
+      ...env,
+    },
+  })

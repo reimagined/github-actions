@@ -1,4 +1,3 @@
-import { execSync, StdioOptions } from 'child_process'
 import { URL } from 'url'
 import { writeFileSync, readFileSync } from 'fs'
 import * as path from 'path'
@@ -9,20 +8,8 @@ import {
   bumpDependencies,
   writeNpmRc,
   parseScopes,
+  createExecutor,
 } from '../../common/src/utils'
-
-export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
-  args: string,
-  stdio: StdioOptions = 'inherit'
-): Buffer =>
-  execSync(args, {
-    cwd,
-    stdio,
-    env: {
-      ...process.env,
-      ...env,
-    },
-  })
 
 export const main = async (): Promise<void> => {
   const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true })

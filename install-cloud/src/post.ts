@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { createExecutor } from './main'
+import { createExecutor } from '../../common/src/utils'
 
 export const post = async (): Promise<void> => {
   const awsAccessKeyId = core.getInput('aws_access_key_id', { required: true })
