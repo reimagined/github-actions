@@ -16,6 +16,9 @@ import {
 import { Package } from '../../common/src/types'
 import { PushEvent } from './types'
 
+const tagName = (version: string) => `V${version.trim()}`
+const versionCommitMessage = (version: string) => `<auto> ${tagName(version)}`
+
 const determineReleaseVersion = (event: PushEvent): string => {
   const versions = findVersions(event.head_commit.message)
   if (versions.length === 0) {
@@ -26,8 +29,6 @@ const determineReleaseVersion = (event: PushEvent): string => {
   }
   return versions[0]
 }
-
-const tagName = (version: string) => `V${version.trim()}`
 
 const packagePatcher = async (
   version: string,
@@ -123,7 +124,9 @@ export const pre = async (): Promise<void> => {
 
   core.startGroup(`committing and pushing changes`)
   git(`add -u`)
-  git(`commit -m "${versionTag}"`)
+  const commitMessage = versionCommitMessage(version)
+  core.saveState(`version_commit_message`, commitMessage)
+  git(`commit -m "${commitMessage}"`)
   git(`push --set-upstream origin ${versionBranch}`)
   core.endGroup()
 

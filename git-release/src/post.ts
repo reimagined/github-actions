@@ -6,8 +6,6 @@ import { parseBoolean } from '../../common/src/utils'
 import { getGit } from '../../common/src/git'
 //import { Octokit, PushEvent } from './types'
 
-const mergeCommitMessage = `<auto> merge version branch`
-
 /*
 const getRepo = (event: PushEvent) => ({
   repo: event.repository.name,
@@ -111,8 +109,10 @@ export const post = async (): Promise<void> => {
       core.debug(`checking out ${releaseBranch}`)
       git(`checkout ${releaseBranch}`)
 
+      const commitMessage = core.getState(`version_commit_message`)
+
       core.debug(`merging ${versionBranch} to ${releaseBranch}`)
-      git(`merge -m "${mergeCommitMessage}" ${versionBranch}`)
+      git(`merge -m "${commitMessage}" ${versionBranch}`)
 
       core.debug(`pushing ${releaseBranch} to remote`)
       git(`push`)
@@ -124,7 +124,7 @@ export const post = async (): Promise<void> => {
       git(`pull`)
 
       core.debug(`merging ${releaseBranch} to ${devBranch}`)
-      git(`merge -m "${mergeCommitMessage}" ${releaseBranch}`)
+      git(`merge -m "${commitMessage}" ${releaseBranch}`)
 
       core.debug(`pushing ${devBranch} to remote`)
       git(`push`)
