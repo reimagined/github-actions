@@ -1,5 +1,5 @@
 import { mocked } from 'ts-jest/utils'
-import { execSync } from 'child_process'
+import { execSync, StdioOptions } from 'child_process'
 import {
   readFileSync,
   writeFileSync,
@@ -16,6 +16,7 @@ import {
   parseScopes,
   WorkspaceProcessor,
   parseBoolean,
+  createExecutor,
 } from '../src/utils'
 
 jest.mock('child_process')
@@ -531,5 +532,30 @@ describe('parseBoolean', () => {
     expect(parseBoolean('False')).toBeFalsy()
     expect(parseBoolean('0')).toBeFalsy()
     expect(parseBoolean('bla-bla')).toBeFalsy()
+  })
+})
+
+describe('createExecutor', async () => {
+  test('should return command executor and work correctly', () => {
+    const cwd = 'source'
+    const stdio = 'pipe'
+    const script = `echo ${Date.now()}`
+    const env = {
+      AWS_ACCESS_KEY_ID: 'awsAccessKeyId',
+      AWS_SECRET_ACCESS_KEY: 'awsSecretAccessKey',
+    }
+
+    const commandExecutor = createExecutor(cwd, env)
+
+    commandExecutor(script, stdio)
+
+    expect(mExec).toHaveBeenCalledWith(script, {
+      cwd,
+      stdio,
+      env: {
+        ...process.env,
+        ...env,
+      },
+    })
   })
 })
