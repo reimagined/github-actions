@@ -27,6 +27,9 @@ type EventData = {
     title: string
     state: PullRequestState
     number: number
+    head: {
+      sha: string
+    }
   }
   repository: {
     name: string

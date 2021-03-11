@@ -100,6 +100,39 @@ const checkVersionConflicts = async (
   }
 }
 
+const isAllChecksSuccessful = async (
+  octokit: Octokit,
+  event: PullRequestEvent
+) => {
+  const checkRuns = await octokit.checks.listForRef({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    ref: event.pull_request.head.sha,
+  })
+  if (checkRuns && checkRuns['total_count'] > 0) {
+    const incompleteChecks = checkRuns['check_runs'].filter(
+      (check) => check.status !== 'completed'
+    )
+    if (incompleteChecks.length < checkRuns['total_count']) {
+      await addComment(
+        octokit,
+        event,
+        `Waiting for ${incompleteChecks.length} of ${checkRuns['total-count']} checks to pass`
+      )
+      return false
+    }
+
+    const isUnsuccessful = checkRuns['check_runs'].some(
+      (check) =>
+        check.conclusion !== 'success' && check.conclusion !== 'neutral'
+    )
+    if (isUnsuccessful) {
+      throw new CheckFailedError(`Some check runs were unsuccessful`)
+    }
+  }
+  return true
+}
+
 const getBotApproval = async (
   octokit: Octokit,
   event: PullRequestEvent,
@@ -237,7 +270,10 @@ const processPullRequestEvent = async (
 ): Promise<void> => {
   const version = await determineReleaseVersion(event.pull_request.title)
   await checkVersionConflicts(octokit, event, version)
-  if (await checkApprovals(octokit, event, bot)) {
+  if (
+    (await isAllChecksSuccessful(octokit, event)) &&
+    (await checkApprovals(octokit, event, bot))
+  ) {
     await approve(octokit, event, bot)
     await mergePullRequest(octokit, event, version)
   }
