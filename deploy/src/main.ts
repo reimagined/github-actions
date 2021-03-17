@@ -59,7 +59,9 @@ export const main = async (): Promise<void> => {
   }
 
   core.debug(`writing patched: ${pkgFile}`)
-  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2))
+  const content = JSON.stringify(pkg, null, 2)
+  core.debug(content)
+  writeFileSync(pkgFile, content)
 
   const registry = core.getInput('package_registry')
   if (registry != null) {
