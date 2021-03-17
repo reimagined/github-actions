@@ -457,3 +457,25 @@ test('deployed application info retrieved on failed deploy operation', async () 
     'event-store-id'
   )
 })
+
+test('fix: specifying CLI sources should remove dev dependencies', async () => {
+  actionInput.cli_sources = '/cli/sources'
+  mReadFile.mockReturnValue(
+    Buffer.from(
+      JSON.stringify(
+        {
+          name: 'package',
+          devDependencies: {
+            'resolve-cloud': '*',
+          },
+        },
+        null,
+        2
+      )
+    )
+  )
+
+  await main()
+
+  expect(getPackageContent()?.devDependencies).toEqual({})
+})

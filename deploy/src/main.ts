@@ -2,6 +2,7 @@ import { URL } from 'url'
 import * as path from 'path'
 import * as core from '@actions/core'
 import setByPath from 'lodash.set'
+import unsetByPath from 'lodash.unset'
 import isEmpty from 'lodash.isempty'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
@@ -56,6 +57,8 @@ export const main = async (): Promise<void> => {
 
     core.debug(`setting cloud CLI version to (${cliVersion})`)
     setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+  } else {
+    unsetByPath(pkg, 'devDependencies.resolve-cloud')
   }
 
   core.debug(`writing patched: ${pkgFile}`)
