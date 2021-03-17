@@ -104,7 +104,7 @@ const isAllChecksSuccessful = async (
   octokit: Octokit,
   event: PullRequestEvent
 ) => {
-  const checkRuns = await octokit.checks.listForRef({
+  const { data: checkRuns } = await octokit.checks.listForRef({
     owner: event.repository.owner.login,
     repo: event.repository.name,
     ref: event.pull_request.head.sha,
@@ -113,7 +113,7 @@ const isAllChecksSuccessful = async (
     const incompleteChecks = checkRuns['check_runs'].filter(
       (check) => check.status !== 'completed'
     )
-    if (incompleteChecks.length < checkRuns['total_count']) {
+    if (incompleteChecks.length > 0) {
       await addComment(
         octokit,
         event,
