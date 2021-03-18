@@ -56,7 +56,10 @@ beforeEach(() => {
     }
     return Buffer.from(result)
   })
-  mCreateExecutor.mockImplementation((command) => execSync)
+  mCreateExecutor.mockImplementation((command: string) => {
+    void command
+    return execSync
+  })
   mReadFile.mockReturnValue(
     Buffer.from(
       JSON.stringify({
