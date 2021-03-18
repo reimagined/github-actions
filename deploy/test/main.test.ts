@@ -274,6 +274,26 @@ test('app dependencies installation', async () => {
   })
 })
 
+test('tolerate to script "yarn install" execution errors', async () => {
+  let retryIndex = 0
+  mExec.mockImplementation((command: string) => {
+    if (retryIndex < 3 && command.includes('yarn install --frozen-lockfile')) {
+      retryIndex++
+      throw new Error(
+        `Couldn't find any versions for "@resolve-js/some-package-name" that matches "x.y.z"`
+      )
+    }
+    return Buffer.from('')
+  })
+
+  await main()
+
+  expect(mExec).toHaveBeenCalledWith('yarn install --frozen-lockfile', {
+    cwd: '/source/dir',
+    stdio: 'inherit',
+  })
+})
+
 test('cloud CLI requested', async () => {
   await main()
 

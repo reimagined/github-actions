@@ -88,10 +88,21 @@ export const main = async (): Promise<void> => {
 
   core.info(`installing application dependencies`)
 
-  execSync(`yarn install --frozen-lockfile`, {
-    cwd: appDir,
-    stdio: 'inherit',
-  })
+  for (let retryIndex = 0; retryIndex < 10; retryIndex++) {
+    try {
+      execSync(`yarn install --frozen-lockfile`, {
+        cwd: appDir,
+        stdio: 'inherit',
+      })
+      break
+    } catch (error) {
+      if (/Couldn't find any versions for "@resolve-js/.test(`${error}`)) {
+        core.debug(`Retry ${retryIndex + 1}/10: yarn install --frozen-lockfile`)
+      } else {
+        throw error
+      }
+    }
+  }
 
   const randomizer = parseBoolean(core.getInput('randomize_name'))
     ? randomize

@@ -535,7 +535,7 @@ describe('parseBoolean', () => {
   })
 })
 
-describe('createExecutor', async () => {
+describe('createExecutor', () => {
   test('should return command executor and work correctly', () => {
     const cwd = 'source'
     const stdio = 'pipe'
