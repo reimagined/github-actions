@@ -66,6 +66,10 @@ inputs:
     required: false
     default: '@resolve-js'
 
+  events_file_path:
+    description: initial events file path
+    required: false
+
 outputs:
   id:
     description: deployed application id
@@ -75,7 +79,7 @@ outputs:
     description: deployed application url
   runtime:
     description: deployed application runtime version
-  eventstore_id:
+  event_store_id:
     description: deployed application event store identifier
 
 runs:

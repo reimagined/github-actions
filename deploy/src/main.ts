@@ -7,6 +7,7 @@ import isEmpty from 'lodash.isempty'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import latestVersion from 'latest-version'
+import * as os from 'os'
 import { Package } from '../../common/src/types'
 import {
   bumpDependencies,
@@ -118,13 +119,56 @@ export const main = async (): Promise<void> => {
 
   const customArgs = core.getInput('deploy_args') || ''
 
-  core.debug(`deploying the application to the cloud`)
-
-  const baseArgs = `--name ${targetAppName}`
   const cli = getCLI(appDir, cliSources)
+  const eventsFilePath = core.getInput('events_file_path')
 
   try {
-    cli(`deploy ${baseArgs} ${customArgs}`, 'inherit')
+    let eventStoreId: string | null = null
+
+    if (eventsFilePath != null) {
+      core.debug(`events file path is specified. creating event-store`)
+      const eventStoreCreateOutput = cli(`event-stores create`, 'inherit')
+      core.debug(`event-store created`)
+
+      const eventStoreIdRegex = new RegExp(
+        'Event store with "((\\w|\\d)+)" id has been created'
+      )
+
+      const lineWithId = eventStoreCreateOutput
+        .split(os.EOL)
+        .find((line) => eventStoreIdRegex.test(line))
+
+      if (lineWithId == null) {
+        throw new Error('Event store ID is not found in the output')
+      }
+
+      void ([, eventStoreId] = eventStoreIdRegex.exec(lineWithId) || [])
+
+      if (eventStoreId == null) {
+        throw new Error('Event store ID is not found in the output')
+      }
+
+      core.debug(`importing initial events into event-store`)
+
+      cli(
+        `event-stores incremental-import ${eventStoreId} ${eventsFilePath}`,
+        'inherit'
+      )
+
+      core.debug(`initial events imported`)
+    }
+
+    const deployCommandParts = ['deploy', `--name ${targetAppName}`]
+
+    if (eventStoreId) {
+      deployCommandParts.push(`--event-store-id ${eventStoreId}`)
+    }
+
+    deployCommandParts.push(customArgs)
+    const deployCommand = deployCommandParts.filter(Boolean).join(' ')
+
+    core.debug(`deploying the application to the cloud`)
+    cli(deployCommand, 'inherit')
     core.debug('the application deployed successfully')
   } finally {
     core.debug(`retrieving deployed application metadata`)
