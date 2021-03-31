@@ -88,6 +88,7 @@ test('input read', async () => {
   expect(mCoreGetInput).toHaveBeenCalledWith('package_registry')
   expect(mCoreGetInput).toHaveBeenCalledWith('framework_version')
   expect(mCoreGetInput).toHaveBeenCalledWith('cli_version')
+  expect(mCoreGetInput).toHaveBeenCalledWith('events_file_path')
 })
 
 test('framework version patched', async () => {
@@ -455,6 +456,35 @@ test('deployed application info retrieved on failed deploy operation', async () 
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'event_store_id',
     'event-store-id'
+  )
+})
+
+test('deployed application with events file', async () => {
+  actionInput.events_file_path = './test-events.txt'
+
+  mDescribeApp.mockReturnValueOnce({
+    name: 'app-name',
+    runtime: 'app-runtime',
+    url: 'https://app-url.com',
+    id: 'app-id',
+    eventStoreId: 'te12st',
+  })
+
+  mCLI.mockReturnValueOnce(`
+    ℹ Event store ID: te12st
+    ✔ Event store with "te12st" id has been created
+  `)
+
+  await main()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    'event-stores incremental-import te12st ./test-events.txt',
+    'inherit'
+  )
+
+  expect(mCLI).toHaveBeenCalledWith(
+    'deploy --name package --event-store-id te12st',
+    'inherit'
   )
 })
 
