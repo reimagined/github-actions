@@ -170,6 +170,8 @@ export const main = async (): Promise<void> => {
     core.debug(`deploying the application to the cloud`)
     cli(deployCommand, 'inherit')
     core.debug('the application deployed successfully')
+  } catch (e) {
+    core.error(`deploy failed: ${e.toString()}`)
   } finally {
     core.debug(`retrieving deployed application metadata`)
 
