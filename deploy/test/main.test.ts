@@ -470,10 +470,7 @@ test('deployed application with events file', async () => {
     eventStoreId: 'te12st',
   })
 
-  mCLI.mockReturnValueOnce(`
-    ℹ Event store ID: te12st
-    ✔ Event store with "te12st" id has been created
-  `)
+  mCLI.mockReturnValueOnce('te12st\n')
 
   await main()
 

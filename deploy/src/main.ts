@@ -127,22 +127,13 @@ export const main = async (): Promise<void> => {
 
     if (eventsFilePath != null) {
       core.debug(`events file path is specified. creating event-store`)
-      const eventStoreCreateOutput = cli(`event-stores create`, 'inherit')
+
+      eventStoreId = cli(`event-stores create --format "{{ eventStoreId }}"`, [
+        'inherit',
+        'pipe',
+      ]).trim()
+
       core.debug(`event-store created`)
-
-      const eventStoreIdRegex = new RegExp(
-        'Event store with "((\\w|\\d)+)" id has been created'
-      )
-
-      const lineWithId = eventStoreCreateOutput
-        .split(os.EOL)
-        .find((line) => eventStoreIdRegex.test(line))
-
-      if (lineWithId == null) {
-        throw new Error('Event store ID is not found in the output')
-      }
-
-      void ([, eventStoreId] = eventStoreIdRegex.exec(lineWithId) || [])
 
       if (eventStoreId == null) {
         throw new Error('Event store ID is not found in the output')
@@ -172,6 +163,7 @@ export const main = async (): Promise<void> => {
     core.debug('the application deployed successfully')
   } catch (e) {
     core.error(`deploy failed: ${e.toString()}`)
+    throw e
   } finally {
     core.debug(`retrieving deployed application metadata`)
 
