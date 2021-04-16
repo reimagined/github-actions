@@ -41,6 +41,22 @@ inputs:
 outputs:
   api_url:
     description: cloud service API url
+  event_store_cluster_arn:
+    description: Event Store cluster ARN
+  read_models_cluster_arn:
+    description: Read Models cluster ARN
+  system_cluster_arn:
+    description: System cluster ARN
+  system_database_name:
+    description: System database name
+  postgres_admin_username:
+    description: Postgres admin username
+  postgres_admin_password:
+    description: Postgres admin password
+  postgres_admin_secret_name:
+    description: Postgres admin secret name
+  postgres_admin_secret_arn:
+    description: Postgres admin secret ARN
 
 runs:
   using: 'node12'

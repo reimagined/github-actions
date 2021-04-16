@@ -1,5 +1,5 @@
 import { mocked } from 'ts-jest/utils'
-import { execSync, StdioOptions } from 'child_process'
+import { execSync } from 'child_process'
 import {
   readFileSync,
   writeFileSync,

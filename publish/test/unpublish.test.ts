@@ -5,8 +5,6 @@ import { execSync } from 'child_process'
 import { mocked } from 'ts-jest/utils'
 import { unpublish } from '../src/unpublish'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
 jest.mock('@actions/core')
 jest.mock('@actions/github')
 jest.mock('fs')

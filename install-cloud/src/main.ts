@@ -85,6 +85,8 @@ export const main = async (): Promise<void> => {
     `yarn -s admin-cli version-resources install --stage=${stage} --version=${determinedVersion}`
   )
 
+  core.saveState(`determined_version`, determinedVersion)
+
   const apiUrl = commandExecutor(
     `yarn -s admin-cli get-api-url --stage=${stage}`,
     'pipe'
@@ -93,5 +95,28 @@ export const main = async (): Promise<void> => {
     .trim()
 
   core.setOutput('api_url', apiUrl)
-  core.saveState(`determined_version`, determinedVersion)
+
+  const {
+    eventStoreClusterArn,
+    readModelsClusterArn,
+    systemClusterArn,
+    systemDatabaseName,
+    postgresAdminUsername,
+    postgresAdminPassword,
+    postgresAdminSecretName,
+    postgresAdminSecretArn,
+  } = JSON.parse(
+    commandExecutor(`yarn -s admin-cli rds describe --stage=${stage}`, 'pipe')
+      .toString()
+      .trim()
+  )
+
+  core.setOutput('event_store_cluster_arn', eventStoreClusterArn)
+  core.setOutput('read_models_cluster_arn', readModelsClusterArn)
+  core.setOutput('system_cluster_arn', systemClusterArn)
+  core.setOutput('system_database_name', systemDatabaseName)
+  core.setOutput('postgres_admin_username', postgresAdminUsername)
+  core.setOutput('postgres_admin_password', postgresAdminPassword)
+  core.setOutput('postgres_admin_secret_name', postgresAdminSecretName)
+  core.setOutput('postgres_admin_secret_arn', postgresAdminSecretArn)
 }
