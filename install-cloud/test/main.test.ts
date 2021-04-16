@@ -54,9 +54,29 @@ beforeEach(() => {
     if (command.includes('admin-cli get-api-url')) {
       result = 'http://cloud-api-url.com'
     }
+    if (command.includes('admin-cli rds describe')) {
+      result = `${JSON.stringify(
+        {
+          eventStoreClusterArn:
+            'arn:aws:rds:test:123456789012:cluster:resolve-test-system',
+          readModelsClusterArn:
+            'arn:aws:rds:test:123456789012:cluster:resolve-test-system',
+          systemClusterArn:
+            'arn:aws:rds:test:123456789012:cluster:resolve-test-system',
+          systemDatabaseName: 'system',
+          postgresAdminUsername: 'master',
+          postgresAdminPassword: 'postgresAdminPassword',
+          postgresAdminSecretName: 'test/postgres/master',
+          postgresAdminSecretArn:
+            'arn:aws:secretsmanager:test:123456789012:secret:test/postgres/master-ABCDEF',
+        },
+        null,
+        2
+      )}\n`
+    }
     return Buffer.from(result)
   })
-  mCreateExecutor.mockImplementation((command) => execSync)
+  mCreateExecutor.mockImplementation(() => execSync)
   mReadFile.mockReturnValue(
     Buffer.from(
       JSON.stringify({
@@ -125,6 +145,46 @@ test('cloud API url retrieved and assigned to output', async () => {
   expect(mCoreSetOutput).toHaveBeenCalledWith(
     'api_url',
     'http://cloud-api-url.com'
+  )
+})
+
+test('RDS credentials retrieved and assigned to output', async () => {
+  await main()
+
+  expect(execSync).toHaveBeenCalledWith(
+    'yarn -s admin-cli rds describe --stage=cloud-stage',
+    'pipe'
+  )
+
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'event_store_cluster_arn',
+    'arn:aws:rds:test:123456789012:cluster:resolve-test-system'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'read_models_cluster_arn',
+    'arn:aws:rds:test:123456789012:cluster:resolve-test-system'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'system_cluster_arn',
+    'arn:aws:rds:test:123456789012:cluster:resolve-test-system'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith('system_database_name', 'system')
+  expect(mCoreSetOutput).toHaveBeenCalledWith('system_database_name', 'system')
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'postgres_admin_username',
+    'master'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'postgres_admin_password',
+    'postgresAdminPassword'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'postgres_admin_secret_name',
+    'test/postgres/master'
+  )
+  expect(mCoreSetOutput).toHaveBeenCalledWith(
+    'postgres_admin_secret_arn',
+    'arn:aws:secretsmanager:test:123456789012:secret:test/postgres/master-ABCDEF'
   )
 })
 

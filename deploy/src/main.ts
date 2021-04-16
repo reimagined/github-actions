@@ -7,7 +7,7 @@ import isEmpty from 'lodash.isempty'
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import latestVersion from 'latest-version'
-import * as os from 'os'
+
 import { Package } from '../../common/src/types'
 import {
   bumpDependencies,
