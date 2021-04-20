@@ -88,7 +88,7 @@ export const main = async (): Promise<void> => {
   core.saveState(`determined_version`, determinedVersion)
 
   const apiUrl = commandExecutor(
-    `yarn -s admin-cli get-api-url --stage=${stage}`,
+    `yarn -s admin-cli get-api-url --stage=${stage} --skip-logs`,
     'pipe'
   )
     .toString()
@@ -106,7 +106,10 @@ export const main = async (): Promise<void> => {
     postgresAdminSecretName,
     postgresAdminSecretArn,
   } = JSON.parse(
-    commandExecutor(`yarn -s admin-cli rds describe --stage=${stage}`, 'pipe')
+    commandExecutor(
+      `yarn -s admin-cli rds describe --stage=${stage} --skip-logs`,
+      'pipe'
+    )
       .toString()
       .trim()
   )

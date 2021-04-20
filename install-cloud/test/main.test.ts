@@ -55,7 +55,7 @@ beforeEach(() => {
       result = 'http://cloud-api-url.com'
     }
     if (command.includes('admin-cli rds describe')) {
-      result = `${JSON.stringify(
+      const credentials = JSON.stringify(
         {
           eventStoreClusterArn:
             'arn:aws:rds:test:123456789012:cluster:resolve-test-system',
@@ -72,7 +72,25 @@ beforeEach(() => {
         },
         null,
         2
-      )}\n`
+      )
+      if (command.includes('--skip-logs')) {
+        result = `${credentials}\n`
+      } else {
+        result = [
+          `Invoke lambda "arn:aws:lambda:eu-central-1:123456789012:function:installer-${actionInput.stage}" : "describeRDSClusters" with {}`,
+          `START RequestId: 1b37a001-e4fe-4c74-95c1-25d3ca267916 Version: $LATEST`,
+          `${new Date().toISOString()} GET-SECRET DEBUG <no-correlation-id> Get a secret`,
+          `${new Date().toISOString()} GET-SECRET DEBUG <no-correlation-id> The secret has been got`,
+          `${new Date().toISOString()} GET-DB-CLUSTER-BY-TAGS DEBUG <no-correlation-id> Find resources by tags`,
+          `${new Date().toISOString()} GET-DB-CLUSTER-BY-TAGS DEBUG <no-correlation-id> Resources have been found`,
+          `${new Date().toISOString()} GET-DB-CLUSTER-BY-TAGS VERBOSE <no-correlation-id> arn:aws:rds:eu-central-1:469403232873:cluster:resolve-dev-system`,
+          `${new Date().toISOString()} GET-DB-CLUSTER-BY-TAGS VERBOSE <no-correlation-id> [{"Key":"Owner","Value":"reimagined"},{"Key":"resolve-rds-cluster-name","Value":"system"},{"Key":"resolve-resource","Value":"rds"},{"Key":"resolve-stage","Value":"dev"}]`,
+          `END RequestId: 1b37a001-e4fe-4c74-95c1-25d3ca267916`,
+          `REPORT RequestId: 1b37a001-e4fe-4c74-95c1-25d3ca267916	Duration: 937.60 ms	Billed Duration: 938 ms	Memory Size: 256 MB	Max Memory Used: 95 MB	Init Duration: 547.98 ms`,
+          `${credentials}`,
+          `${credentials}`,
+        ].join('\n')
+      }
     }
     return Buffer.from(result)
   })
@@ -138,7 +156,7 @@ test('cloud API url retrieved and assigned to output', async () => {
   await main()
 
   expect(execSync).toHaveBeenCalledWith(
-    'yarn -s admin-cli get-api-url --stage=cloud-stage',
+    'yarn -s admin-cli get-api-url --stage=cloud-stage --skip-logs',
     'pipe'
   )
 
@@ -151,7 +169,8 @@ test('cloud API url retrieved and assigned to output', async () => {
 test('RDS credentials retrieved and assigned to output', async () => {
   await main()
 
-  expect(execSync).toHaveBeenCalledWith(
+  // throw error when missing flag "--skip-logs"
+  expect(execSync).not.toHaveBeenCalledWith(
     'yarn -s admin-cli rds describe --stage=cloud-stage',
     'pipe'
   )
