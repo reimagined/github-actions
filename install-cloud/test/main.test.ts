@@ -169,9 +169,8 @@ test('cloud API url retrieved and assigned to output', async () => {
 test('RDS credentials retrieved and assigned to output', async () => {
   await main()
 
-  // throw error when missing flag "--skip-logs"
-  expect(execSync).not.toHaveBeenCalledWith(
-    'yarn -s admin-cli rds describe --stage=cloud-stage',
+  expect(execSync).toHaveBeenCalledWith(
+    'yarn -s admin-cli rds describe --stage=cloud-stage --skip-logs',
     'pipe'
   )
 
