@@ -82,6 +82,8 @@ export const main = async (): Promise<void> => {
           ? `--unreleased --unreleased-only`
           : '--no-unreleased'
       }`,
+      debug: core.debug,
+      error: core.error,
     })
   } catch (e) {
     core.error(e)

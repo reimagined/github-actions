@@ -28,18 +28,23 @@ const runImage = async (
       }
     )
 
-    let result
+    let stdout = ''
+    let stderr = ''
 
     const onComplete = (code: number) => {
       if (code !== 0) {
-        reject(Error(`Process exit with code ${code}`))
+        reject(Error(`Code ${code}: ${stderr}`))
       }
-      return resolve(result)
+      return resolve(stdout)
     }
 
-    proc.on('data', (data) => {
-      result += data.toString()
-      options?.log?.(data.toString())
+    proc.stdout?.on('data', (data) => {
+      stdout += data.toString()
+      options?.debug?.(data.toString())
+    })
+    proc.stderr?.on('data', (data) => {
+      stderr += data.toString()
+      options?.error?.(data.toString())
     })
     proc.on('error', reject)
     proc.on('exit', onComplete)
