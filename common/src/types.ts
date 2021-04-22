@@ -25,3 +25,16 @@ export type CloudDeployment = {
 
 export type CLI = (args: string, stdio?: StdioOptions) => string
 export type Git = (args: string, stdio?: StdioOptions) => string
+
+export type DockerRunOptions = {
+  mounts?: Array<{
+    host: string
+    container: string
+  }>
+  stdio?: StdioOptions
+  args?: string
+}
+
+export type Docker = {
+  runSync: (options?: DockerRunOptions) => string
+}
