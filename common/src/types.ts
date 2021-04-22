@@ -33,6 +33,7 @@ export type DockerRunOptions = {
   }>
   stdio?: StdioOptions
   args?: string
+  log?: (chunk: string) => void
 }
 
 export type Docker = {

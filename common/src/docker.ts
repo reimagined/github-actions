@@ -24,20 +24,26 @@ const runImage = async (
       args.filter((arg) => arg.length > 0),
       {
         shell: true,
-        stdio: options?.stdio ?? 'inherit',
+        stdio: options?.stdio ?? 'pipe',
       }
     )
+
     let result
-    proc.on('data', (data) => {
-      result += data.toString()
-    })
-    proc.on('error', reject)
-    proc.on('exit', (code) => {
+
+    const onComplete = (code: number) => {
       if (code !== 0) {
         reject(Error(`Process exit with code ${code}`))
       }
       return resolve(result)
+    }
+
+    proc.on('data', (data) => {
+      result += data.toString()
+      options?.log?.(data.toString())
     })
+    proc.on('error', reject)
+    proc.on('exit', onComplete)
+    proc.on('close', onComplete)
   })
 }
 
