@@ -13,8 +13,7 @@ import {
   exportEnvVar,
   processWorkspaces,
 } from '../../common/src/utils'
-import { Package } from '../../common/src/types'
-import { PushEvent } from './types'
+import { Package, PushEvent } from '../../common/src/types'
 
 const tagName = (version: string) => `V${version.trim()}`
 const versionCommitMessage = (version: string) => `<auto> ${tagName(version)}`

@@ -38,3 +38,18 @@ export type DockerRunOptions = {
 export type Docker = {
   runSync: (options?: DockerRunOptions) => string
 }
+
+export type PushEvent = {
+  ref: string
+  head_commit: {
+    id: string
+    message: string
+  }
+  repository: {
+    ssh_url: string
+    name: string
+    owner: {
+      name: string
+    }
+  }
+}
