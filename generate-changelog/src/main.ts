@@ -75,7 +75,7 @@ export const main = async (): Promise<void> => {
           container: '/usr/local/src/your-app',
         },
       ],
-      args: `--token=${token} --user=${event.repository.owner} --project=${
+      args: `--token=${token} --user=${event.repository.owner.name} --project=${
         event.repository.name
       } ${
         core.getInput('pre_release')
