@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/changelog-generator
     tags-ignore:
       - v*
   pull_request:
