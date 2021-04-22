@@ -67,22 +67,27 @@ export const main = async (): Promise<void> => {
     )}`
   )
   core.debug(`executing generator Docker image`)
-  docker.runSync({
-    stdio: 'inherit',
-    mounts: [
-      {
-        host: process.cwd(),
-        container: '/usr/local/src/your-app',
-      },
-    ],
-    args: `--token=${token} --user=${event.repository.owner} --project=${
-      event.repository.name
-    } ${
-      core.getInput('pre_release')
-        ? `--unreleased --unreleased-only`
-        : '--no-unreleased'
-    }`,
-  })
+  try {
+    const output = docker.runSync({
+      mounts: [
+        {
+          host: process.cwd(),
+          container: '/usr/local/src/your-app',
+        },
+      ],
+      args: `--token=${token} --user=${event.repository.owner} --project=${
+        event.repository.name
+      } ${
+        core.getInput('pre_release')
+          ? `--unreleased --unreleased-only`
+          : '--no-unreleased'
+      }`,
+    })
+    core.debug(output)
+  } catch (e) {
+    core.error(e)
+  }
+
   core.endGroup()
 
   core.startGroup(`committing and pushing changes`)
