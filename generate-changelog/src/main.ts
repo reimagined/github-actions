@@ -2,10 +2,10 @@ import * as path from 'path'
 import * as core from '@actions/core'
 import isEmpty from 'lodash.isempty'
 import { getGit } from '../../common/src/git'
+import { getDocker } from '../../common/src/docker'
 import { parseBoolean } from '../../common/src/utils'
 import { PushEvent } from '../../common/src/types'
 import { getOctokit } from '@actions/github'
-import { getDocker } from '@reimagined/github-actions-common/lib/src/docker'
 
 export const main = async (): Promise<void> => {
   core.info('preparing to generate changelog')
@@ -68,7 +68,7 @@ export const main = async (): Promise<void> => {
   )
   core.debug(`executing generator Docker image`)
   try {
-    const output = docker.runSync({
+    await docker.run({
       mounts: [
         {
           host: process.cwd(),
@@ -83,7 +83,6 @@ export const main = async (): Promise<void> => {
           : '--no-unreleased'
       }`,
     })
-    core.debug(output)
   } catch (e) {
     core.error(e)
   }

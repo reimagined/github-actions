@@ -1,9 +1,12 @@
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import partial from 'lodash.partial'
 import { Docker, DockerRunOptions } from './types'
 
-const runImage = (image: string, options?: DockerRunOptions): string => {
-  const args: string[] = ['--rm']
+const runImage = async (
+  image: string,
+  options?: DockerRunOptions
+): Promise<string> => {
+  const args: string[] = ['run', '--rm']
 
   args.push(
     options && options.mounts && options.mounts.length > 0
@@ -15,17 +18,31 @@ const runImage = (image: string, options?: DockerRunOptions): string => {
 
   args.push(...[image, options?.args ?? ''])
 
-  const result = execSync(
-    `docker run ${args.filter((arg) => arg.length > 0).join(' ')}`,
-    {
-      stdio: options?.stdio ?? 'pipe',
-    }
-  )
-  return result.toString()
+  return await new Promise((resolve, reject) => {
+    const proc = spawn(
+      `docker`,
+      args.filter((arg) => arg.length > 0),
+      {
+        shell: true,
+        stdio: options?.stdio ?? 'inherit',
+      }
+    )
+    let result
+    proc.on('data', (data) => {
+      result += data.toString()
+    })
+    proc.on('error', reject)
+    proc.on('exit', (code) => {
+      if (code !== 0) {
+        reject(Error(`Process exit with code ${code}`))
+      }
+      return resolve(result)
+    })
+  })
 }
 
 export const getDocker = (image: string): Docker => {
   return {
-    runSync: partial(runImage, image),
+    run: partial(runImage, image),
   }
 }

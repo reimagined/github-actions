@@ -16,7 +16,7 @@ describe('runSync', () => {
   })
 
   test('default docker execution', () => {
-    expect(docker.runSync()).toEqual('execution-result')
+    expect(docker.run()).toEqual('execution-result')
 
     expect(mExec).toHaveBeenCalledWith(
       'docker run -it --rm ubuntu',
@@ -25,7 +25,7 @@ describe('runSync', () => {
   })
 
   test('executed docker with inherited i/o', () => {
-    docker.runSync({
+    docker.run({
       stdio: 'inherit',
     })
 
@@ -38,7 +38,7 @@ describe('runSync', () => {
   })
 
   test('executed docker with custom image arguments', () => {
-    docker.runSync({
+    docker.run({
       args: '--custom --arg=true',
     })
 
@@ -49,7 +49,7 @@ describe('runSync', () => {
   })
 
   test('executed docker mount', () => {
-    docker.runSync({
+    docker.run({
       mounts: [
         {
           host: '/host/path',
@@ -65,7 +65,7 @@ describe('runSync', () => {
   })
 
   test('mount and image args', () => {
-    docker.runSync({
+    docker.run({
       mounts: [
         {
           host: '/host/path',

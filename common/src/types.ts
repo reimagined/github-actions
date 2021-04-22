@@ -36,7 +36,7 @@ export type DockerRunOptions = {
 }
 
 export type Docker = {
-  runSync: (options?: DockerRunOptions) => string
+  run: (options?: DockerRunOptions) => Promise<string>
 }
 
 export type PushEvent = {
