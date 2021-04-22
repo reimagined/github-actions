@@ -2,11 +2,14 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - feature/changelog-generator
     tags-ignore:
       - v*
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   verify:
