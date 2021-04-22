@@ -3,7 +3,7 @@ import partial from 'lodash.partial'
 import { Docker, DockerRunOptions } from './types'
 
 const runImage = (image: string, options?: DockerRunOptions): string => {
-  const args: string[] = ['-it', '--rm']
+  const args: string[] = ['--rm']
 
   args.push(
     options && options.mounts && options.mounts.length > 0

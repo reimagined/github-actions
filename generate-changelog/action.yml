@@ -26,7 +26,7 @@ inputs:
   prepare:
     description: configure git repository and user
     required: false
-    default: 'false'
+    default: 'true'
 
 
   generator_verion:
