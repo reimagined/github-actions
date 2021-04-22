@@ -28,8 +28,7 @@ inputs:
     required: false
     default: 'true'
 
-
-  generator_verion:
+  generator_version:
     description: github-changelog-generator docker image version tag
     required: false
     default: '1.16.1'
