@@ -24,7 +24,7 @@ export const main = async (): Promise<void> => {
     core.getInput(`push_event`, { required: true })
   )
 
-  if (parseBoolean(core.getInput('prepare_git'))) {
+  if (parseBoolean(core.getInput('prepare'))) {
     core.startGroup('configuring git')
     core.debug(`requesting PAT user info`)
     const octokit = getOctokit(token)
@@ -59,7 +59,7 @@ export const main = async (): Promise<void> => {
     core.endGroup()
   }
 
-  core.startGroup('starting generator')
+  core.startGroup('GitHub changelog generator')
   core.debug(`acquiring Docker`)
   const docker = getDocker(
     `githubchangeloggenerator/github-changelog-generator:${core.getInput(
@@ -91,7 +91,7 @@ export const main = async (): Promise<void> => {
 
   core.endGroup()
 
-  core.startGroup(`committing and pushing changes`)
+  core.startGroup(`Committing and pushing changes`)
   git(`add -u`)
   const commitMessage = core.getInput('commit_message')
   git(`commit -m "${commitMessage}"`)
