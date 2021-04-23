@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 import isEmpty from 'lodash.isempty'
 import { getGit } from '../../common/src/git'
 import { getDocker } from '../../common/src/docker'
-import { parseBoolean } from '../../common/src/utils'
+import { branchFromRef, parseBoolean } from '../../common/src/utils'
 import { PushEvent } from '../../common/src/types'
 import { getOctokit } from '@actions/github'
 
@@ -48,7 +48,7 @@ export const main = async (): Promise<void> => {
     core.debug(`cloning repo ${event.repository.ssh_url}`)
     git(`clone ${event.repository.ssh_url} ./`)
 
-    const branch = event.ref
+    const branch = branchFromRef(event.ref)
 
     core.debug(`checking out branch: ${branch}`)
     git(`checkout ${branch}`)
