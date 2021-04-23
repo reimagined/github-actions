@@ -1,55 +1,98 @@
 import { mocked } from 'ts-jest/utils'
-import { execSync } from 'child_process'
+import { ChildProcess, spawn } from 'child_process'
 import { Docker } from '../src/types'
 import { getDocker } from '../src/docker'
 
 jest.mock('child_process')
 
-const mExec = mocked(execSync)
+const mSpawn = mocked(spawn)
 
-describe('runSync', () => {
+type EventListenerSetter = (event: string, listener: Function) => void
+type MockChildProcess = {
+  on: EventListenerSetter
+  stdout: {
+    on: EventListenerSetter
+  }
+  stderr: {
+    on: EventListenerSetter
+  }
+}
+
+describe('run', () => {
+  const enqueueExit = (code: number) =>
+    setImmediate(() => {
+      listeners['stdout.data'](Buffer.from(`execution-result`))
+      listeners['stderr.data'](Buffer.from(`error-result`))
+      listeners['exit'](code)
+    })
+
   let docker: Docker
+  let process: MockChildProcess
+  let listeners: { [key: string]: Function }
 
   beforeEach(() => {
     docker = getDocker('ubuntu')
-    mExec.mockReturnValue(Buffer.from('execution-result'))
+    listeners = {}
+    process = {
+      on: jest.fn((event, listener) => {
+        listeners[event] = listener
+      }),
+      stdout: {
+        on: jest.fn((event, listener) => {
+          listeners[`stdout.${event}`] = listener
+        }),
+      },
+      stderr: {
+        on: jest.fn((event, listener) => {
+          listeners[`stderr.${event}`] = listener
+        }),
+      },
+    }
+    mSpawn.mockReturnValue(process as ChildProcess)
   })
 
-  test('default docker execution', () => {
-    expect(docker.run()).toEqual('execution-result')
+  test('default docker execution', async () => {
+    enqueueExit(0)
+    expect(await docker.run()).toEqual('execution-result')
 
-    expect(mExec).toHaveBeenCalledWith(
-      'docker run -it --rm ubuntu',
+    expect(mSpawn).toHaveBeenCalledWith(
+      'docker',
+      ['run', '--rm', 'ubuntu'],
       expect.any(Object)
     )
   })
 
-  test('executed docker with inherited i/o', () => {
-    docker.run({
+  test('executed docker with inherited i/o', async () => {
+    enqueueExit(0)
+    await docker.run({
       stdio: 'inherit',
     })
 
-    expect(mExec).toHaveBeenCalledWith(
+    expect(mSpawn).toHaveBeenCalledWith(
       expect.any(String),
+      expect.any(Array),
       expect.objectContaining({
         stdio: 'inherit',
       })
     )
   })
 
-  test('executed docker with custom image arguments', () => {
-    docker.run({
+  test('executed docker with custom image arguments', async () => {
+    enqueueExit(0)
+    await docker.run({
       args: '--custom --arg=true',
     })
 
-    expect(mExec).toHaveBeenCalledWith(
-      'docker run -it --rm ubuntu --custom --arg=true',
+    expect(mSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining(['--custom --arg=true']),
       expect.any(Object)
     )
   })
 
-  test('executed docker mount', () => {
-    docker.run({
+  test('executed docker mount', async () => {
+    enqueueExit(0)
+    await docker.run({
       mounts: [
         {
           host: '/host/path',
@@ -58,14 +101,16 @@ describe('runSync', () => {
       ],
     })
 
-    expect(mExec).toHaveBeenCalledWith(
-      'docker run -it --rm -v /host/path:/container/path ubuntu',
+    expect(mSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining(['-v /host/path:/container/path']),
       expect.any(Object)
     )
   })
 
-  test('mount and image args', () => {
-    docker.run({
+  test('mount and image args', async () => {
+    enqueueExit(0)
+    await docker.run({
       mounts: [
         {
           host: '/host/path',
@@ -75,9 +120,23 @@ describe('runSync', () => {
       args: '--custom --arg=true',
     })
 
-    expect(mExec).toHaveBeenCalledWith(
-      'docker run -it --rm -v /host/path:/container/path ubuntu --custom --arg=true',
+    expect(mSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        '-v /host/path:/container/path',
+        '--custom --arg=true',
+      ]),
       expect.any(Object)
     )
+  })
+
+  test('error with stderr', async () => {
+    enqueueExit(1)
+    try {
+      await docker.run()
+    } catch (e) {
+      expect(e.message).toContain(`code 1`)
+      expect(e.message).toContain(`error-result`)
+    }
   })
 })

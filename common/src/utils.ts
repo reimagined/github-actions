@@ -194,3 +194,7 @@ export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
       ...env,
     },
   })
+
+export const branchFromRef = (ref: string): string => {
+  return ''
+}

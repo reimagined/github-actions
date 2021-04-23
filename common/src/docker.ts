@@ -33,7 +33,7 @@ const runImage = async (
 
     const onComplete = (code: number) => {
       if (code !== 0) {
-        reject(Error(`Code ${code}: ${stderr}`))
+        reject(Error(`Exit code ${code}: ${stderr}`))
       }
       return resolve(stdout)
     }
