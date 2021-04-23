@@ -563,10 +563,10 @@ describe('createExecutor', async () => {
 
 describe('branchFromRef', () => {
   test('various refs', () => {
-    expect(branchFromRef('ref/heads/feature/cd-burn')).toEqual(
-      'feature/cd-burn'
+    expect(branchFromRef('refs/heads/feature/changelog-generator')).toEqual(
+      'feature/changelog-generator'
     )
-    expect(branchFromRef('ref/tags/v1.0.0')).toEqual('v1.0.0')
-    expect(branchFromRef('ref/something/branch-name')).toEqual('branch-name')
+    expect(branchFromRef('refs/tags/v1.0.0')).toEqual('v1.0.0')
+    expect(branchFromRef('refs/something/branch-name')).toEqual('branch-name')
   })
 })

@@ -196,7 +196,7 @@ export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
   })
 
 export const branchFromRef = (ref: string): string | null => {
-  const match = /^ref\/((?!\/).)*\/(.*)$/.exec(ref)
+  const match = /^refs\/((?!\/).)*\/(.*)$/.exec(ref)
 
   if (match != null) {
     return match[2]
