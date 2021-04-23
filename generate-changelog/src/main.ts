@@ -48,6 +48,7 @@ export const main = async (): Promise<void> => {
     core.debug(`cloning repo ${event.repository.ssh_url}`)
     git(`clone ${event.repository.ssh_url} ./`)
 
+    core.debug(`determining branch from ref: ${event.ref}`)
     const branch = branchFromRef(event.ref)
 
     core.debug(`checking out branch: ${branch}`)
