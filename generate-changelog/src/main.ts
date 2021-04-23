@@ -8,6 +8,19 @@ import { PushEvent } from '../../common/src/types'
 import { getOctokit } from '@actions/github'
 
 export const main = async (): Promise<void> => {
+  core.debug(`parsing push event`)
+  const event: PushEvent = JSON.parse(
+    core.getInput(`push_event`, { required: true })
+  )
+
+  const commitMessage = core.getInput('commit_message')
+  if (event.head_commit.message === commitMessage) {
+    core.warning(
+      `Skipping own commit because of message "${commitMessage}". There will be more efficient to add workflow condition!`
+    )
+    return
+  }
+
   core.info('preparing to generate changelog')
 
   core.debug(`acquiring Git CLI`)
@@ -18,11 +31,6 @@ export const main = async (): Promise<void> => {
   )
 
   const token = core.getInput('token', { required: true })
-
-  core.debug(`parsing push event`)
-  const event: PushEvent = JSON.parse(
-    core.getInput(`push_event`, { required: true })
-  )
 
   if (parseBoolean(core.getInput('prepare'))) {
     core.startGroup('configuring git')
@@ -94,7 +102,11 @@ export const main = async (): Promise<void> => {
 
   core.startGroup(`Committing and pushing changes`)
   git(`add -u`)
-  const commitMessage = core.getInput('commit_message')
-  git(`commit -m "${commitMessage}"`)
-  git(`push`)
+
+  try {
+    git(`commit -m "${commitMessage}"`)
+    git(`push`)
+  } catch (e) {
+    core.error(e)
+  }
 }
