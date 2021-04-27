@@ -68,7 +68,7 @@ export const main = async (): Promise<void> => {
   writeFileSync(pkgFile, content)
 
   const registry = core.getInput('package_registry')
-  if (registry != null) {
+  if (registry != null && registry !== '') {
     let registryURL: URL
     try {
       registryURL = new URL(registry)
@@ -125,7 +125,7 @@ export const main = async (): Promise<void> => {
   try {
     let eventStoreId: string | null = null
 
-    if (eventsFilePath != null) {
+    if (eventsFilePath != null && eventsFilePath !== '') {
       core.debug(`events file path is specified. creating event-store`)
 
       eventStoreId = cli(`event-stores create --format "{{ eventStoreId }}"`, [

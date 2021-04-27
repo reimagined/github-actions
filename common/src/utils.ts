@@ -116,7 +116,7 @@ export const writeNpmRc = (
       : `registry=${registry.href}\n`
 
   const content =
-    token == null
+    token == null || token === ''
       ? registryBinding
       : `//${registry.host}/:_authToken=${token}\n` +
         `//${registry.host}/:always-auth=true\n` +
@@ -159,7 +159,7 @@ export const restoreNpmRc = (
 export const parseScopes = (
   scopes: string | undefined | null
 ): Array<string> => {
-  if (scopes != null) {
+  if (scopes != null && scopes !== '') {
     return scopes
       .split(',')
       .map((scope) => scope.trim())

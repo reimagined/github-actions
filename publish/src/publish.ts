@@ -59,10 +59,10 @@ export const publish = async (
   }
 
   pkg.version = publishVersion.version
-  if (frameworkScope != null) {
+  if (frameworkScope != null && frameworkScope !== '') {
     pkg = bumpDependencies(pkg, `${frameworkScope}/.*$`, publishVersion.version)
   }
-  if (repository != null) {
+  if (repository != null && frameworkScope !== '') {
     pkg.repository = repository
   }
 
@@ -71,7 +71,7 @@ export const publish = async (
   try {
     exec(
       `npm publish --access=public --unsafe-perm${
-        tag != null ? ` --tag=${tag}` : ''
+        tag != null && tag !== '' ? ` --tag=${tag}` : ''
       }`,
       location
     )
