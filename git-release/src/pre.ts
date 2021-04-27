@@ -54,8 +54,8 @@ export const pre = async (): Promise<void> => {
   const version = determineReleaseVersion(event)
   core.debug(`release version: ${version}`)
   core.saveState(`version`, version)
-  core.setOutput('release_tag', tagName(version))
   exportEnvVar('git_release_version', version)
+  exportEnvVar('git_release_tag', tagName(version))
 
   core.debug(`acquiring Git CLI`)
   const git = getGit(
