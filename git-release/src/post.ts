@@ -49,6 +49,9 @@ export const post = async (): Promise<void> => {
       core.debug(`pushing ${devBranch} to remote`)
       git(`push`)
 
+      core.debug(`checking out ${releaseBranch}`)
+      git(`checkout ${releaseBranch}`)
+
       core.debug(`tagging with annotated tag ${versionTag}`)
       git(`tag --annotate ${versionTag} --message ${versionTag}`)
 
@@ -62,7 +65,10 @@ export const post = async (): Promise<void> => {
         try {
           core.debug(`gathering release info`)
           const changelogSlicer = new RegExp(
-            `(^## \[${versionTag}\][^\n]*$)(.*?)^(## V[0-9]*.[0-9]*.[0-9])`,
+            `^(## \\[${versionTag.replace(
+              '.',
+              '\\.'
+            )}\\][^\\n]*$)(.*?)^(## V[0-9]*\\.[0-9]*\\.[0-9])`,
             'gms'
           )
           const changelog = readFileSync('./CHANGELOG.md').toString()
