@@ -81,7 +81,7 @@ export const main = async (): Promise<void> => {
       `--project=${event.repository.name}`,
       `--unreleased`,
       `--unreleased-only`,
-      notEmpty(releaseTag) ? `--future-release=$${releaseTag}` : '',
+      notEmpty(releaseTag) ? `--future-release=${releaseTag}` : '',
     ].join(' ')
 
     await docker.run({

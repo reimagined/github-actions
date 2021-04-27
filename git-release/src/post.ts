@@ -28,8 +28,11 @@ export const post = async (): Promise<void> => {
 
       const commitMessage = core.getState(`version_commit_message`)
 
-      core.debug(`merging ${versionBranch} to ${releaseBranch}`)
-      git(`merge -m "${commitMessage}" ${versionBranch}`)
+      core.debug(`merging squashed ${versionBranch} to ${releaseBranch}`)
+      git(`merge --squash ${versionBranch}`)
+
+      core.debug(`committing squashed merge commit`)
+      git(`commit -m "${commitMessage}"`)
 
       core.debug(`pushing ${releaseBranch} to remote`)
       git(`push`)
