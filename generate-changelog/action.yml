@@ -23,7 +23,12 @@ inputs:
     required: false
     default: '1.16.1'
 
-  release:
+  upcoming:
+    description: upcoming changes (not a release)
+    required: false
+    default: 'true'
+
+  release_tag:
     description: release tag name (version)
     required: false
 

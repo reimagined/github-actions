@@ -26,14 +26,15 @@ export const main = async (): Promise<void> => {
   core.debug(`acquiring Git CLI`)
   const git = getGit(
     path.resolve('./'),
-    core.getInput('ssh_private_key', { required: false }),
+    core.getInput('ssh_private_key'),
     core
   )
 
   const token = core.getInput('token', { required: true })
-  const release = core.getInput('release')
+  const releaseTag = core.getInput('release')
+  const upcoming = parseBoolean(core.getInput('upcoming'))
 
-  if (isEmpty(release)) {
+  if (upcoming) {
     core.startGroup('configuring git')
     core.debug(`requesting PAT user info`)
     const octokit = getOctokit(token)
@@ -84,7 +85,7 @@ export const main = async (): Promise<void> => {
       `--project=${event.repository.name}`,
       `--unreleased`,
       `--unreleased-only`,
-      notEmpty(release) ? `--future-release=$${release}` : '',
+      notEmpty(releaseTag) ? `--future-release=$${releaseTag}` : '',
     ]
       .filter((arg) => arg.length > 0)
       .join(' ')
