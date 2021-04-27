@@ -41,7 +41,7 @@ const execSourcedCLI = (
   execCLI(appDir, `node ${path.resolve(sources, 'lib/index.js')}`, args, stdio)
 
 export const getCLI = (appDir: string, sources?: string): CLI =>
-  sources
+  sources != null && sources !== ''
     ? partial(execSourcedCLI, appDir, sources)
     : partial(execPackagedCLI, appDir)
 

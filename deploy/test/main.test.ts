@@ -55,7 +55,7 @@ beforeEach(() => {
     cloud_user: 'cloud-user',
     cloud_token: 'cloud-token',
   }
-  mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mCoreGetInput.mockImplementation((name) => actionInput[name] ?? '')
   mParseScopes.mockReturnValue([])
   mParseBoolean.mockImplementation((val) => val === 'true')
   mLatestVersion.mockResolvedValue('1.2.3')
@@ -212,7 +212,7 @@ test('write npmrc for custom registry', async () => {
   expect(mWriteNpmRc).toHaveBeenCalledWith(
     '/source/dir/.npmrc',
     new URL('https://packages.org'),
-    undefined,
+    '',
     {
       core,
       scopes: [],
@@ -278,7 +278,7 @@ test('app dependencies installation', async () => {
 test('cloud CLI requested', async () => {
   await main()
 
-  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', undefined)
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '')
 })
 
 test('cloud CLI requested for specific sources', async () => {
@@ -366,7 +366,7 @@ test('.resolverc file written with default URL', async () => {
     '/source/dir/.resolverc',
     'cloud-user',
     'cloud-token',
-    undefined,
+    '',
     core
   )
 })

@@ -23,12 +23,12 @@ export const main = async (): Promise<void> => {
   const token = core.getInput('token')
   const scopes = parseScopes(core.getInput('scopes'))
 
-  if (registry != null) {
+  if (registry != null && registry !== '') {
     let registryURL: URL
     try {
       registryURL = new URL(registry)
     } catch (error) {
-      core.debug(`invalid registry URL: ${registry}`)
+      core.debug(`invalid registry URL: "${registry}"`)
       throw Error(error.message)
     }
     writeNpmRc(path.resolve(source, '.npmrc'), registryURL, token, {
