@@ -24,11 +24,7 @@ export const main = async (): Promise<void> => {
   core.info('preparing to generate changelog')
 
   core.debug(`acquiring Git CLI`)
-  const git = getGit(
-    path.resolve('./'),
-    core.getInput('ssh_private_key'),
-    core
-  )
+  const git = getGit(path.resolve('./'), core.getInput('ssh_private_key'), core)
 
   const token = core.getInput('token', { required: true })
   const releaseTag = core.getInput('release')
@@ -86,9 +82,7 @@ export const main = async (): Promise<void> => {
       `--unreleased`,
       `--unreleased-only`,
       notEmpty(releaseTag) ? `--future-release=$${releaseTag}` : '',
-    ]
-      .filter((arg) => arg.length > 0)
-      .join(' ')
+    ].join(' ')
 
     await docker.run({
       mounts: [

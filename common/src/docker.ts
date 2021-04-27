@@ -19,6 +19,7 @@ const runImage = async (
   args.push(...[image, options?.args ?? ''])
 
   return await new Promise((resolve, reject) => {
+    options?.debug?.(`spawning: docker ${args.join(' ')}`)
     const proc = spawn(
       `docker`,
       args.filter((arg) => arg.length > 0),
