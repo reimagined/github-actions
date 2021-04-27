@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 import isEmpty from 'lodash.isempty'
 import { getGit } from '../../common/src/git'
 import { getDocker } from '../../common/src/docker'
-import { branchFromRef, parseBoolean } from '../../common/src/utils'
+import { branchFromRef, notEmpty, parseBoolean } from '../../common/src/utils'
 import { PushEvent } from '../../common/src/types'
 import { getOctokit } from '@actions/github'
 
@@ -31,9 +31,9 @@ export const main = async (): Promise<void> => {
   )
 
   const token = core.getInput('token', { required: true })
-  const standalone = parseBoolean(core.getInput('standalone'))
+  const release = core.getInput('release')
 
-  if (standalone) {
+  if (isEmpty(release)) {
     core.startGroup('configuring git')
     core.debug(`requesting PAT user info`)
     const octokit = getOctokit(token)
@@ -78,14 +78,13 @@ export const main = async (): Promise<void> => {
   )
   core.debug(`executing generator Docker image`)
   try {
-    const futureRelease = core.getInput('future_release')
     const args = [
       `--token=${token}`,
       `--user=${event.repository.owner.name}`,
       `--project=${event.repository.name}`,
       `--unreleased`,
       `--unreleased-only`,
-      futureRelease ? `--future-release=$${futureRelease}` : '',
+      notEmpty(release) ? `--future-release=$${release}` : '',
     ]
       .filter((arg) => arg.length > 0)
       .join(' ')

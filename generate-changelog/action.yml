@@ -18,18 +18,13 @@ inputs:
     required: false
     default: 'Changelog update'
 
-  standalone:
-    description: perform Git operations as standalone operation
-    required: false
-    default: 'true'
-
   generator_version:
     description: github-changelog-generator docker image version tag
     required: false
     default: '1.16.1'
 
-  future_release:
-    description: future release version
+  release:
+    description: release tag name (version)
     required: false
 
 
