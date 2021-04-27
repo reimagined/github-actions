@@ -27,7 +27,7 @@ export const main = async (): Promise<void> => {
   const git = getGit(path.resolve('./'), core.getInput('ssh_private_key'), core)
 
   const token = core.getInput('token', { required: true })
-  const releaseTag = core.getInput('release')
+  const releaseTag = core.getInput('release_tag')
   const upcoming = parseBoolean(core.getInput('upcoming'))
 
   if (upcoming) {
