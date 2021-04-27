@@ -1,11 +1,17 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import isEmpty from 'lodash.isempty'
+import fs from 'fs'
+import { promisify } from 'util'
 import { getGit } from '../../common/src/git'
 import { getDocker } from '../../common/src/docker'
 import { branchFromRef, notEmpty, parseBoolean } from '../../common/src/utils'
 import { PushEvent } from '../../common/src/types'
 import { getOctokit } from '@actions/github'
+
+const truncateFile = promisify(fs.truncate)
+const readFile = promisify(fs.readFile)
+const writeFile = promisify(fs.writeFile)
 
 export const main = async (): Promise<void> => {
   core.debug(`parsing push event`)
@@ -99,6 +105,22 @@ export const main = async (): Promise<void> => {
     core.error(e)
   }
 
+  if (!upcoming) {
+    core.debug(`replacing HISTORY.md`)
+    const historyFile = 'HISTORY.md'
+    const changelogFile = 'CHANGELOG.md'
+
+    core.debug(`reading changelog`)
+    const changelog = (await readFile(changelogFile)).toString()
+
+    core.debug(`truncating changelog`)
+    await truncateFile(historyFile)
+
+    core.debug(`writing history`)
+    await writeFile(historyFile, changelog)
+
+    core.debug(`HISTORY.md updated`)
+  }
   core.endGroup()
 
   core.startGroup(`Committing and pushing changes`)
