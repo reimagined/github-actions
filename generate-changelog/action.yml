@@ -18,13 +18,8 @@ inputs:
     required: false
     default: 'Changelog update'
 
-  pre_release:
-    description: include unreleased features
-    required: false
-    default: 'true'
-
-  prepare:
-    description: configure git repository and user
+  standalone:
+    description: perform Git operations as standalone operation
     required: false
     default: 'true'
 
@@ -32,6 +27,10 @@ inputs:
     description: github-changelog-generator docker image version tag
     required: false
     default: '1.16.1'
+
+  future_release:
+    description: future release version
+    required: false
 
 
 runs:

@@ -31,8 +31,9 @@ export const main = async (): Promise<void> => {
   )
 
   const token = core.getInput('token', { required: true })
+  const standalone = parseBoolean(core.getInput('standalone'))
 
-  if (parseBoolean(core.getInput('prepare'))) {
+  if (standalone) {
     core.startGroup('configuring git')
     core.debug(`requesting PAT user info`)
     const octokit = getOctokit(token)
@@ -77,6 +78,18 @@ export const main = async (): Promise<void> => {
   )
   core.debug(`executing generator Docker image`)
   try {
+    const futureRelease = core.getInput('future_release')
+    const args = [
+      `--token=${token}`,
+      `--user=${event.repository.owner.name}`,
+      `--project=${event.repository.name}`,
+      `--unreleased`,
+      `--unreleased-only`,
+      futureRelease ? `--future-release=$${futureRelease}` : '',
+    ]
+      .filter((arg) => arg.length > 0)
+      .join(' ')
+
     await docker.run({
       mounts: [
         {
@@ -84,13 +97,7 @@ export const main = async (): Promise<void> => {
           container: '/usr/local/src/your-app',
         },
       ],
-      args: `--token=${token} --user=${event.repository.owner.name} --project=${
-        event.repository.name
-      } ${
-        core.getInput('pre_release')
-          ? `--unreleased --unreleased-only`
-          : '--no-unreleased'
-      }`,
+      args,
       debug: core.debug,
       error: core.error,
     })
@@ -101,12 +108,13 @@ export const main = async (): Promise<void> => {
   core.endGroup()
 
   core.startGroup(`Committing and pushing changes`)
-  git(`add -u`)
-
   try {
+    git(`add -u`)
     git(`commit -m "${commitMessage}"`)
     git(`push`)
   } catch (e) {
     core.error(e)
+  } finally {
+    core.endGroup()
   }
 }
