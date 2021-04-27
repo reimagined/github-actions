@@ -5,13 +5,13 @@ inputs:
     description: GitHub user's PAT with required permissions
     required: true
 
-  ssh_private_key:
-    description: GitHub user's private SSH key part to access to repository
-    required: true
-
   push_event:
     description: GitHub push event that triggers workflow in JSON format
     required: true
+
+  ssh_private_key:
+    description: GitHub user's private SSH key part to access to repository
+    required: false
 
   commit_message:
     description: generated changes commit message
