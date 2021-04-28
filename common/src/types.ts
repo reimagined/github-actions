@@ -25,3 +25,33 @@ export type CloudDeployment = {
 
 export type CLI = (args: string, stdio?: StdioOptions) => string
 export type Git = (args: string, stdio?: StdioOptions) => string
+
+export type DockerRunOptions = {
+  mounts?: Array<{
+    host: string
+    container: string
+  }>
+  stdio?: StdioOptions
+  args?: string
+  debug?: (chunk: string) => void
+  error?: (chunk: string) => void
+}
+
+export type Docker = {
+  run: (options?: DockerRunOptions) => Promise<string>
+}
+
+export type PushEvent = {
+  ref: string
+  head_commit: {
+    id: string
+    message: string
+  }
+  repository: {
+    ssh_url: string
+    name: string
+    owner: {
+      name: string
+    }
+  }
+}

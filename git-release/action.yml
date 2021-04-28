@@ -25,6 +25,10 @@ inputs:
     description: delete version branch
     required: false
     default: 'true'
+  create_github_release:
+    description: create GitHub release
+    required: false
+    default: 'true'
 
 outputs:
   version:

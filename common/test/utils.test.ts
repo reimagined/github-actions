@@ -17,6 +17,7 @@ import {
   WorkspaceProcessor,
   parseBoolean,
   createExecutor,
+  branchFromRef,
 } from '../src/utils'
 
 jest.mock('child_process')
@@ -557,5 +558,15 @@ describe('createExecutor', async () => {
         ...env,
       },
     })
+  })
+})
+
+describe('branchFromRef', () => {
+  test('various refs', () => {
+    expect(branchFromRef('refs/heads/feature/changelog-generator')).toEqual(
+      'feature/changelog-generator'
+    )
+    expect(branchFromRef('refs/tags/v1.0.0')).toEqual('v1.0.0')
+    expect(branchFromRef('refs/something/branch-name')).toEqual('branch-name')
   })
 })

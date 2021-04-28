@@ -13,8 +13,7 @@ import {
   exportEnvVar,
   processWorkspaces,
 } from '../../common/src/utils'
-import { Package } from '../../common/src/types'
-import { PushEvent } from './types'
+import { Package, PushEvent } from '../../common/src/types'
 
 const tagName = (version: string) => `V${version.trim()}`
 const versionCommitMessage = (version: string) => `<auto> ${tagName(version)}`
@@ -56,6 +55,7 @@ export const pre = async (): Promise<void> => {
   core.debug(`release version: ${version}`)
   core.saveState(`version`, version)
   exportEnvVar('git_release_version', version)
+  exportEnvVar('git_release_tag', tagName(version))
 
   core.debug(`acquiring Git CLI`)
   const git = getGit(

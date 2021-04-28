@@ -36,6 +36,7 @@
     "install-cloud",
     "deploy",
     "git-release",
-    "release-pr-bot"
+    "release-pr-bot",
+    "generate-changelog"
   ]
 }

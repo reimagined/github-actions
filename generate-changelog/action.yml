@@ -1,0 +1,38 @@
+name: generate-changelog
+description: generates changelog for current branch
+inputs:
+  token:
+    description: GitHub user's PAT with required permissions
+    required: true
+
+  push_event:
+    description: GitHub push event that triggers workflow in JSON format
+    required: true
+
+  ssh_private_key:
+    description: GitHub user's private SSH key part to access to repository
+    required: false
+
+  commit_message:
+    description: generated changes commit message
+    required: false
+    default: 'Changelog update'
+
+  generator_version:
+    description: github-changelog-generator docker image version tag
+    required: false
+    default: '1.16.1'
+
+  upcoming:
+    description: upcoming changes (not a release)
+    required: false
+    default: 'true'
+
+  release_tag:
+    description: release tag name (version)
+    required: false
+
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'
