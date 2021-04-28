@@ -56,7 +56,7 @@ beforeEach(() => {
     framework_scope: '@scope',
   }
 
-  mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mCoreGetInput.mockImplementation((name) => actionInput[name] ?? '')
   mExec.mockImplementation((command, options, callback) => {
     callback?.(null, 'executed', '')
     return {} as ChildProcess
@@ -281,7 +281,7 @@ test('workspace processor', async () => {
   expect(mPublish).toHaveBeenCalledWith('1.2.3', {
     tag: 'publish-tag',
     location: '/path/to/package',
-    repository: undefined,
+    repository: '',
     frameworkScope: '@scope',
   })
 })

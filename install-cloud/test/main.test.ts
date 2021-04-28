@@ -48,7 +48,7 @@ beforeEach(() => {
     source: '/source',
     stage: 'cloud-stage',
   }
-  mCoreGetInput.mockImplementation((name) => actionInput[name])
+  mCoreGetInput.mockImplementation((name) => actionInput[name] ?? '')
   execSync.mockImplementation((command) => {
     let result = ''
     if (command.includes('admin-cli get-api-url')) {
@@ -264,7 +264,7 @@ test('custom registry: set registry for whole project', async () => {
   expect(mWriteNpmRc).toHaveBeenCalledWith(
     `/source/.npmrc`,
     new URL('https://packages.org'),
-    undefined,
+    '',
     {
       core,
       scopes: [],
@@ -301,7 +301,7 @@ test('custom registry: set registry for specified package scopes', async () => {
   expect(mWriteNpmRc).toHaveBeenCalledWith(
     `/source/.npmrc`,
     new URL('https://packages.org'),
-    undefined,
+    '',
     {
       core,
       scopes: ['parsed-scopes'],

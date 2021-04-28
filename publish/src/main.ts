@@ -66,8 +66,9 @@ const determineVersion = (): string => {
     case 'auto':
       const pkg = readPackage()
       const build =
-        limitLength(core.getInput('build')) ??
-        new Date().toISOString().replace(/[:.]/gi, '-')
+        core.getInput('build') !== ''
+          ? limitLength(core.getInput('build'))
+          : new Date().toISOString().replace(/[:.]/gi, '-')
       return `${pkg.version}-${build}`
 
     case 'source':
