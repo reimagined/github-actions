@@ -68,7 +68,7 @@ export const post = async (): Promise<void> => {
             `^(## \\[${versionTag.replace(
               '.',
               '\\.'
-            )}\\][^\\n]*$)(.*?)^(## V[0-9]*\\.[0-9]*\\.[0-9])`,
+            )}\\][^\\n]*$)(.*?)^(## \\[?V[0-9]*\\.[0-9]*\\.[0-9])`,
             'gms'
           )
           const changelog = readFileSync('./CHANGELOG.md').toString()
