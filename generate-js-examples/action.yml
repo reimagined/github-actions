@@ -1,0 +1,10 @@
+name: generate-js-examples
+description: TS to JS examples converter
+inputs:
+  token:
+    description: Examples path masks (glob pattern)
+    required: true
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'

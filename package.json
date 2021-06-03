@@ -37,6 +37,7 @@
     "deploy",
     "git-release",
     "release-pr-bot",
-    "generate-changelog"
+    "generate-changelog",
+    "generate-js-examples"
   ]
 }
