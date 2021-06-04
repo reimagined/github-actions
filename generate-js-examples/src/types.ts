@@ -5,3 +5,8 @@ export type Logger = {
 }
 
 export type PathResolver = (file: string) => string
+
+export type PathResolvers = {
+  source: PathResolver
+  out: PathResolver
+}

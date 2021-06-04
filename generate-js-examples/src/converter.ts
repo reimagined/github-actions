@@ -1,24 +1,49 @@
 import cps from 'child_process'
 import path from 'path'
+import globCb from 'glob'
 import fs from 'fs'
+import fse from 'fs-extra'
 import { promisify } from 'util'
 import partial from 'lodash.partial'
-import { Logger, PathResolver } from './types'
+import { Logger, PathResolvers } from './types'
 
 const truncateFile = promisify(fs.truncate)
 const readFile = promisify(fs.readFile)
+const copy = promisify(fse.copy)
+const emptyDir = promisify(fse.emptyDir)
+const remove = promisify(fse.remove)
 const exists = promisify(fs.exists)
 const mkdir = promisify(fs.mkdir)
 const writeFile = promisify(fs.writeFile)
+const glob = promisify(globCb)
 const exec = promisify(cps.exec)
 
 const tsConfigFileName = 'converter.tsconfig.json'
-const makeConfig = (resolveSource: PathResolver, resolveOut: PathResolver) => ({
-  include: [resolveSource('./**/*')],
-  exclude: [resolveSource('./test/e2e')],
+
+const bundleAssets = [
+  'static/',
+  'data/',
+  'data-replica/',
+  '.babelrc',
+  '.gitignore',
+  '.prettierignore',
+  'jest.config.js',
+  'README.md',
+]
+
+const redundantAssets = ['*tsconfig*']
+
+const makeConfig = (
+  resolve: PathResolvers,
+  include: string[],
+  exclude: string[],
+  types: string[]
+) => ({
+  include,
+  exclude,
   compilerOptions: {
-    outDir: resolveOut('./'),
-    rootDir: resolveSource('./'),
+    outDir: resolve.out('./'),
+    rootDir: resolve.source('./'),
     module: 'ES2015',
     moduleResolution: 'node',
     esModuleInterop: false,
@@ -27,18 +52,30 @@ const makeConfig = (resolveSource: PathResolver, resolveOut: PathResolver) => ({
     allowJs: true,
     target: 'ES2018',
     lib: ['ES2018', 'dom'],
-    types: ['node', 'react', 'jest'],
+    types,
     noEmit: false,
     skipLibCheck: true,
     allowSyntheticDefaultImports: true,
   },
 })
 
-const execTsc = async (
-  directory: string,
-  args: string,
-  env: NodeJS.ProcessEnv = process.env
-): Promise<string> => {
+const pipeSource = async (
+  resolve: PathResolvers,
+  assets: string[],
+  processor: (source: string, target: string) => Promise<void>
+): Promise<void> => {
+  await assets.map(async (asset) => {
+    const files = await glob(resolve.source(asset))
+    await files.map(async (file) => {
+      await processor(
+        resolve.source(file),
+        resolve.out(`.${file.substring(resolve.source('./').length)}`)
+      )
+    })
+  })
+}
+
+const execTsc = async (directory: string, args: string): Promise<string> => {
   return await new Promise((resolve, reject) => {
     cps.exec(`tsc ${args}`, (error, stdout, stderr) => {
       if (error != null) {
@@ -47,38 +84,84 @@ const execTsc = async (
       return resolve(stdout)
     })
   })
-
-  /*
-  const { stdout, stderr } = await exec(`tsc ${args}`, {
-    env,
-  })
-  if (result != null) {
-    return result.toString()
-  }
-  return ''
-   */
 }
 
-const runTSC = async (
-  resolveSource: PathResolver,
-  resolveOut: PathResolver,
-  log: Logger
-) => {
-  const tsconfigFile = resolveOut(tsConfigFileName)
+const compile = async (resolve: PathResolvers, log: Logger) => {
+  log.debug(`compiling sources and unit tests`)
+
+  const tsconfigFile = resolve.out(tsConfigFileName)
 
   log.debug(`writing ${tsconfigFile}`)
 
   await writeFile(
     tsconfigFile,
-    JSON.stringify(makeConfig(resolveSource, resolveOut), null, 2)
+    JSON.stringify(
+      makeConfig(
+        resolve,
+        [resolve.source('./**/*')],
+        [resolve.source('./test/e2e')],
+        ['node', 'react', 'jest']
+      ),
+      null,
+      2
+    )
   )
 
-  log.debug(`executing TSC`)
+  await execTsc(resolve.source('./'), `--build ${tsconfigFile}`)
+}
 
-  await execTsc(
-    resolveSource('./'),
-    `--build ${tsconfigFile}`
-  )
+const compileE2E = async (resolve: PathResolvers, log: Logger) => {
+  if (await exists(resolve.source('./test/e2e'))) {
+    log.debug(`compiling E2E`)
+
+    const tsconfigFile = resolve.out(tsConfigFileName)
+
+    log.debug(`writing ${tsconfigFile}`)
+
+    await writeFile(
+      tsconfigFile,
+      JSON.stringify(
+        makeConfig(
+          resolve,
+          [resolve.source('./test/e2e')],
+          [],
+          ['node', 'react', 'testcafe']
+        ),
+        null,
+        2
+      )
+    )
+
+    await execTsc(resolve.source('./'), `--build ${tsconfigFile}`)
+  } else {
+    log.debug(`no E2E tests found, skipping compilation`)
+  }
+}
+
+const copyAssets = async (resolve: PathResolvers, log: Logger) => {
+  log.debug(`copying assets:`)
+  await pipeSource(resolve, bundleAssets, async (source, target) => {
+    log.debug(`${source} -> ${target}`)
+    await copy(source, target)
+  })
+}
+
+const strip = async (resolve: PathResolvers, log: Logger) => {
+  log.debug(`stripping JS example`)
+
+  await redundantAssets.map(async (asset) => {
+    const files = await glob(resolve.out(asset))
+    await files.map(async (file) => {
+      log.debug(`! ${file}`)
+      await remove(file)
+    })
+  })
+}
+
+const copyPackageJson = async (resolve: PathResolvers, log: Logger) => {
+
+
+
 }
 
 export const converter = async (
@@ -90,17 +173,17 @@ export const converter = async (
   log.debug(`sourceDir: ${sourceDir}`)
   log.debug(`outDir: ${outDir}`)
 
-  const resolveSource = partial(path.resolve, sourceDir)
-  const resolveOut = partial(path.resolve, outDir)
+  const resolve = {
+    source: partial(path.resolve, sourceDir),
+    out: partial(path.resolve, outDir),
+  }
 
   log.debug(`touching ${outDir}`)
 
-  if (!(await exists(outDir))) {
-    log.debug(`creating ${outDir}`)
-    await mkdir(outDir)
-  }
+  await emptyDir(outDir)
 
-  log.debug(`processing project with TSC`)
-
-  await runTSC(resolveSource, resolveOut, log)
+  await compile(resolve, log)
+  await compileE2E(resolve, log)
+  await copyAssets(resolve, log)
+  await strip(resolve, log)
 }
