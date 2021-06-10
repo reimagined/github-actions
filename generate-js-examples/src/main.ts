@@ -102,7 +102,9 @@ export const main = async (): Promise<void> => {
 
   await Promise.all(
     refinedEntries.map(async ({ source, out }) => {
+      core.info(`converting ${source}`)
       await converter(source, out, core)
+      core.info(`${source} complete`)
     })
   )
 
