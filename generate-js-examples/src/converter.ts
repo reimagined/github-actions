@@ -100,7 +100,7 @@ const compile = async (resolve: PathResolvers, log: Logger) => {
         resolve,
         [resolve.source('./**/*')],
         [resolve.source('./test/e2e')],
-        ['node', 'react', 'jest']
+        ['node', 'jest']
       ),
       null,
       2
@@ -121,12 +121,7 @@ const compileE2E = async (resolve: PathResolvers, log: Logger) => {
     await writeFile(
       tsconfigFile,
       JSON.stringify(
-        makeConfig(
-          resolve,
-          [resolve.source('./test/e2e')],
-          [],
-          ['node', 'react', 'testcafe']
-        ),
+        makeConfig(resolve, [resolve.source('./test/e2e')], [], ['node']),
         null,
         2
       )
@@ -158,10 +153,73 @@ const strip = async (resolve: PathResolvers, log: Logger) => {
   })
 }
 
-const copyPackageJson = async (resolve: PathResolvers, log: Logger) => {
+const patchJsonFile = (
+  fileName: string,
+  transform: (sourceJson: object) => object
+) => async (resolve: PathResolvers, log: Logger) => {
+  log.debug(`Patching ${fileName}`)
+  const fileContents = (await readFile(resolve.source(fileName))).toString()
+  const sourceJson = JSON.parse(fileContents)
 
+  const resultingJson = transform(sourceJson)
 
+  await writeFile(resolve.out(fileName), JSON.stringify(resultingJson, null, 2))
+}
 
+const patchBabelrc = patchJsonFile('.babelrc', (sourceJson: any) => ({
+  ...sourceJson,
+  presets: sourceJson.presets.filter((entry) => !entry.includes('typescript')),
+}))
+
+const patchPackageJson = patchJsonFile('package.json', (sourceJson: any) => {
+  const nonTypescriptEntries = (key) =>
+    key !== 'typescript' && !key.startsWith('@types/')
+
+  const keepNonTypescriptEntries = (entries) => {
+    return Object.keys(entries)
+      .filter(nonTypescriptEntries)
+      .reduce((obj, key) => ({ ...obj, [key]: entries[key] }), {})
+  }
+
+  const patchedScripts = Object.keys(sourceJson.scripts).reduce(
+    (obj, key) => ({
+      ...obj,
+      [key]: sourceJson.scripts[key]
+        .replace('tsc && babel-node --extensions=.ts,.tsx', 'babel-node')
+        .replace('run.ts', 'run.js'),
+    }),
+    {}
+  )
+
+  return {
+    ...sourceJson,
+    scripts: patchedScripts,
+    dependencies: keepNonTypescriptEntries(sourceJson.dependencies),
+    devDependencies: keepNonTypescriptEntries(sourceJson.devDependencies),
+  }
+})
+
+const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
+  const filenamePatterns = ['config.*.js', 'run.js']
+
+  const replaceFileExtensions = (input) =>
+    input.replace(/(\.tsx?',\n)/g, ".js',\n")
+
+  await Promise.all(
+    filenamePatterns.map(async (pattern) => {
+      const files = await glob(resolve.out(pattern))
+      return await Promise.all(
+        files.map(async (file) => {
+          log.debug(`Patching ${file}`)
+          const fileContents = replaceFileExtensions(
+            (await readFile(file)).toString()
+          )
+
+          return writeFile(file, fileContents)
+        })
+      )
+    })
+  )
 }
 
 export const converter = async (
@@ -185,5 +243,8 @@ export const converter = async (
   await compile(resolve, log)
   await compileE2E(resolve, log)
   await copyAssets(resolve, log)
+  await patchConfigs(resolve, log)
+  await patchBabelrc(resolve, log)
+  await patchPackageJson(resolve, log)
   await strip(resolve, log)
 }
