@@ -71,9 +71,6 @@ export const main = async (): Promise<void> => {
   core.debug(`checking out branch: ${branch}`)
   git(`checkout ${branch}`)
 
-  core.debug(`resetting branch to push commit: ${event.head_commit.id}`)
-  git(`reset --hard ${event.head_commit.id}`)
-
   core.endGroup()
 
   core.startGroup('installing packages')
