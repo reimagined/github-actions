@@ -222,6 +222,23 @@ const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
   )
 }
 
+const patchAdjustWebpack = async (resolve: PathResolvers, log: Logger) => {
+  const fileName = 'config.adjust-webpack.js'
+  log.debug(`Patching ${fileName}`)
+
+  const deletionPatterns = [
+    /enableTypescript\(webpackConfig\)/g,
+    /(\/\/ enable-ts)(.|\n)+(\/\/ enable-ts)/g,
+  ]
+
+  const fileContents = (await readFile(resolve.out(fileName))).toString()
+  const patchedContents = deletionPatterns.reduce(
+    (content, pattern) => content.replace(pattern, ''),
+    fileContents
+  )
+  await writeFile(resolve.out(fileName), patchedContents)
+}
+
 export const converter = async (
   sourceDir: string,
   outDir: string,
@@ -243,6 +260,7 @@ export const converter = async (
   await compile(resolve, log)
   await compileE2E(resolve, log)
   await copyAssets(resolve, log)
+  await patchAdjustWebpack(resolve, log)
   await patchConfigs(resolve, log)
   await patchBabelrc(resolve, log)
   await patchPackageJson(resolve, log)
