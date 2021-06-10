@@ -1,7 +1,7 @@
 export type Logger = {
   debug: (msg: string) => void
   error: (msg: string) => void
-  warn: (msg: string) => void
+  warning: (msg: string) => void
 }
 
 export type PathResolver = (file: string) => string
@@ -9,4 +9,9 @@ export type PathResolver = (file: string) => string
 export type PathResolvers = {
   source: PathResolver
   out: PathResolver
+}
+
+export type ActionConverterEntry = {
+  source: string
+  out: string
 }
