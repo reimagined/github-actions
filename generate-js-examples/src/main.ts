@@ -84,7 +84,11 @@ export const main = async (): Promise<void> => {
         const sources = await glob(entry.source)
         return sources.map((source) => ({
           source: path.resolve(process.cwd(), source),
-          out: path.resolve(process.cwd(), entry.out),
+          out: path.resolve(
+            process.cwd(),
+            entry.out,
+            source.replace(`${path.dirname(source)}/`, '')
+          ),
         }))
       })
     )
