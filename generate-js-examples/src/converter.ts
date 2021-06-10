@@ -48,7 +48,7 @@ const makeConfig = (
     moduleResolution: 'node',
     esModuleInterop: false,
     sourceMap: false,
-    jsx: 'react',
+    jsx: 'react-native',
     allowJs: true,
     target: 'ES2018',
     lib: ['ES2018', 'dom'],
