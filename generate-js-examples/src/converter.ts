@@ -157,7 +157,7 @@ const patchJsonFile = (
   fileName: string,
   transform: (sourceJson: object) => object
 ) => async (resolve: PathResolvers, log: Logger) => {
-  log.debug(`Patching ${fileName}`)
+  log.debug(`patching ${fileName}`)
   const fileContents = (await readFile(resolve.source(fileName))).toString()
   const sourceJson = JSON.parse(fileContents)
 
@@ -211,7 +211,7 @@ const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
       const files = await glob(resolve.out(pattern))
       return await Promise.all(
         files.map(async (file) => {
-          log.debug(`Patching ${file}`)
+          log.debug(`patching ${file}`)
           const fileContents = replaceFileExtensions(
             (await readFile(file)).toString()
           )
@@ -225,7 +225,7 @@ const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
 
 const patchAdjustWebpack = async (resolve: PathResolvers, log: Logger) => {
   const fileName = 'config.adjust-webpack.js'
-  log.debug(`Patching ${fileName}`)
+  log.debug(`patching ${fileName}`)
 
   const deletionPatterns = [
     /enableTypescript\(webpackConfig\)/g,
@@ -238,6 +238,13 @@ const patchAdjustWebpack = async (resolve: PathResolvers, log: Logger) => {
     fileContents
   )
   await writeFile(resolve.out(fileName), patchedContents)
+}
+
+const prettify = async (resolve: PathResolvers, log: Logger) => {
+  log.debug(`running Prettier`)
+  await exec('prettier --write "**/**.{js,jsx,json}"', {
+    cwd: resolve.out(''),
+  })
 }
 
 export const converter = async (
@@ -266,4 +273,5 @@ export const converter = async (
   await patchBabelrc(resolve, log)
   await patchPackageJson(resolve, log)
   await strip(resolve, log)
+  await prettify(resolve, log)
 }
