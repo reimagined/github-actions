@@ -75,7 +75,7 @@ export const main = async (): Promise<void> => {
 
   core.startGroup('installing packages')
 
-  execSync(`yarn install`)
+  execSync(`yarn install --frozen-lockfile`)
 
   core.endGroup()
 
