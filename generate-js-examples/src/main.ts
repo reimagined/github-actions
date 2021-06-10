@@ -9,6 +9,7 @@ import { PushEvent } from '../../common/src/types'
 import { ActionConverterEntry } from './types'
 import { promisify } from 'util'
 import { converter } from './converter'
+import { execSync } from 'child_process'
 
 const glob = promisify(globCb)
 
@@ -72,6 +73,12 @@ export const main = async (): Promise<void> => {
 
   core.debug(`resetting branch to push commit: ${event.head_commit.id}`)
   git(`reset --hard ${event.head_commit.id}`)
+
+  core.endGroup()
+
+  core.startGroup('installing packages')
+
+  execSync(`yarn install`)
 
   core.endGroup()
 
