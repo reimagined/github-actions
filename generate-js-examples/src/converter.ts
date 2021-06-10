@@ -173,7 +173,7 @@ const patchBabelrc = patchJsonFile('.babelrc', (sourceJson: any) => ({
 
 const patchPackageJson = patchJsonFile('package.json', (sourceJson: any) => {
   const nonTypescriptEntries = (key) =>
-    key !== 'typescript' && !key.startsWith('@types/')
+    key !== 'typescript' && key !== 'ts-node' && !key.startsWith('@types/')
 
   const keepNonTypescriptEntries = (entries) => {
     return Object.keys(entries)
@@ -186,6 +186,7 @@ const patchPackageJson = patchJsonFile('package.json', (sourceJson: any) => {
       ...obj,
       [key]: sourceJson.scripts[key]
         .replace('tsc && babel-node --extensions=.ts,.tsx', 'babel-node')
+        .replace('ts-node', 'babel-node')
         .replace('run.ts', 'run.js'),
     }),
     {}
