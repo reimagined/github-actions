@@ -194,6 +194,7 @@ const patchPackageJson = patchJsonFile('package.json', (sourceJson: any) => {
 
   return {
     ...sourceJson,
+    name: sourceJson.name.replace('-ts', '-js'),
     scripts: patchedScripts,
     dependencies: keepNonTypescriptEntries(sourceJson.dependencies),
     devDependencies: keepNonTypescriptEntries(sourceJson.devDependencies),
