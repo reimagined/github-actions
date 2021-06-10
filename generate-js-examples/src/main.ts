@@ -110,7 +110,7 @@ export const main = async (): Promise<void> => {
 
   core.startGroup(`Committing and pushing changes`)
   try {
-    git(`add -u`)
+    git(`add .`)
     git(`commit -m "${commitMessage}"`)
     git(`push`)
   } catch (e) {
