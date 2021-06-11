@@ -29,9 +29,11 @@ const bundleAssets = [
   '.prettierignore',
   'jest.config.js',
   'README.md',
+  './**/*.vue',
+  './**/*.css',
 ]
 
-const redundantAssets = ['*tsconfig*']
+const redundantAssets = ['*tsconfig*', 'types.js']
 
 const makeConfig = (
   resolve: PathResolvers,
