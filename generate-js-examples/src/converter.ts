@@ -21,9 +21,9 @@ const exec = promisify(cps.exec)
 const tsConfigFileName = 'converter.tsconfig.json'
 
 const bundleAssets = [
-  'static/',
-  'data/',
-  'data-replica/',
+  'static/**/*',
+  'data/**/*',
+  'data-replica/**/*',
   '.babelrc',
   '.gitignore',
   '.prettierignore',
