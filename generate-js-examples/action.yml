@@ -1,0 +1,28 @@
+name: generate-js-examples
+description: TS to JS examples converter
+inputs:
+  token:
+    description: GitHub user's PAT with required permissions
+    required: true
+
+  push_event:
+    description: GitHub push event that triggers workflow in JSON format
+    required: true
+
+  entries:
+    description: An array of source/output entries in JSON format
+    required: true
+
+  ssh_private_key:
+    description: GitHub user's private SSH key part to access to repository
+    required: false
+
+  commit_message:
+    description: generated changes commit message
+    required: false
+    default: 'Changelog update'
+
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'
