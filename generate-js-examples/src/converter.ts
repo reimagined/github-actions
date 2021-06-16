@@ -7,13 +7,11 @@ import { promisify } from 'util'
 import partial from 'lodash.partial'
 import { Logger, PathResolvers } from './types'
 
-const truncateFile = promisify(fs.truncate)
 const readFile = promisify(fs.readFile)
 const copy = promisify(fse.copy)
 const emptyDir = promisify(fse.emptyDir)
 const remove = promisify(fse.remove)
 const exists = promisify(fs.exists)
-const mkdir = promisify(fs.mkdir)
 const writeFile = promisify(fs.writeFile)
 const glob = promisify(globCb)
 const exec = promisify(cps.exec)
