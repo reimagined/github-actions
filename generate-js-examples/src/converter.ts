@@ -37,14 +37,15 @@ const makeConfig = (
   resolve: PathResolvers,
   include: string[],
   exclude: string[],
-  types: string[]
+  types: string[],
+  module = 'ES2015'
 ) => ({
   include,
   exclude,
   compilerOptions: {
     outDir: resolve.out('./'),
     rootDir: resolve.source('./'),
-    module: 'ES2015',
+    module,
     moduleResolution: 'node',
     esModuleInterop: false,
     sourceMap: false,
@@ -99,7 +100,7 @@ const compile = async (resolve: PathResolvers, log: Logger) => {
       makeConfig(
         resolve,
         [resolve.source('./**/*')],
-        [resolve.source('./test/e2e')],
+        [resolve.source('./test/e2e'), resolve.source('./jest.config.ts')],
         ['node', 'jest']
       ),
       null,
@@ -122,6 +123,35 @@ const compileE2E = async (resolve: PathResolvers, log: Logger) => {
       tsconfigFile,
       JSON.stringify(
         makeConfig(resolve, [resolve.source('./test/e2e')], [], ['node']),
+        null,
+        2
+      )
+    )
+
+    await execTsc(resolve.source('./'), `--build ${tsconfigFile}`)
+  } else {
+    log.debug(`no E2E tests found, skipping compilation`)
+  }
+}
+
+const compileJestConfig = async (resolve: PathResolvers, log: Logger) => {
+  if (await exists(resolve.source('./jest.config.ts'))) {
+    log.debug(`compiling jest.config.ts`)
+
+    const tsconfigFile = resolve.out(tsConfigFileName)
+
+    log.debug(`writing ${tsconfigFile}`)
+
+    await writeFile(
+      tsconfigFile,
+      JSON.stringify(
+        makeConfig(
+          resolve,
+          [resolve.source('./jest.config.ts')],
+          [],
+          ['node'],
+          'commonjs'
+        ),
         null,
         2
       )
@@ -202,10 +232,12 @@ const patchPackageJson = patchJsonFile('package.json', (sourceJson: any) => {
 })
 
 const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
-  const filenamePatterns = ['config.*.js', 'run.js']
+  const filenamePatterns = ['config.*.js', 'run.js', 'jest.config.js']
 
   const replaceFileExtensions = (input) =>
-    input.replace(/(\.tsx?',\n)/g, ".js',\n")
+    input
+      .replace(/(\.tsx?',\n)/g, ".js',\n")
+      .replace(/(\.tsx?'],\n)/g, ".js'],\n")
 
   await Promise.all(
     filenamePatterns.map(async (pattern) => {
@@ -268,6 +300,7 @@ export const converter = async (
 
   await compile(resolve, log)
   await compileE2E(resolve, log)
+  await compileJestConfig(resolve, log)
   await copyAssets(resolve, log)
   await patchAdjustWebpack(resolve, log)
   await patchConfigs(resolve, log)
