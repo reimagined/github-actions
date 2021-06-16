@@ -22,8 +22,8 @@ const tsConfigFileName = 'converter.tsconfig.json'
 
 const bundleAssets = [
   'static/**/*',
-  'data/**/*',
-  'data-replica/**/*',
+  'data/.gitignore',
+  'data-replica/.gitignore',
   '.babelrc',
   '.gitignore',
   '.prettierignore',
