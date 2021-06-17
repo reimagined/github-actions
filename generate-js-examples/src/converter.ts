@@ -275,7 +275,7 @@ const patchAdjustWebpack = async (resolve: PathResolvers, log: Logger) => {
 
 const prettify = async (resolve: PathResolvers, log: Logger) => {
   log.debug(`running Prettier`)
-  await exec('yarn prettier --write "**/**.{js,jsx,json}"', {
+  await exec('yarn prettier --write "**/**.{js,jsx,json,babelrc}"', {
     cwd: resolve.out(''),
   })
 }
