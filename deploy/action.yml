@@ -70,6 +70,11 @@ inputs:
     description: initial events file path
     required: false
 
+  skip_remove:
+    description: do not remove deployment at the end of the job
+    required: false
+    default: 'false'
+
 outputs:
   id:
     description: deployed application id
