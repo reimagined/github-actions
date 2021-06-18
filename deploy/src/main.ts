@@ -51,12 +51,15 @@ export const main = async (): Promise<void> => {
     )
   }
 
+  let useGlobalCli = false
+
   if (isEmpty(cliSources)) {
     const cliVersion = isEmpty(specificCliVersion)
       ? await latestVersion('resolve-cloud')
       : specificCliVersion
 
     if (cliVersion === 'global') {
+      useGlobalCli = true
       unsetByPath(pkg, 'devDependencies.resolve-cloud')
     } else {
       core.debug(`setting cloud CLI version to (${cliVersion})`)
@@ -123,7 +126,7 @@ export const main = async (): Promise<void> => {
 
   const customArgs = core.getInput('deploy_args') || ''
 
-  const cli = getCLI(appDir, cliSources)
+  const cli = getCLI(appDir, cliSources, useGlobalCli)
   const eventsFilePath = core.getInput('events_file_path')
 
   try {

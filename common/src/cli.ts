@@ -28,9 +28,16 @@ const execCLI = (
 
 const execPackagedCLI = (
   appDir: string,
+  useGlobal: boolean,
   args: string,
   stdio: StdioOptions = 'pipe'
-): string => execCLI(appDir, 'yarn --silent resolve-cloud', args, stdio)
+): string =>
+  execCLI(
+    appDir,
+    `${useGlobal ? '' : 'yarn --silent '}resolve-cloud`,
+    args,
+    stdio
+  )
 
 const execSourcedCLI = (
   appDir: string,
@@ -40,10 +47,14 @@ const execSourcedCLI = (
 ): string =>
   execCLI(appDir, `node ${path.resolve(sources, 'lib/index.js')}`, args, stdio)
 
-export const getCLI = (appDir: string, sources?: string): CLI =>
+export const getCLI = (
+  appDir: string,
+  sources?: string,
+  useGlobalCli = false
+): CLI =>
   sources != null && sources !== ''
     ? partial(execSourcedCLI, appDir, sources)
-    : partial(execPackagedCLI, appDir)
+    : partial(execPackagedCLI, appDir, useGlobalCli)
 
 const toTable = (tableOutput: string) => {
   const rows = tableOutput
