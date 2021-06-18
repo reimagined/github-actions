@@ -56,8 +56,12 @@ export const main = async (): Promise<void> => {
       ? await latestVersion('resolve-cloud')
       : specificCliVersion
 
-    core.debug(`setting cloud CLI version to (${cliVersion})`)
-    setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+    if (cliVersion === 'global') {
+      unsetByPath(pkg, 'devDependencies.resolve-cloud')
+    } else {
+      core.debug(`setting cloud CLI version to (${cliVersion})`)
+      setByPath(pkg, 'devDependencies.resolve-cloud', cliVersion)
+    }
   } else {
     unsetByPath(pkg, 'devDependencies.resolve-cloud')
   }
