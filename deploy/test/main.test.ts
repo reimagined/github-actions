@@ -278,7 +278,7 @@ test('app dependencies installation', async () => {
 test('cloud CLI requested', async () => {
   await main()
 
-  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '')
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '', false)
 })
 
 test('cloud CLI requested for specific sources', async () => {
@@ -286,7 +286,7 @@ test('cloud CLI requested for specific sources', async () => {
 
   await main()
 
-  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '/cli/sources')
+  expect(mGetCLI).toHaveBeenCalledWith('/source/dir', '/cli/sources', false)
 })
 
 test('app name from input', async () => {
