@@ -255,6 +255,7 @@ const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
       )
     })
   )
+  log.debug(`configs patching done`)
 }
 
 const patchAdjustWebpack = async (resolve: PathResolvers, log: Logger) => {
