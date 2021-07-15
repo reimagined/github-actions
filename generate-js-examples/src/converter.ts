@@ -238,6 +238,7 @@ const patchConfigs = async (resolve: PathResolvers, log: Logger) => {
     input
       .replace(/(\.tsx?',\n)/g, ".js',\n")
       .replace(/(\.tsx?'],\n)/g, ".js'],\n")
+      .replace(/(\.tsx?'] },\n)/g, ".js'] },\n")
 
   await Promise.all(
     filenamePatterns.map(async (pattern) => {
