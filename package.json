@@ -38,6 +38,6 @@
     "git-release",
     "release-pr-bot",
     "generate-changelog",
-    "generate-js-examples"
+    "resolve-gate"
   ]
 }
