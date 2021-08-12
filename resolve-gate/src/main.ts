@@ -56,7 +56,8 @@ export const main = async (): Promise<void> => {
 
     const { data } = JSON.parse(
       commandExecutor(
-        `yarn -s info ${resolvePackage} dist-tags --json`
+        `yarn -s info ${resolvePackage} dist-tags --json`,
+        'pipe'
       ).toString()
     )
 
