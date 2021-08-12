@@ -1,0 +1,35 @@
+name: resolve gate
+description: starts resolve gate tests
+inputs:
+  source:
+    description: local path to source files
+    required: true
+  registry:
+    description: NPM registry to install packages from
+    required: true
+  token:
+    description: NPM registry authentication token
+    required: true
+  framework_scope:
+    description: reSolve framework scope for packages detection
+    required: false
+    default: '@resolve-js'
+  framework_version:
+    description: reSolve framework version override
+    required: false
+  registry_package_tag:
+    description: packages registry tag
+    required: false
+  cloud_user:
+    description: reSolve cloud service user
+    required: true
+  cloud_token:
+    description: reSolve cloud service refresh token
+    required: true
+  cloud_api_url:
+    description: reSolve cloud service API url
+    required: false
+
+runs:
+  using: 'node12'
+  main: 'dist/main.js'

@@ -182,7 +182,7 @@ export const exportEnvVar = (name: string, value: string): string =>
     stdio: 'pipe',
   }).toString()
 
-export const createExecutor = (cwd: string, env: NodeJS.ProcessEnv) => (
+export const createExecutor = (cwd: string, env?: NodeJS.ProcessEnv) => (
   args: string,
   stdio: StdioOptions = 'inherit'
 ): Buffer =>
