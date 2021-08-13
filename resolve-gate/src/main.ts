@@ -28,6 +28,9 @@ export const main = async (): Promise<void> => {
   const token = core.getInput('token', { required: true })
   const scopes = parseScopes(core.getInput('framework_scope'))
 
+  core.info(`installing resolve-cloud dependency`)
+  commandExecutor(`npm install resolve-cloud@latest`)
+
   const pkgFile = path.resolve(appDir, './package.json')
   const pkg = readPackage(pkgFile)
 
