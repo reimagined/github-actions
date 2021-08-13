@@ -206,7 +206,7 @@ test('start resolve-gate script', async () => {
   await main()
 
   expect(execSync).toHaveBeenLastCalledWith(
-    'node ./ci-scripts/resolve-gate/run-task.js'
+    'npx ts-node ./ci-scripts/resolve-gate/run-task.ts'
   )
 })
 

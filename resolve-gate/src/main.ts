@@ -101,5 +101,5 @@ export const main = async (): Promise<void> => {
 
   commandExecutor(`npm install`)
 
-  commandExecutor(`node ./ci-scripts/resolve-gate/run-task.js`)
+  commandExecutor(`npx ts-node ./ci-scripts/resolve-gate/run-task.ts`)
 }
