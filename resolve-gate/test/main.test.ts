@@ -199,7 +199,7 @@ test('throw error incorrect framework_version', async () => {
 test('app dependencies installation', async () => {
   await main()
 
-  expect(execSync).toHaveBeenNthCalledWith(2, 'npm install')
+  expect(execSync).toHaveBeenNthCalledWith(3, 'npm install')
 })
 
 test('start resolve-gate script', async () => {
