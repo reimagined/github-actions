@@ -12,6 +12,7 @@ import {
   restoreNpmRc,
 } from '../../common/src/utils'
 import { main } from '../src/main'
+import semver from 'semver/preload'
 
 jest.mock('../src/publish')
 jest.mock('../../common/src/utils')
@@ -531,10 +532,11 @@ test('determine version: auto without build', async () => {
 
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith(
-    'version',
-    `6.5.4-2000-01-01T01-01-01-001Z`
-  )
+  const version = mCoreSaveState.mock.calls.find(
+    ([name]) => name === 'version'
+  )?.[1]
+  expect(semver.parse(version)).not.toBeNull()
+  expect(version).toEqual(`6.5.4-v2000-01-01T01-01-01-001Z`)
 
   spy.mockRestore()
 })
@@ -545,16 +547,24 @@ test('determine version: auto with build', async () => {
 
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4-build`)
+  const version = mCoreSaveState.mock.calls.find(
+    ([name]) => name === 'version'
+  )?.[1]
+  expect(semver.parse(version)).not.toBeNull()
+  expect(version).toEqual(`6.5.4-vbuild`)
 })
 
 test('determine version: auto with build - limit build length (cloud issues)', async () => {
   actionInput.version = 'auto'
-  actionInput.build = '123456-long-build-specifier'
+  actionInput.build = '001234-long-build-specifier'
 
   await main()
 
-  expect(mCoreSaveState).toHaveBeenCalledWith('version', `6.5.4-123456`)
+  const version = mCoreSaveState.mock.calls.find(
+    ([name]) => name === 'version'
+  )?.[1]
+  expect(semver.parse(version)).not.toBeNull()
+  expect(version).toEqual(`6.5.4-v001234`)
 })
 
 test('determine version: invalid semver', async () => {
