@@ -536,7 +536,7 @@ test('determine version: auto without build', async () => {
     ([name]) => name === 'version'
   )?.[1]
   expect(semver.parse(version)).not.toBeNull()
-  expect(version).toEqual(`6.5.4-v2000-01-01T01-01-01-001Z`)
+  expect(version).toEqual(`6.5.4+2000-01-01T01-01-01-001Z`)
 
   spy.mockRestore()
 })
@@ -551,7 +551,7 @@ test('determine version: auto with build', async () => {
     ([name]) => name === 'version'
   )?.[1]
   expect(semver.parse(version)).not.toBeNull()
-  expect(version).toEqual(`6.5.4-vbuild`)
+  expect(version).toEqual(`6.5.4+build`)
 })
 
 test('determine version: auto with build - limit build length (cloud issues)', async () => {
@@ -564,7 +564,7 @@ test('determine version: auto with build - limit build length (cloud issues)', a
     ([name]) => name === 'version'
   )?.[1]
   expect(semver.parse(version)).not.toBeNull()
-  expect(version).toEqual(`6.5.4-v001234`)
+  expect(version).toEqual(`6.5.4+001234`)
 })
 
 test('determine version: invalid semver', async () => {

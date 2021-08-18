@@ -69,7 +69,7 @@ const determineVersion = (): string => {
         core.getInput('build') !== ''
           ? limitLength(core.getInput('build'))
           : new Date().toISOString().replace(/[:.]/gi, '-')
-      return `${pkg.version}-v${build}`
+      return `${pkg.version}+${build}`
 
     case 'source':
       return readPackage().version
