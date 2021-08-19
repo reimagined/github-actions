@@ -44,7 +44,7 @@ export const publish = async (
   let packagePublished = false
 
   try {
-    const registryData = exec(`npm view ${name}@${publishVersion.version}`)
+    const registryData = exec(`npm view ${name}@${version}`)
     if (registryData != '') {
       packagePublished = true
     }
@@ -58,9 +58,9 @@ export const publish = async (
     return
   }
 
-  pkg.version = publishVersion.version
+  pkg.version = version
   if (frameworkScope != null && frameworkScope !== '') {
-    pkg = bumpDependencies(pkg, `${frameworkScope}/.*$`, publishVersion.version)
+    pkg = bumpDependencies(pkg, `${frameworkScope}/.*$`, version)
   }
   if (repository != null && frameworkScope !== '') {
     pkg.repository = repository
