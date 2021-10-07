@@ -127,13 +127,13 @@ export const main = async (): Promise<void> => {
   const customArgs = core.getInput('deploy_args') || ''
 
   const cli = getCLI(appDir, cliSources, useGlobalCli)
-  const eventsFilePath = core.getInput('events_file_path')
+  const eventStorePath = core.getInput('event_store_path')
 
   try {
     let eventStoreId: string | null = null
 
-    if (eventsFilePath != null && eventsFilePath !== '') {
-      core.debug(`events file path is specified. creating event-store`)
+    if (eventStorePath != null && eventStorePath !== '') {
+      core.debug(`event-store path is specified. creating event-store`)
 
       eventStoreId = cli(`event-stores create --format "{{ eventStoreId }}"`, [
         'inherit',
@@ -148,10 +148,7 @@ export const main = async (): Promise<void> => {
 
       core.debug(`importing initial events into event-store`)
 
-      cli(
-        `event-stores incremental-import ${eventStoreId} ${eventsFilePath}`,
-        'inherit'
-      )
+      cli(`event-stores import ${eventStoreId} ${eventStorePath}`, 'inherit')
 
       core.debug(`initial events imported`)
     }

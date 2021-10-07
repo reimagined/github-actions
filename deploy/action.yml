@@ -66,8 +66,8 @@ inputs:
     required: false
     default: '@resolve-js'
 
-  events_file_path:
-    description: initial events file path
+  event_store_path:
+    description: initial event-store path
     required: false
 
   skip_remove:
