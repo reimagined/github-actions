@@ -90,3 +90,20 @@ test('retrieve deployment logs if retrieve_logs option set', async () => {
   expect(mGetCLI).toHaveBeenCalled()
   expect(mCLI).toHaveBeenCalledWith(`logs deployment-id`, `inherit`)
 })
+
+test('remove deployment if logs retrieval failed anyway', async () => {
+  actionInput = {
+    retrieve_logs: 'true',
+  }
+
+  mCLI.mockImplementationOnce(() => {
+    throw Error(`error`)
+  })
+
+  await post()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`rm deployment-id`),
+    expect.anything()
+  )
+})

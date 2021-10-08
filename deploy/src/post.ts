@@ -13,8 +13,12 @@ export const post = async (): Promise<void> => {
         core.startGroup(`removing cloud deployment: ${id}`)
         const cli = getCLI(dir, core.getInput('cli_sources'))
         if (retrieveLogs) {
-          core.debug(`=== DEPLOYMENT LOGS ====`)
-          cli(`logs ${id}`, `inherit`)
+          try {
+            core.debug(`=== DEPLOYMENT LOGS ====`)
+            cli(`logs ${id}`, `inherit`)
+          } catch (error) {
+            core.warning(error)
+          }
         }
 
         cli(`rm ${id} --with-event-store`, 'inherit')
