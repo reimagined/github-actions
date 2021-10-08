@@ -14,6 +14,12 @@ export const post = async (): Promise<void> => {
         const cli = getCLI(dir, core.getInput('cli_sources'))
         if (retrieveLogs) {
           try {
+            core.debug(`=== EVENT SUBSCRIBERS ====`)
+            cli(`read-models ${id}`, `inherit`)
+          } catch (error) {
+            core.warning(error)
+          }
+          try {
             core.debug(`=== DEPLOYMENT LOGS ====`)
             cli(`logs ${id}`, `inherit`)
           } catch (error) {

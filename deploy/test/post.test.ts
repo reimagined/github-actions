@@ -91,11 +91,42 @@ test('retrieve deployment logs if retrieve_logs option set', async () => {
   expect(mCLI).toHaveBeenCalledWith(`logs deployment-id`, `inherit`)
 })
 
+test('retrieve deployment read-models if retrieve_logs option set', async () => {
+  actionInput = {
+    retrieve_logs: 'true',
+  }
+
+  await post()
+
+  expect(mGetCLI).toHaveBeenCalled()
+  expect(mCLI).toHaveBeenCalledWith(`read-models deployment-id`, `inherit`)
+})
+
 test('remove deployment if logs retrieval failed anyway', async () => {
   actionInput = {
     retrieve_logs: 'true',
   }
 
+  mCLI.mockImplementationOnce(() => {
+    throw Error(`error`)
+  })
+
+  await post()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`rm deployment-id`),
+    expect.anything()
+  )
+})
+
+test('remove deployment if both logs and read-models retrieval failed', async () => {
+  actionInput = {
+    retrieve_logs: 'true',
+  }
+
+  mCLI.mockImplementationOnce(() => {
+    throw Error(`error`)
+  })
   mCLI.mockImplementationOnce(() => {
     throw Error(`error`)
   })
