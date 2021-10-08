@@ -21,7 +21,9 @@ beforeEach(() => {
     app_id: 'deployment-id',
     app_dir: '/source/dir',
   }
-  actionInput = {}
+  actionInput = {
+    retrieve_logs_on_post_job: 'false',
+  }
 
   mCoreGetState.mockImplementation((name) => jobState[name])
   mCoreGetInput.mockImplementation((name) => actionInput[name])
@@ -76,4 +78,32 @@ test('do nothing if no app directory stored in state', async () => {
 
   expect(mGetCLI).not.toHaveBeenCalled()
   expect(mCLI).not.toHaveBeenCalled()
+})
+
+test('retrieve deployment logs if retrieve_logs option set', async () => {
+  actionInput = {
+    retrieve_logs: 'true',
+  }
+
+  await post()
+
+  expect(mGetCLI).toHaveBeenCalled()
+  expect(mCLI).toHaveBeenCalledWith(`logs deployment-id`, `inherit`)
+})
+
+test('remove deployment if logs retrieval failed anyway', async () => {
+  actionInput = {
+    retrieve_logs: 'true',
+  }
+
+  mCLI.mockImplementationOnce(() => {
+    throw Error(`error`)
+  })
+
+  await post()
+
+  expect(mCLI).toHaveBeenCalledWith(
+    expect.stringContaining(`rm deployment-id`),
+    expect.anything()
+  )
 })
