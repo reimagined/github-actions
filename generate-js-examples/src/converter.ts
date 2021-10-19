@@ -100,7 +100,7 @@ const compile = async (resolve: PathResolvers, log: Logger) => {
       makeConfig(
         resolve,
         [resolve.source('./**/*')],
-        [resolve.source('./test/e2e'), resolve.source('./jest.config.ts')],
+        [resolve.source('./test/e2e*'), resolve.source('./jest.config.ts')],
         ['node', 'jest']
       ),
       null,
@@ -112,7 +112,9 @@ const compile = async (resolve: PathResolvers, log: Logger) => {
 }
 
 const compileE2E = async (resolve: PathResolvers, log: Logger) => {
-  if (await exists(resolve.source('./test/e2e'))) {
+  const e2eTests = await glob(resolve.source('./test/e2e*'))
+
+  if (e2eTests.length > 0) {
     log.debug(`compiling E2E`)
 
     const tsconfigFile = resolve.out(tsConfigFileName)
@@ -121,11 +123,7 @@ const compileE2E = async (resolve: PathResolvers, log: Logger) => {
 
     await writeFile(
       tsconfigFile,
-      JSON.stringify(
-        makeConfig(resolve, [resolve.source('./test/e2e')], [], ['node']),
-        null,
-        2
-      )
+      JSON.stringify(makeConfig(resolve, e2eTests, [], ['node']), null, 2)
     )
 
     await execTsc(resolve.source('./'), `--build ${tsconfigFile}`)
