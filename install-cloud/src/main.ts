@@ -84,6 +84,9 @@ export const main = async (): Promise<void> => {
   commandExecutor(
     `yarn -s admin-cli version-resources install --stage=${stage} --version=${determinedVersion}`
   )
+  commandExecutor(
+    `yarn -s admin-cli runtimes ensure --stage=${stage} --version=${determinedVersion}`
+  )
 
   core.saveState(`determined_version`, determinedVersion)
 
