@@ -69,19 +69,23 @@ export const publish = async (
   writeFileSync(`${packageLocation}/package.json`, JSON.stringify(pkg, null, 2))
 
   try {
-    const cmd = 'npm pack --dry run';
-    const cmdExecutionResult = execSync(cmd).toString();
-    console.log(cmdExecutionResult);
+    const cmd = 'npm pack --dry run'
+    const cmdExecutionResult = execSync(cmd).toString()
+    console.log(cmdExecutionResult)
   } catch (error) {
-    console.log(`npm pack dry run failed. Status Code: ${error.status} with '${error.message}'`)
+    console.log(
+      `npm pack dry run failed. Status Code: ${error.status} with '${error.message}'`
+    )
   }
 
   try {
-    const cmd = 'npm publish --access=public --unsafe-perm --dry-run';
-    const cmdExecutionResult = execSync(cmd).toString();
-    console.log(cmdExecutionResult);
+    const cmd = 'npm publish --access=public --unsafe-perm --dry-run'
+    const cmdExecutionResult = execSync(cmd).toString()
+    console.log(cmdExecutionResult)
   } catch (error) {
-    console.log(`npm publish dry run failed. Status Code: ${error.status} with '${error.message}'`)
+    console.log(
+      `npm publish dry run failed. Status Code: ${error.status} with '${error.message}'`
+    )
   }
 
   try {
