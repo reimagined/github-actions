@@ -69,6 +69,8 @@ export const publish = async (
 
   writeFileSync(`${packageLocation}/package.json`, JSON.stringify(pkg, null, 2))
 
+  core.info(`Publishing package ${name}`)
+
   try {
     const cmd = 'npm pack --dry run'
     const cmdExecutionResult = execSync(cmd).toString()
