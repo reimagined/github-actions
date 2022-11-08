@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import { readFileSync, writeFileSync } from 'fs'
 import { execSync } from 'child_process'
 import semver from 'semver'
@@ -71,9 +72,9 @@ export const publish = async (
   try {
     const cmd = 'npm pack --dry run'
     const cmdExecutionResult = execSync(cmd).toString()
-    console.log(cmdExecutionResult)
+    core.info(cmdExecutionResult)
   } catch (error) {
-    console.log(
+    core.error(
       `npm pack dry run failed. Status Code: ${error.status} with '${error.message}'`
     )
   }
@@ -81,12 +82,14 @@ export const publish = async (
   try {
     const cmd = 'npm publish --access=public --unsafe-perm --dry-run'
     const cmdExecutionResult = execSync(cmd).toString()
-    console.log(cmdExecutionResult)
+    core.info(cmdExecutionResult)
   } catch (error) {
-    console.log(
+    core.error(
       `npm publish dry run failed. Status Code: ${error.status} with '${error.message}'`
     )
   }
+
+  core.info('Publish started')
 
   try {
     exec(
@@ -96,6 +99,7 @@ export const publish = async (
       location
     )
   } catch (error) {
+    core.error(error)
     throw error
   } finally {
     writeFileSync(`${packageLocation}/package.json`, fileContents)
