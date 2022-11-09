@@ -72,24 +72,28 @@ export const publish = async (
   core.info(`Publishing package ${name}`)
 
   try {
-    const cmd = 'npm pack --dry run'
-    const cmdExecutionResult = execSync(cmd).toString()
-    core.info(cmdExecutionResult)
+    const cmd = 'npm pack --dry-run'
+    const cmdExecutionResult = exec(cmd)
+    core.info(`${name} npm pack output: ${cmdExecutionResult}`)
   } catch (error) {
     core.error(
       `npm pack dry run failed. Status Code: ${error.status} with '${error.message}'`
     )
   }
 
+  core.info(`package ${name} npm pack dry run finished`)
+
   try {
     const cmd = 'npm publish --access=public --unsafe-perm --dry-run'
-    const cmdExecutionResult = execSync(cmd).toString()
-    core.info(cmdExecutionResult)
+    const cmdExecutionResult = exec(cmd)
+    core.info(`${name} npm publish output: ${cmdExecutionResult}`)
   } catch (error) {
     core.error(
       `npm publish dry run failed. Status Code: ${error.status} with '${error.message}'`
     )
   }
+
+  core.info(`package ${name} npm publish dry run finished`)
 
   core.info('Publish started')
 
